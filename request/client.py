@@ -50,7 +50,7 @@ class Client:
         return apps
     
     def get_access_requests(self) -> List[AccessRequest]:
-        raw_access_requests = self._get("appstore/access_requests")
+        raw_access_requests = self._get("appstore/access_requests?&page=1&size=100")
 
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests["items"]:
