@@ -4,7 +4,7 @@ from uuid import UUID
 from tabulate import tabulate
 from pick import pick
 
-from request.client import Client, App, Permission
+from request.client import AccessRequest, Client, App, Permission
 
 app = typer.Typer()
 
@@ -47,14 +47,17 @@ def request(
 def list_permissions(
     app_id: str
 ) -> None:
-    print(f"Listing permissions for app {app_id}\n")
     permissions: List[Permission] = client.get_app_requestable_permissions(app_id=app_id)
     print(tabulate([[permission.label, permission.id] for permission in permissions], headers=["Permission", "UUID"]), "\n")
 
 @app.command()
+def list() -> None:
+    access_requests: List[AccessRequest] = client.get_access_requests()
+    print(tabulate([[ar.app_name, ar.status, ar.requested_at, ar.supporter_user.email if ar.supporter_user else "Pending"] for ar in access_requests], headers=["App", "Request Status", "Requested At", "Approver Email"]), "\n")
+
+@app.command()
 def list_apps(
 ) -> None:
-    print("Listing all your apps...\n")
     apps: List[App] = client.get_appstore_apps()
     print(tabulate([[app.user_friendly_label, app.id] for app in apps], headers=["App", "UUID"]), "\n")
 

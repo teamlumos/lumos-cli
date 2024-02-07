@@ -1,7 +1,7 @@
 # client.py
 
 from pydantic import BaseModel
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 import requests
 
 API_TOKEN = "lsk_kKSWQAh1YAwWKgmj2Ppbg1jLVB5PVKY7VoBRJK-spCeA"
@@ -25,6 +25,18 @@ class Permission(BaseModel):
     def __str__(self):
         return self.label
 
+class User(BaseModel):
+    email: str
+
+class AccessRequest(BaseModel):
+    id: str
+    app_name: str
+    status: str
+    requested_at: str
+    requester_user: User
+    supporter_user: Optional[User]
+    target_user: User
+
 class Client:
     def __init__(self):
         pass
@@ -36,6 +48,15 @@ class Client:
         for item in raw_apps["items"]:
             apps.append(App(**item))
         return apps
+    
+    def get_access_requests(self) -> List[AccessRequest]:
+        raw_access_requests = self._get("appstore/access_requests")
+        print(raw_access_requests)
+
+        access_requests: List[AccessRequest] = []
+        for item in raw_access_requests["items"]:
+            access_requests.append(AccessRequest(**item))
+        return access_requests
 
     def get_app_requestable_permissions(self, app_id: str) -> List[Permission]:
         raw_permissions = self._get(f"appstore/requestable_permissions?app_id={app_id}")
