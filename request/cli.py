@@ -1,0 +1,70 @@
+from typing import List, Optional
+import typer
+
+from request.client import Client, App, Permission
+
+app = typer.Typer()
+
+client = Client()
+
+@app.callback(invoke_without_command=True)
+def request(
+    ctx: typer.Context,
+    app: Optional[int] = None,
+    user: Optional[int] = None,
+    permission: Optional[int] = None,
+    length: Optional[int] = None,
+) -> None:
+    if ctx.invoked_subcommand is None:
+        # Validate parameters or interactively input them
+        if not app:
+            app = typer.prompt("Enter the domain app id")
+        if not user:
+            user = typer.prompt("Enter the user id")
+        if not permission:
+            permission = typer.prompt("Enter the permission id")
+        if not length:
+            length = typer.prompt("Enter the access length")
+        print(f"Requesting app {app} for {user} to access permission {permission} for {length} seconds")
+        
+
+@app.command()
+def list_permissions(
+    app: int
+) -> None:
+    permissions: List[Permission] = client.get_app_requestable_permissions(app_id="67dfb94d-0292-e800-6ad3-459d94022a3e")
+    for permission in permissions:
+        print(permission)
+
+@app.command()
+def list_apps(
+) -> None:
+    apps: List[App] = client.get_appstore_apps()
+    for app in apps:
+        print(app)
+
+@app.command()
+def create_access_request() -> List[App]:
+    # TODO
+    return []
+    # apps: List[App] = client.create_access_request(
+    #     app_id="67dfb94d-0292-e800-6ad3-459d94022a3e",
+    #     permission_ids=[],
+    #     target_user="",
+    #     note="",
+    #     expiration_in_seconds=15,
+    # )
+    # for app in apps:
+    #     print(app)
+    # return apps
+
+@app.command()
+def list_access_lengths(
+    app: int,
+    permission: int
+) -> None:
+    print(f"Listing access lengths for app {app} and permission {permission}")
+    return
+
+if __name__ == "__main__":
+    app()
