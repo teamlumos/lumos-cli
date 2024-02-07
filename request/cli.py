@@ -60,9 +60,9 @@ def list_apps(
     print(tabulate([[app.user_friendly_label, app.id] for app in apps], headers=["App", "UUID"]), "\n")
 
 def create_access_request(
-    app_id: str,
+    app_id: UUID,
     requestable_permission_ids: List[UUID],
-    target_user_id: str,
+    target_user_id: UUID,
     note: str,
     expiration: Optional[int] = None
 ) -> None:
