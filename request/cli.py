@@ -3,6 +3,7 @@ import typer
 from uuid import UUID
 from tabulate import tabulate
 from pick import pick
+import pytz
 
 from request.client import AccessRequest, Client, App, Permission
 
@@ -41,9 +42,8 @@ def request(
         if not reason:
             reason = typer.prompt("Enter your business justification for the request")
 
-        create_access_request(app_id=app, requestable_permission_ids=selected_permissions, target_user_id=user, note=reason, expiration=length)
+        create_access_request(app_id=app, requestable_permission_ids=selected_permissions, note=reason, expiration=length)
         
-
 @app.command()
 def list_permissions(
     app_id: str
@@ -54,7 +54,30 @@ def list_permissions(
 @app.command()
 def list() -> None:
     access_requests: List[AccessRequest] = client.get_access_requests()
-    print(tabulate([[ar.app_name, ar.status, ar.requested_at, ar.supporter_user.email if ar.supporter_user else "Pending"] for ar in access_requests], headers=["App", "Request Status", "Requested At", "Approver Email"]), "\n")
+
+    def convert_to_human_date(inp: str) -> str:
+        import datetime
+
+        # Parse the input UTC time string to a datetime object
+        utc_time = datetime.datetime.strptime(inp, "%Y-%m-%dT%H:%M:%S")
+        
+        # Set the timezone to UTC for the parsed datetime
+        utc_time = utc_time.replace(tzinfo=pytz.utc)
+        
+        # Convert UTC time to EST
+        est_time = utc_time.astimezone(pytz.timezone('America/New_York'))
+        
+        # Format the EST time into a more human-readable string
+        human_date = est_time.strftime("%A, %B %d, %Y %I:%M %p EST")
+        
+        return human_date
+    
+    rows = []
+    access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)[:1]
+    for ar in access_requests:
+        rows.append(([ar.app_name, ar.status, convert_to_human_date(ar.requested_at), ar.supporter_user.email if ar.supporter_user else "Pending"]))
+
+    print(tabulate(rows, headers=["App", "Request Status", "Requested At", "Approver Email"]), "\n")
 
 @app.command()
 def list_apps(
@@ -65,14 +88,12 @@ def list_apps(
 def create_access_request(
     app_id: UUID,
     requestable_permission_ids: List[UUID],
-    target_user_id: UUID,
     note: str,
     expiration: Optional[int] = None
 ) -> None:
     client.create_access_request(
         app_id=str(app_id),
         permission_ids=[str(requestable_permission_id) for requestable_permission_id in requestable_permission_ids],
-        target_user_id=str(target_user_id),
         note=note,
         # expiration_in_seconds=expiration,
     )

@@ -51,7 +51,6 @@ class Client:
     
     def get_access_requests(self) -> List[AccessRequest]:
         raw_access_requests = self._get("appstore/access_requests")
-        print(raw_access_requests)
 
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests["items"]:
@@ -66,16 +65,15 @@ class Client:
             permissions.append(Permission(**item))
         return permissions
 
-    def create_access_request(self, app_id: str, permission_ids: List[str], target_user_id: str, note: str) -> None:
-        # TODO(alanefl) expand to include expiration in seconds.
+    def create_access_request(self, app_id: str, permission_ids: List[str], note: str) -> None:
+        # TODO: expand to include expiration in seconds.
+        # TODO: expand to include target user
         self._post(
             "appstore/access_request",
             body={
                 "app_id": app_id,
                 "requestable_permission_ids": permission_ids,
-                "target_user_id": target_user_id,
                 "note": note,
-                # "expiration_in_seconds": str(expiration_in_seconds)
             }
         )
 
