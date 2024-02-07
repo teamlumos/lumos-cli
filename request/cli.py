@@ -25,7 +25,7 @@ def request(
             apps: List[App] = client.get_appstore_apps()
             option, _ = pick(apps, "Select an app")
             app = option.id
-            print(f"Selected app {app}\n")
+            print(f"Selected app {app}")
 
         if not permission:
             # permission = typer.prompt("Enter the permission id")
@@ -40,7 +40,7 @@ def request(
         if not reason:
             reason = typer.prompt("Enter your business justification for the request")
 
-        create_access_request(app_id=app, note=reason, permission_id=permission, user_id=user, expiration=length)
+        create_access_request(app_id=app, requestable_permission_id=permission, target_user_id=user, note=reason, expiration=length)
         
 
 @app.command()
@@ -58,19 +58,22 @@ def list_apps(
     apps: List[App] = client.get_appstore_apps()
     print(tabulate([[app.user_friendly_label, app.id] for app in apps], headers=["App", "UUID"]), "\n")
 
-def create_access_request(app_id, note, permission_id, user_id, expiration) -> List[App]:
-    # TODO
-    return []
-    # apps: List[App] = client.create_access_request(
-    #     app_id="67dfb94d-0292-e800-6ad3-459d94022a3e",
-    #     permission_ids=[],
-    #     target_user="",
-    #     note="",
-    #     expiration_in_seconds=15,
-    # )
-    # for app in apps:
-    #     print(app)
-    # return apps
+def create_access_request(
+    app_id: str,
+    requestable_permission_id: str,
+    target_user_id: str,
+    note: str,
+    expiration: Optional[int] = None
+) -> List[App]:
+    resp = client.create_access_request(
+        app_id=app_id,
+        permission_id=requestable_permission_id,
+        target_user_id=target_user_id,
+        note=note,
+       # expiration_in_seconds=expiration_in_seconds,
+    )
+    print("Your request is in progress! 🏃🌴")
+    return
 
 @app.command()
 def list_access_lengths(
