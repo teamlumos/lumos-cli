@@ -45,20 +45,18 @@ class Client:
             permissions.append(Permission(**item))
         return permissions
 
-    def create_access_request(self, app_id: str, permission_id: str, target_user_id: str, note: str) -> None:
-        # TODO(alanefl) expand to a list of permission_id.
+    def create_access_request(self, app_id: str, permission_ids: List[str], target_user_id: str, note: str) -> None:
         # TODO(alanefl) expand to include expiration in seconds.
         self._post(
             "appstore/access_request",
             body={
                 "app_id": app_id,
-                "requestable_permission_ids": [permission_id],
+                "requestable_permission_ids": permission_ids,
                 "target_user_id": target_user_id,
                 "note": note,
                 # "expiration_in_seconds": str(expiration_in_seconds)
             }
         )
-        return "launched!"
 
     def _get(self, endpoint: str) -> Any:
         """Function to call an API endpoint and return the response."""
