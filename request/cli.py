@@ -45,19 +45,22 @@ def list_apps(
         print(app)
 
 @app.command()
-def create_access_request() -> List[App]:
-    # TODO
-    return []
-    # apps: List[App] = client.create_access_request(
-    #     app_id="67dfb94d-0292-e800-6ad3-459d94022a3e",
-    #     permission_ids=[],
-    #     target_user="",
-    #     note="",
-    #     expiration_in_seconds=15,
-    # )
-    # for app in apps:
-    #     print(app)
-    # return apps
+def create_access_request(
+    app_id: str,
+    requestable_permission_id: str,
+    target_user_id: str,
+    note: str,
+    expiration_in_seconds: Optional[int] = None
+) -> List[App]:
+    resp = client.create_access_request(
+        app_id=app_id,
+        permission_id=requestable_permission_id,
+        target_user_id=target_user_id,
+        note=note,
+       # expiration_in_seconds=expiration_in_seconds,
+    )
+    print("started request")
+    return
 
 @app.command()
 def list_access_lengths(

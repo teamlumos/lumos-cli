@@ -1,6 +1,6 @@
 # client.py
 
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 import requests
 
 API_TOKEN = "lsk_kKSWQAh1YAwWKgmj2Ppbg1jLVB5PVKY7VoBRJK-spCeA"
@@ -39,9 +39,20 @@ class Client:
             permissions.append(Permission(**item))
         return permissions
 
-    def launch_access_request(self, app_id: str, permission_ids: List[str], target_user_id: int, note: str, expiration_in_seconds: int) -> None:
-        # TODO
-        return "launched access request"
+    def create_access_request(self, app_id: str, permission_id: str, target_user_id: str, note: str) -> None:
+        # TODO(alanefl) expand to a list of permission_id.
+        # TODO(alanefl) expand to include expiration in seconds.
+        self._post(
+            "appstore/access_request",
+            body={
+                "app_id": app_id,
+                "requestable_permission_ids": [permission_id],
+                "target_user_id": target_user_id,
+                "note": note,
+                # "expiration_in_seconds": str(expiration_in_seconds)
+            }
+        )
+        return "launched!"
 
     def _get(self, endpoint: str) -> Any:
         """Function to call an API endpoint and return the response."""
@@ -56,14 +67,14 @@ class Client:
         else:
             return {"error": "Failed to fetch data", "status_code": response.status_code}
         
-    def _post(self, endpoint: str) -> Any:
+    def _post(self, endpoint: str, body: Dict[str, Any]) -> Any:
         """Function to call an API endpoint and return the response."""
         url = f"http://localhost:8000/{endpoint}"
         headers = {
             "Authorization": f"Bearer {API_TOKEN}",
             "Accept": "application/json",
         }
-        response = requests.post(url, headers=headers)
+        response = requests.post(url, headers=headers, json=body)
         if response.ok:
             return response.json()
         else:
