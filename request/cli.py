@@ -14,6 +14,7 @@ client = Client()
 def request(
     ctx: typer.Context,
     app: Optional[UUID] = None,
+    reason: Optional[str] = None,
     user: Optional[UUID] = None,
     permission: Optional[UUID] = None,
     length: Optional[int] = None,
@@ -29,11 +30,17 @@ def request(
         if not permission:
             # permission = typer.prompt("Enter the permission id")
             permissions: List[Permission] = client.get_app_requestable_permissions(app_id=app)
-            option, _ = pick(permissions, "Select a permission")
-            permission = option.id
+            if len(permissions) > 1:
+                option, _ = pick(permissions, "Select a permission")
+                permission = option.id
+            else:
+                permission = permissions[0].id
             print(f"Selected permission {permission}\n")
+        
+        if not reason:
+            reason = typer.prompt("Enter your business justification for the request")
 
-        create_access_request(app_id=app, note="", permission_id=permission, user_id=user, expiration=length)
+        create_access_request(app_id=app, note=reason, permission_id=permission, user_id=user, expiration=length)
         
 
 @app.command()
