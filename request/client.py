@@ -1,11 +1,11 @@
 # client.py
 
+from pydantic import BaseModel
 from typing import Any, List
 import requests
 
 API_TOKEN = "lsk_kKSWQAh1YAwWKgmj2Ppbg1jLVB5PVKY7VoBRJK-spCeA"
 
-from pydantic import BaseModel
 
 class App(BaseModel):
     id: str
@@ -13,11 +13,17 @@ class App(BaseModel):
     app_class_id: str
     instance_id: str
 
+    def __str__(self):
+        return self.user_friendly_label
+
 class Permission(BaseModel):
     id: str
     label: str
     app_id: str
     app_class_id: str
+
+    def __str__(self):
+        return self.label
 
 class Client:
     def __init__(self):

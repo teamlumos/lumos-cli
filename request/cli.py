@@ -2,6 +2,7 @@ from typing import List, Optional
 import typer
 from uuid import UUID
 from tabulate import tabulate
+from pick import pick
 
 from request.client import Client, App, Permission
 
@@ -20,16 +21,19 @@ def request(
     if ctx.invoked_subcommand is None:
         # Validate parameters or interactively input them
         if not app:
-            # app = typer.prompt("Enter the domain app id")
-            print("Select an app")
-            # apps: List[App] = client.get_appstore_apps()
-        if not user:
-            user = typer.prompt("Enter the user id")
+            apps: List[App] = client.get_appstore_apps()
+            option, _ = pick(apps, "Select an app")
+            app = option.id
+            print(f"Selected app {app}\n")
+
         if not permission:
-            permission = typer.prompt("Enter the permission id")
-        # if not length:
-        #     length = typer.prompt("Enter the access length")
-        print(f"Requesting app {app} for {user} to access permission {permission} for {length} seconds")
+            # permission = typer.prompt("Enter the permission id")
+            permissions: List[Permission] = client.get_app_requestable_permissions(app_id=app)
+            option, _ = pick(permissions, "Select a permission")
+            permission = option.id
+            print(f"Selected permission {permission}\n")
+
+        create_access_request(app_id=app, note="", permission_id=permission, user_id=user, expiration=length)
         
 
 @app.command()
@@ -47,8 +51,7 @@ def list_apps(
     apps: List[App] = client.get_appstore_apps()
     print(tabulate([[app.user_friendly_label, app.id] for app in apps], headers=["App", "UUID"]), "\n")
 
-@app.command()
-def create_access_request() -> List[App]:
+def create_access_request(app_id, note, permission_id, user_id, expiration) -> List[App]:
     # TODO
     return []
     # apps: List[App] = client.create_access_request(
