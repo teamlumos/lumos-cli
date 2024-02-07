@@ -30,9 +30,10 @@ def request(
 
 @app.command()
 def list_permissions(
-    app: int
+    app_id: str
 ) -> None:
-    permissions: List[Permission] = client.get_app_requestable_permissions(app_id="67dfb94d-0292-e800-6ad3-459d94022a3e")
+    print(app_id)
+    permissions: List[Permission] = client.get_app_requestable_permissions(app_id=app_id)
     for permission in permissions:
         print(permission)
 
