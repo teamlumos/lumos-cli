@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 import requests
 
+# Local token, harmless
 API_TOKEN = "lsk_kKSWQAh1YAwWKgmj2Ppbg1jLVB5PVKY7VoBRJK-spCeA"
 
 
