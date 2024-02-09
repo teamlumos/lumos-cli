@@ -38,6 +38,8 @@ def request(
             elif len(permissions) == 1:
                 selected_permissions = [permissions[0].id]
             print(f"Selected permissions: {selected_permissions}\n")
+        else:
+            selected_permissions = [permission]
         
         if not reason:
             reason = typer.prompt("Enter your business justification for the request")
