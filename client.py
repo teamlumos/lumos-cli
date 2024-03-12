@@ -91,7 +91,7 @@ class Client:
         params: dict[str, Any] = {}
         if like:
             params["name_or_email_search"] = like
-        raw_users = client.get(endpoint)
+        raw_users = client.get(endpoint, params=params)
 
         users: List[User] = []
         for item in raw_users["items"]:
@@ -106,7 +106,7 @@ class Client:
         if (search_term):
             params["search_term"] = search_term
         
-        raw_permissions = client.get(endpoint)
+        raw_permissions = client.get(endpoint, params=params)
         
         permissions: List[Permission] = []
         for item in raw_permissions["items"]:
