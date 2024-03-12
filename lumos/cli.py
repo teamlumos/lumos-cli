@@ -3,9 +3,8 @@ from lumos import __version__, __app_name__
 import list_collections
 import request
 from pathlib import Path
-from state import state 
 from client import Client
-
+import os
 app = typer.Typer()
 
 app.add_typer(request.app, name="request")
@@ -24,6 +23,13 @@ def main(
         None, "--version", "-v", help="Show the applications version and exit", callback=_version_callback, is_eager=True
     )
 ) -> None:
+    local_api_key = os.environ.get("API_KEY")
+    if local_api_key:
+        os.environ["API_KEY"] = local_api_key
+        typer.echo("****************************************")
+        typer.echo("Using API key from environment variable.")
+        typer.echo("****************************************")
+        return
     key_file = Path.home() / ".lumos" 
 
     if not key_file.exists():
@@ -34,7 +40,7 @@ def main(
             f.write(api_key)
     else:
         with key_file.open("r") as f:
-            state["api_key"] = f.read().strip()
+            os.environ["API_KEY"] = f.read().strip()
 
 @app.command("whoami")
 def whoami() -> None:

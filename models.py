@@ -1,6 +1,7 @@
 from uuid import UUID
 from pydantic import BaseModel
 from typing import Optional
+import pytz
 
 class App(BaseModel):
     id: UUID
@@ -10,6 +11,13 @@ class App(BaseModel):
 
     def __str__(self):
         return self.user_friendly_label
+    
+    def tabulate(self):
+        return [self.user_friendly_label, self.id]
+    
+    @staticmethod   
+    def headers():
+        return ["App", "ID"]
 
 class Permission(BaseModel):
     id: UUID
@@ -21,6 +29,13 @@ class Permission(BaseModel):
     def __str__(self):
         return self.label
 
+    def tabulate(self):
+        return [self.label, self.id, ', '.join(self.duration_options)]
+    
+    @staticmethod
+    def headers():
+        return ["Permission", "ID", "Access length options"]
+
 class User(BaseModel):
     id: UUID
     given_name: str
@@ -29,6 +44,13 @@ class User(BaseModel):
 
     def __str__(self):
         return f"{self.given_name} {self.family_name} ({self.email})"
+    
+    def tabulate(self):
+        return [f"{self.given_name} {self.family_name}", self.email, self.id]
+    
+    @staticmethod
+    def headers():
+        return ["Name", "Email", "ID"]
 
 class AccessRequest(BaseModel):
     id: UUID
@@ -38,6 +60,40 @@ class AccessRequest(BaseModel):
     requester_user: User
     supporter_user: Optional[User]
     target_user: User
+
+    @staticmethod
+    def _convert_to_human_date(inp: str) -> str:
+        import datetime
+
+        # Parse the input UTC time string to a datetime object
+        utc_time = datetime.datetime.strptime(inp, "%Y-%m-%dT%H:%M:%S")
+        
+        # Set the timezone to UTC for the parsed datetime
+        utc_time = utc_time.replace(tzinfo=pytz.utc)
+        
+        # Convert UTC time to EST
+        est_time = utc_time.astimezone(pytz.timezone('America/New_York'))
+        
+        # Format the EST time into a more human-readable string
+        human_date = est_time.strftime("%a %b %d, %Y %I:%M %p EST")
+        
+        return human_date
+
+    def __str__(self):
+        return f"{self.app_name} ({self.status})"
+    
+    def tabulate(self):
+        return [
+            self.app_name,
+            self.requester_user.given_name + " " + self.requester_user.family_name,
+            self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "",
+            self.status,
+            self._convert_to_human_date(self.requested_at),
+            self.supporter_user.email if self.supporter_user else "Pending"]
+    
+    @staticmethod
+    def headers():
+        return ["App", "Requester", "For", "Status", "Requested at", "Approver email"]
 
 
 # If this enum is updated both this table as well as SupportRequestComments must be updated.

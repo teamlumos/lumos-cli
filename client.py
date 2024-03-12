@@ -5,9 +5,10 @@ from models import App, AccessRequest, Permission, SupportRequestStatus, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from models import App, AccessRequest, Permission, User
-from state import state
+import os
 
 class BaseClient:
+    API_URL="https://api.lumos.com"
     def __init__(self):
         pass
 
@@ -17,8 +18,8 @@ class BaseClient:
         response = requests.get(url, headers=headers, params=params)
         if response.ok:
             return response.json()
-        else:
-            return None
+        print("Failed to get", response.status_code, response.text)
+        return None
 
     def post(self, endpoint: str, body: Dict[str, Any]) -> Any:
         """Function to call an API endpoint and return the response."""
@@ -26,18 +27,20 @@ class BaseClient:
         response = requests.post(url, headers=headers, json=body)
         if response.ok:
             return response.json()
-        else:
-            return {"error": "Failed to post", "status_code": response.status_code}
+        print("Failed to post", response.status_code, response.text)
+        return None
 
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
-        api_key = state["api_key"]
+        api_key = os.environ.get("API_KEY")
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
         }
-        return f"http://localhost:8000/{endpoint}", headers
+        return f"{self._get_api_url()}/{endpoint}", headers
     
-
+    def _get_api_url(self) -> str:
+        return os.environ.get("API_URL") or self.API_URL
+    
 client = BaseClient()
 class Client:
     def __init__(self):
@@ -55,9 +58,10 @@ class Client:
     
     def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int]:
         endpoint = "appstore/apps"
+        params: dict[str, Any] = {}
         if name_search:
-            endpoint += f"?name_search={name_search}"
-        raw_apps = client.get(endpoint)
+            params["name_search"] = name_search
+        raw_apps = client.get(endpoint, params=params)
         apps: List[App] = []
         for item in raw_apps["items"]:
             apps.append(App(**item))
@@ -84,9 +88,9 @@ class Client:
     
     def get_users(self, like: Optional[str] = None) -> Tuple[List[User], int]:
         endpoint = "users"
-
+        params: dict[str, Any] = {}
         if like:
-            endpoint += f"?name_or_email_search={like}"
+            params["name_or_email_search"] = like
         raw_users = client.get(endpoint)
 
         users: List[User] = []
@@ -95,9 +99,12 @@ class Client:
         return users, int(raw_users["total"])
 
     def get_app_requestable_permissions(self, app_id: UUID, search_term: str | None = None) -> Tuple[List[Permission], int]:
-        endpoint = f"appstore/requestable_permissions?app_id={app_id}"
+        endpoint = f"appstore/requestable_permissions"
+        params: dict[str, Any] = {
+            "app_id": str(app_id)
+        }
         if (search_term):
-            endpoint += f"&search_term={search_term}"
+            params["search_term"] = search_term
         
         raw_permissions = client.get(endpoint)
         
@@ -123,8 +130,6 @@ class Client:
             note: str,
             expiration_in_seconds: int | None,
             target_user_id: UUID | None) -> None:
-        # TODO: expand to include expiration in seconds.
-        # TODO: expand to include target user
         body: dict[str, Any] = {
             "app_id": str(app_id),
             "requestable_permission_ids": [str(p) for p in permission_ids],

@@ -80,7 +80,7 @@ def request(
         permission_flags = ""
         for permission in selected_permissions:
             permission_flags += f" --permission {permission.id}"
-        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\" [--for-user USER_ID]`\n")
+        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\"{' --for-user USER_ID]' if for_user else ''}`\n")
 
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None
