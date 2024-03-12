@@ -1,4 +1,12 @@
-# Use setup
+# Setup
+
+```shell
+python -m venv ./venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Use setup
 
 It is reccommended that you create this alias:
 `alias lumos='python -m lumos'`
@@ -8,13 +16,8 @@ Then you can run commands like:
 `lumos list apps --like sales`
 `lumos list users --like Albus`
 `lumos request --app-like github --permission-like dev --reason "Dev access"`
-# Development setup
 
-```shell
-python -m venv ./venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
+## Development setup
 
 To point towards local API server, add the following lines to `venv/bin/activate`:
 ```

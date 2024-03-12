@@ -102,6 +102,7 @@ class Client:
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests["items"]:
             access_requests.append(AccessRequest(**item))
+        access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
         return access_requests, int(raw_access_requests["total"])
     
     def get_users(self, like: Optional[str] = None) -> Tuple[List[User], int]:

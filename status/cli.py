@@ -26,7 +26,8 @@ def status(
         if count == 0:
             typer.echo("No pending requests found")
             return
-        request_id = access_requests[0].id
+        print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
+        return
     if not request_id:
         request_id = typer.prompt("Please provide a request ID")
     request = client.get_request_status(request_id)
