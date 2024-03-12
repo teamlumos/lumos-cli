@@ -6,29 +6,36 @@ from uuid import UUID
 from typing import Any, Dict, List, Optional
 from models import App, AccessRequest, Permission, User
 import os
+import typer
 
 class BaseClient:
     API_URL="https://api.lumos.com"
     def __init__(self):
         pass
 
-    def get(self, endpoint: str, params: dict | None = None) -> Any:
+    def get(self, endpoint: str, params: dict | None = None) -> dict[str, Any]:
         """Function to call an API endpoint and return the response."""
-        url, headers = self._get_url_and_headers(endpoint)
-        response = requests.get(url, headers=headers, params=params)
-        if response.ok:
-            return response.json()
-        print("Failed to get", response.status_code, response.text)
-        return None
+        return self._send_request("GET", endpoint, params=params)
 
-    def post(self, endpoint: str, body: Dict[str, Any]) -> Any:
+    def post(self, endpoint: str, body: Dict[str, Any]) -> dict[str, Any]:
         """Function to call an API endpoint and return the response."""
+        return self._send_request("POST", endpoint, body=body)
+    
+    def _send_request(self,
+        method: str,
+        endpoint: str,
+        body: dict | None = None,
+        params: dict | None = None
+    ) -> dict[str, Any]:
         url, headers = self._get_url_and_headers(endpoint)
-        response = requests.post(url, headers=headers, json=body)
+        response = requests.request(method, url, headers=headers, json=body, params=params)
         if response.ok:
             return response.json()
-        print("Failed to post", response.status_code, response.text)
-        return None
+        if response.status_code == 403 or response.status_code == 401:
+            typer.echo("Check your API token.")
+            raise typer.Exit(1)
+        typer.echo(f"Failed to {method}", response.status_code, response.text)
+        raise typer.Exit(1)
 
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
         api_key = os.environ.get("API_KEY")
@@ -39,16 +46,21 @@ class BaseClient:
         return f"{self._get_api_url()}/{endpoint}", headers
     
     def _get_api_url(self) -> str:
-        return os.environ.get("API_URL") or self.API_URL
+        api_url: str | None = None
+        if (os.environ.get("DEV_MODE")):
+            api_url = os.environ.get("API_URL")
+        return api_url or self.API_URL
     
 client = BaseClient()
 class Client:
     def __init__(self):
         pass
 
-    def get_current_user(self) -> User:
+    def get_current_user(self) -> User | None:
         user = client.get("users/current")
-        return User(**user)
+        if user:
+            return User(**user)
+        return None
 
     def get_appstore_app(self, id: UUID) -> App | None:
         raw_app = client.get(f"appstore/apps/{id}")
@@ -90,7 +102,7 @@ class Client:
         endpoint = "users"
         params: dict[str, Any] = {}
         if like:
-            params["name_or_email_search"] = like
+            params["search_term"] = like
         raw_users = client.get(endpoint, params=params)
 
         users: List[User] = []

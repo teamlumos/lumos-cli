@@ -23,13 +23,11 @@ def main(
         None, "--version", "-v", help="Show the applications version and exit", callback=_version_callback, is_eager=True
     )
 ) -> None:
-    local_api_key = os.environ.get("API_KEY")
-    if local_api_key:
-        os.environ["API_KEY"] = local_api_key
-        typer.echo("****************************************")
-        typer.echo("Using API key from environment variable.")
-        typer.echo("****************************************")
-        return
+    if (os.environ.get("DEV_MODE")):
+        local_api_key = os.environ.get("API_KEY")
+        if local_api_key:
+            os.environ["API_KEY"] = local_api_key
+            return
     key_file = Path.home() / ".lumos" 
 
     if not key_file.exists():

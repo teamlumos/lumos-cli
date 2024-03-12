@@ -24,3 +24,10 @@ export API_URL
 API_KEY=<YOUR_DEVELOPMENT_API_KEY>
 export API_KEY
 ```
+
+and run with `DEV_MODE=true` in the command line, like:
+
+```
+DEV_MODE=1 lumos whoami
+```
+You can add `alias lumosdev='DEV_MODE=true python -m lumos'` to your shell as well
