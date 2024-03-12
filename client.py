@@ -13,11 +13,11 @@ class BaseClient:
     def __init__(self):
         pass
 
-    def get(self, endpoint: str, params: dict | None = None) -> dict[str, Any]:
+    def get(self, endpoint: str, params: dict | None = None):
         """Function to call an API endpoint and return the response."""
         return self._send_request("GET", endpoint, params=params)
 
-    def post(self, endpoint: str, body: Dict[str, Any]) -> dict[str, Any]:
+    def post(self, endpoint: str, body: Dict[str, Any]):
         """Function to call an API endpoint and return the response."""
         return self._send_request("POST", endpoint, body=body)
     
@@ -26,7 +26,7 @@ class BaseClient:
         endpoint: str,
         body: dict | None = None,
         params: dict | None = None
-    ) -> dict[str, Any]:
+    ):
         url, headers = self._get_url_and_headers(endpoint)
         response = requests.request(method, url, headers=headers, json=body, params=params)
         if response.ok:
@@ -34,7 +34,6 @@ class BaseClient:
         if response.status_code == 403 or response.status_code == 401:
             typer.echo("Check your API token.")
             raise typer.Exit(1)
-        typer.echo(f"Failed to {method}", response.status_code, response.text)
         raise typer.Exit(1)
 
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
@@ -59,6 +58,7 @@ class Client:
     def get_current_user(self) -> User | None:
         user = client.get("users/current")
         if user:
+            os.environ["USER_ID"] = user["id"]
             return User(**user)
         return None
 
@@ -66,6 +66,12 @@ class Client:
         raw_app = client.get(f"appstore/apps/{id}")
         if raw_app:
             return App(**raw_app)
+        return None
+    
+    def get_request_status(self, id: UUID) -> AccessRequest | None:
+        raw_request = client.get(f"appstore/access_requests/{id}")
+        if raw_request:
+            return AccessRequest(**raw_request)
         return None
     
     def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int]:
@@ -81,9 +87,9 @@ class Client:
     
     def get_access_requests(
         self,
-        app_id: UUID | None,
-        target_user_id: UUID | None,
-        status: List[str] | None) -> Tuple[List[AccessRequest], int]:
+        app_id: UUID | None = None,
+        target_user_id: UUID | None = None,
+        status: List[str] | None = None) -> Tuple[List[AccessRequest], int]:
         params: dict[str, Any]= {}
         if app_id: 
             params["app_id"] = str(app_id)
@@ -141,7 +147,7 @@ class Client:
             permission_ids: List[UUID],
             note: str,
             expiration_in_seconds: int | None,
-            target_user_id: UUID | None) -> None:
+            target_user_id: UUID | None) -> AccessRequest | None:
         body: dict[str, Any] = {
             "app_id": str(app_id),
             "requestable_permission_ids": [str(p) for p in permission_ids],
@@ -153,7 +159,9 @@ class Client:
 
         if target_user_id:
             body["target_user_id"] = str(target_user_id)
-        client.post(
+        response = client.post(
             "appstore/access_request",
             body
         )
+
+        return self.get_request_status(response[0]["id"])

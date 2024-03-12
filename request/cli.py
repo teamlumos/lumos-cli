@@ -1,14 +1,14 @@
 from typing import List, Optional, Tuple
 import typer
 from uuid import UUID
-from tabulate import tabulate
 from pick import pick
+from tabulate import tabulate
 import pytz
 from functools import reduce
 import re
 
 from client import Client
-from models import App, Permission
+from models import AccessRequest, App, Permission
 
 app = typer.Typer()
 
@@ -75,7 +75,7 @@ def request(
             note=reason,
             expiration=length,
             target_user_id=for_user)
-
+        
         typer.echo("If you need to make this same request in the future, use:")
         permission_flags = ""
         for permission in selected_permissions:
@@ -149,13 +149,17 @@ def create_access_request(
     expiration: Optional[int] = None,
     target_user_id: Optional[UUID] = None
 ) -> None:
-    client.create_access_request(
+    request = client.create_access_request(
         app_id=app_id,
         permission_ids=requestable_permission_ids,
         note=note,
         expiration_in_seconds=expiration,
         target_user_id=target_user_id
     )
+    if request:
+        print("\nREQUEST DETAILS")
+        print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
+
     print("\nYour request is in progress! 🏃🌴")
 
 if __name__ == "__main__":

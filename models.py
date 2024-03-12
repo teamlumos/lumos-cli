@@ -84,6 +84,7 @@ class AccessRequest(BaseModel):
     
     def tabulate(self):
         return [
+            self.id,
             self.app_name,
             self.requester_user.given_name + " " + self.requester_user.family_name,
             self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "",
@@ -93,7 +94,7 @@ class AccessRequest(BaseModel):
     
     @staticmethod
     def headers():
-        return ["App", "Requester", "For", "Status", "Requested at", "Approver email"]
+        return ["ID", "App", "Requester", "For", "Status", "Requested at", "Approver email"]
 
 
 # If this enum is updated both this table as well as SupportRequestComments must be updated.
