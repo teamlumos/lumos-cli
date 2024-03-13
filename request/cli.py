@@ -17,15 +17,42 @@ client = Client()
 @app.callback(invoke_without_command=True)
 def request(
     ctx: typer.Context,
-    app: Optional[UUID] = None,
-    app_like: Optional[str] = None,
-    reason: Optional[str] = None,
-    for_user: Optional[UUID] = None,
-    for_me: bool | None = None,
-    permission: Optional[list[UUID]] = None,
-    permission_like: Optional[str] = None,
-    user_like: Optional[str] = None,
-    length: Optional[int] = None,
+    app: Annotated[
+        Optional[UUID],
+        typer.Option(help="App UUID. Takes precedence over --app-like"),
+    ] = None,
+    reason: Annotated[
+        Optional[str],
+        typer.Option(help="Business justification for request")
+    ] = None,
+    for_user: Annotated[
+        Optional[UUID],
+        typer.Option(help="UUID of user for whom to request access. Takes precedence over --user-like"),
+    ] = None,
+    for_me: Annotated[
+        Optional[bool],
+        typer.Option(help="Makes the request for the current user.")
+    ] = None,
+    permission:Annotated[
+        Optional[list[UUID]],
+        typer.Option(help="List of permission UUIDs. Takes precedence over --app-like"),
+    ] = None,
+    length: Annotated[
+        Optional[int],
+        typer.Option(help="Length of access request in seconds. Don't populate unless you know your app permission's specific settings")
+    ] = None,
+    app_like: Annotated[
+        Optional[str],
+        typer.Option(help="App name like--filters apps shown as options when selecting")
+    ] = None,
+    permission_like: Annotated[
+        Optional[str],
+        typer.Option(help="Permission name like--filters permissions shown as options when selecting")
+    ] = None,
+    user_like: Annotated[
+        Optional[str],
+        typer.Option(help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
+    ] = None,
 ) -> None:
     if ctx.invoked_subcommand is None:
         if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
@@ -122,7 +149,7 @@ def status(
         request_id = typer.prompt("Please provide a request ID")
     request = client.get_request_status(request_id)
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
-    
+
 
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None

@@ -28,9 +28,10 @@ def list_users(
 @app.command("permissions")
 def list_permissions(
     app: UUID,
-    like: Optional[str] = None,
-    user: Optional[UUID] = None,
-    mine: bool = False,
+    like: Annotated[
+        Optional[str],
+        typer.Option(help="Filters permissions")
+     ] = None,
 ) -> None:
     permissions, count = client.get_app_requestable_permissions(app_id=app, search_term=like)
     print(tabulate([permission.tabulate() for permission in permissions], headers=Permission.headers()), "\n")
@@ -39,24 +40,33 @@ def list_permissions(
 
 @app.command("requests")
 def list_requests(
-    user: Optional[UUID] = None,
-    mine: bool = False,
+    for_user: Annotated[
+        Optional[UUID],
+        typer.Option(help="Show only requests for ('targetting') a particular user")
+     ] = None,
+    mine: Annotated[
+        bool,
+        typer.Option(help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
+     ] = False,
     status: Annotated[
         Optional[List[str]],
         typer.Option(help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc",),
     ] = None,
-    all_statuses: bool = False,
+    all_statuses: Annotated[
+        bool,
+        typer.Option(help="Show requests of all statuses (not just pending)")
+     ] = False,
 ) -> None:
     
     if mine:
-        user = client.get_current_user().id
+        for_user = client.get_current_user().id
 
     if all_statuses:
         status = None
     elif not status:
         status = SupportRequestStatus.PENDING_STATUSES
 
-    access_requests, count = client.get_access_requests(target_user_id=user, status=status)
+    access_requests, count = client.get_access_requests(target_user_id=for_user, status=status)
 
     rows = []
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
@@ -69,8 +79,10 @@ def list_requests(
 
 @app.command("apps")
 def list_apps(
-    like: Optional[str] = None
-) -> None:
+    like: Annotated[
+        Optional[str],
+        typer.Option(help="Filters apps")
+    ] = None,) -> None:
     apps, count = client.get_appstore_apps(name_search=like)
     print(tabulate([app.tabulate() for app in apps], headers=App.headers()), "\n")
     if (len(apps) < count):
