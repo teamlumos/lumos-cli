@@ -12,10 +12,17 @@ class BaseClient:
     API_URL="https://api.lumos.com"
     def __init__(self):
         pass
-
+    
     def get(self, endpoint: str, params: dict | None = None):
         """Function to call an API endpoint and return the response."""
         return self._send_request("GET", endpoint, params=params)
+    
+    def get_paged(self, endpoint: str, params: dict | None = None):
+        """Function to call an API endpoint and return the paged response."""
+        response = self.get(endpoint, params=params)
+        if response:
+            return response["items"], int(response["size"]), int(response["total"]), int(response["page"]), int(response["pages"])
+        return [], 0, 0, 0, 0
 
     def post(self, endpoint: str, body: Dict[str, Any]):
         """Function to call an API endpoint and return the response."""
@@ -43,6 +50,7 @@ class BaseClient:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
+            "User-Agent": "lumos-cli/0.1.0",
         }
         return f"{self._get_api_url()}/{endpoint}", headers
     
@@ -52,8 +60,7 @@ class BaseClient:
             api_url = os.environ.get("API_URL")
         return api_url or self.API_URL
     
-client = BaseClient()
-class Client:
+class Client(BaseClient):
     def __init__(self):
         pass
 
@@ -65,34 +72,34 @@ class Client:
         return os.environ["USER_ID"]
     
     def get_current_user(self) -> User | None:
-        user = client.get("users/current")
+        user = self.get("users/current")
         if user:
             os.environ["USER_ID"] = user["id"]
             return User(**user)
         return None
 
     def get_appstore_app(self, id: UUID) -> App | None:
-        raw_app = client.get(f"appstore/apps/{id}")
+        raw_app = self.get(f"appstore/apps/{id}")
         if raw_app:
             return App(**raw_app)
         return None
     
     def get_request_status(self, id: UUID) -> AccessRequest | None:
-        raw_request = client.get(f"appstore/access_requests/{id}")
+        raw_request = self.get(f"appstore/access_requests/{id}")
         if raw_request:
             return AccessRequest(**raw_request)
         return None
     
-    def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int]:
+    def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"
         params: dict[str, Any] = {}
         if name_search:
             params["name_search"] = name_search
-        raw_apps = client.get(endpoint, params=params)
+        raw_apps, count, total, _, _ = self.get_paged(endpoint, params=params)
         apps: List[App] = []
-        for item in raw_apps["items"]:
+        for item in raw_apps:
             apps.append(App(**item))
-        return apps, int(raw_apps["total"])
+        return apps, count, total
     
     def get_access_requests(
         self,
@@ -101,7 +108,7 @@ class Client:
         status: List[str] | None = None,
         page: int = 1,
         count: int = 25
-    ) -> Tuple[List[AccessRequest], int]:
+    ) -> Tuple[List[AccessRequest], int, int, int, int]:
         params: dict[str, Any]= {
             "page": page,
             "count": count
@@ -111,26 +118,30 @@ class Client:
         if (status and len(status) > 0):
             params["statuses"] = [str(s) for s in status]
 
-        raw_access_requests = client.get("appstore/access_requests", params=params)
+        raw_access_requests, count, total, page, pages = self.get_paged("appstore/access_requests", params=params)
         access_requests: List[AccessRequest] = []
-        for item in raw_access_requests["items"]:
+        for item in raw_access_requests:
             access_requests.append(AccessRequest(**item))
         access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
-        return access_requests, int(raw_access_requests["total"])
+        return access_requests, count, total, page, pages
     
-    def get_users(self, like: Optional[str] = None) -> Tuple[List[User], int]:
+    def get_users(self, like: Optional[str] = None) -> Tuple[List[User], int, int]:
         endpoint = "users"
         params: dict[str, Any] = {}
         if like:
             params["search_term"] = like
-        raw_users = client.get(endpoint, params=params)
+        raw_users, count, total, _, _ = self.get_paged(endpoint, params=params)
 
         users: List[User] = []
-        for item in raw_users["items"]:
+        for item in raw_users:
             users.append(User(**item))
-        return users, int(raw_users["total"])
+        return users, count, total
 
-    def get_app_requestable_permissions(self, app_id: UUID, search_term: str | None = None) -> Tuple[List[Permission], int]:
+    def get_app_requestable_permissions(
+        self,
+        app_id: UUID,
+        search_term: str | None = None
+    ) -> Tuple[List[Permission], int, int]:
         endpoint = f"appstore/requestable_permissions"
         params: dict[str, Any] = {
             "app_id": str(app_id)
@@ -138,18 +149,18 @@ class Client:
         if (search_term):
             params["search_term"] = search_term
         
-        raw_permissions = client.get(endpoint, params=params)
+        raw_permissions, count, total, _, _ = self.get_paged(endpoint, params=params)
         
         permissions: List[Permission] = []
-        for item in raw_permissions["items"]:
+        for item in raw_permissions:
             permission = Permission(**item)
             durations = item["request_config"]["request_fulfillment_config"]["time_based_access"]
             permission.duration_options = durations
             permissions.append(permission)
-        return permissions, int(raw_permissions["total"])
+        return permissions, count, total
     
     def get_app_requestable_permission(self, permission_id: UUID) -> Permission:
-        item = client.get(f"appstore/requestable_permissions/{permission_id}")
+        item = self.get(f"appstore/requestable_permissions/{permission_id}")
         permission = Permission(**item)
         durations = item["request_config"]["request_fulfillment_config"]["time_based_access"]
         permission.duration_options = durations
@@ -172,7 +183,7 @@ class Client:
             body["expiration_in_seconds"] = expiration_in_seconds
         if target_user_id:
             body["target_user_id"] = str(target_user_id)
-        response = client.post(
+        response = self.post(
             "appstore/access_request",
             body
         )

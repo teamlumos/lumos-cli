@@ -8,7 +8,7 @@ from functools import reduce
 import re
 
 from client import Client
-from models import AccessRequest, App, Permission
+from models import AccessRequest, App, Permission, User
 
 app = typer.Typer()
 
@@ -56,18 +56,19 @@ def request(
 ) -> None:
     if ctx.invoked_subcommand is None:
         if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
-            users = []
-            count = 100
-            while (len(users) < count):
-                users, count = client.get_users(like=user_like)
-                if (count == 0):
+            users: List[User] = []
+            count = 0
+            total = 100
+            while (count < total):
+                users, count, total = client.get_users(like=user_like)
+                if (total == 0):
                     if user_like:
                         typer.echo(f"No users found for '{user_like}'")
                         user_like = typer.prompt("Give me something to search on")
                     else:
                         typer.echo("No users found")
                         raise typer.Exit(1)
-                if (len(users) < count):
+                if (count < total):
                     user_like = typer.prompt(f"Too many users to show. Give me something to search on")
             description = "Select a user"
             for_user, _ = pick(users, description)
@@ -133,15 +134,14 @@ def status(
 ) -> None:
     if last:
         current_user_uuid = UUID(client.get_current_user_id())
-        access_requests, count = client.get_access_requests(target_user_id=current_user_uuid)
+        access_requests, count, total, page, pages = client.get_access_requests(target_user_id=current_user_uuid)
         if count == 0:
             typer.echo("No pending requests found")
             return
-        total_pages = count / len(access_requests)
-        if (total_pages > 1):
-            access_requests, count = client.get_access_requests(
+        if (pages > 1):
+            access_requests, count, total = client.get_access_requests(
                 target_user_id=current_user_uuid,
-                page = int(total_pages) if total_pages == int(total_pages) else int(total_pages) + 1
+                page = pages
             )
         print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
         return
@@ -156,9 +156,10 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
     while not app_id or not (app := client.get_appstore_app(app_id)):
         typer.echo("\n⏳ Loading your apps ...\n")
         apps = []
-        count = 100
-        while (len(apps) < count):
-            apps, count = client.get_appstore_apps(name_search=app_like)
+        count = 0
+        total = 100
+        while (count < total):
+            apps, count, total = client.get_appstore_apps(name_search=app_like)
             if (count == 0):
                 if app_like:
                     typer.echo(f"No apps found for '{app_like}'")
@@ -166,9 +167,9 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
                 else:
                     typer.echo("No apps found")
                     raise typer.Exit(1)
-            if (len(apps) < count):
+            if (count < total):
                 app_like = typer.prompt(f"Too many apps to show. Give me something to search on")
-        if len(apps) == 1:
+        if count == 1:
             app = apps[0]
         else:
             app, _ = pick(apps, f"Select an app")
@@ -187,25 +188,26 @@ def select_permissions(
     typer.echo("\n⏳ Loading permissions for app ...\n")
     done_selecting = False
     while not done_selecting:
-        permissions = []
-        count = 100
-        while (len(permissions) < count):
-            permissions, count = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
+        permissions: List[Permission] = []
+        count = 0
+        total = 100
+        while (count < total):
+            permissions, count, total = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
             if (count == 0):
                 if permission_like:
                     typer.echo(f"No permissions found for '{permission_like}'")
                 else:
                     typer.echo("No permissions found (you're just requesting the app)")
                     return None
-            if (len(permissions) < count):
+            if (count < total):
                 permission_like = typer.prompt("Too many permissions to show. Give me something to search on")
-        if len(permissions) > 1:
+        if count > 1:
             already_selected = ', '.join([p.label for p in valid_permissions])
             description = f"Select permissions {f'(already selected: {already_selected})' if already_selected else ''}"
             selected = pick(permissions, description, multiselect=True, min_selection_count=1)
             for option, _ in selected:
                 valid_permissions.append(option)
-        elif len(permissions) == 1:
+        elif count == 1:
             valid_permissions.append(permissions[0])
         if typer.confirm("Done selecting permissions?", abort=False, default=True):
             done_selecting = True

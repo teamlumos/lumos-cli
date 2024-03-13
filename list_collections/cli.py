@@ -19,10 +19,10 @@ def list_users(
         ),
     ] = None
 ) -> None:
-    users, count = client.get_users(like=like)
+    users, count, total = client.get_users(like=like)
     print(tabulate([user.tabulate() for user in users], headers=User.headers()), "\n")
-    if (len(users) < count):
-        print(f"There are {count - len(users)} more users that match your search. Use --like to search.\n")
+    if (count < total):
+        print(f"There are {total - count} more users that match your search. Use --like to search.\n")
 
 
 @app.command("permissions")
@@ -33,10 +33,10 @@ def list_permissions(
         typer.Option(help="Filters permissions")
      ] = None,
 ) -> None:
-    permissions, count = client.get_app_requestable_permissions(app_id=app, search_term=like)
+    permissions, count, total = client.get_app_requestable_permissions(app_id=app, search_term=like)
     print(tabulate([permission.tabulate() for permission in permissions], headers=Permission.headers()), "\n")
-    if (len(permissions) < count):
-        print(f"There are {count - len(permissions)} more permissions that match your search. Use --like to search.\n")
+    if (count < total):
+        print(f"There are {total - count} more permissions that match your search. Use --like to search.\n")
 
 @app.command("requests")
 def list_requests(
@@ -66,7 +66,7 @@ def list_requests(
     elif not status:
         status = SupportRequestStatus.PENDING_STATUSES
 
-    access_requests, count = client.get_access_requests(target_user_id=for_user, status=status)
+    access_requests, count, total, _, _ = client.get_access_requests(target_user_id=for_user, status=status)
 
     rows = []
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
@@ -74,8 +74,8 @@ def list_requests(
         rows.append(ar.tabulate())
 
     print(tabulate(rows, headers=AccessRequest.headers()), "\n")
-    if (len(access_requests) < count):
-        print(f"There are {count - len(access_requests)} more requests. Filter by app or user.\n")
+    if (total < total):
+        print(f"There are {total - count} more requests. Filter by app or user.\n")
 
 @app.command("apps")
 def list_apps(
@@ -83,7 +83,7 @@ def list_apps(
         Optional[str],
         typer.Option(help="Filters apps")
     ] = None,) -> None:
-    apps, count = client.get_appstore_apps(name_search=like)
+    apps, count, total = client.get_appstore_apps(name_search=like)
     print(tabulate([app.tabulate() for app in apps], headers=App.headers()), "\n")
-    if (len(apps) < count):
-        print(f"There are {count - len(apps)} more apps that match your search. Use --like to search.\n")
+    if (count < total):
+        print(f"There are {total - count} more apps that match your search. Use --like to search.\n")
