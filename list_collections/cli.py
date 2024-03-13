@@ -22,7 +22,7 @@ def list_users(
     users, count = client.get_users(like=like)
     print(tabulate([user.tabulate() for user in users], headers=User.headers()), "\n")
     if (len(users) < count):
-        print(f"There are {users - len(users)} more users that match your search. Use --like to search.\n")
+        print(f"There are {count - len(users)} more users that match your search. Use --like to search.\n")
 
 
 @app.command("permissions")
