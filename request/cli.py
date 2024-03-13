@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import Annotated, List, Optional, Tuple
 import typer
 from uuid import UUID
 from pick import pick
@@ -21,17 +21,21 @@ def request(
     app_like: Optional[str] = None,
     reason: Optional[str] = None,
     for_user: Optional[UUID] = None,
+    for_me: bool | None = None,
     permission: Optional[list[UUID]] = None,
     permission_like: Optional[str] = None,
     user_like: Optional[str] = None,
     length: Optional[int] = None,
 ) -> None:
     if ctx.invoked_subcommand is None:
-        if not typer.confirm("This request is for you?", abort=False, default=True):
-            users, count = client.get_users(like=user_like)
+        if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
+            users = []
+            count = 100
+            while (len(users) < count):
+                users, count = client.get_users(like=user_like)
+                if (len(users) < count):
+                    user_like = typer.prompt(f"Too many users to show. Give me something to search on")
             description = "Select a user"
-            if (len(users) < count):
-                description += "\nThere are {count - len(users)} more users that match your search. Use --user_like to search.\n"
             for_user, _ = pick(users, description)
             typer.echo(f"Selected user {for_user.email}\n")
             for_user = for_user.id
@@ -79,17 +83,46 @@ def request(
             note=reason,
             expiration=length,
             target_user_id=for_user)
-        
-       
+
+@app.command("status")     
+def status(
+    request_id: Annotated[
+        Optional[str],
+        typer.Option(
+            help="Request ID",
+        ),
+    ] = None,
+    last: bool = False
+) -> None:
+    if last:
+        current_user_uuid = UUID(client.get_current_user_id())
+        access_requests, count = client.get_access_requests(target_user_id=current_user_uuid)
+        if count == 0:
+            typer.echo("No pending requests found")
+            return
+        total_pages = count / len(access_requests)
+        if (total_pages > 1):
+            access_requests, count = client.get_access_requests(
+                target_user_id=current_user_uuid,
+                page = int(total_pages) if total_pages == int(total_pages) else int(total_pages) + 1
+            )
+        print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
+        return
+    if not request_id:
+        request_id = typer.prompt("Please provide a request ID")
+    request = client.get_request_status(request_id)
+    print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None
     while not app_id or not (app := client.get_appstore_app(app_id)):
         typer.echo("\n⏳ Loading your apps ...\n")
-        apps, count = client.get_appstore_apps(name_search=app_like)
-        description = f"Select an app"
-        if (len(apps) < count):
-            description += f"\n\n({count - len(apps)} not shown--use `lumos list apps` to search all apps)"
-        app, _ = pick(apps, description)
+        apps = []
+        count = 100
+        while (len(apps) < count):
+            apps, count = client.get_appstore_apps(name_search=app_like)
+            if (len(apps) < count):
+                app_like =typer.prompt(f"Too many apps to show. Give me something to search on")
+        app, _ = pick(apps, f"Select an app")
         app_id = app.id
     return app
 
@@ -103,19 +136,34 @@ def select_permissions(
         return valid_permissions
     
     typer.echo("\n⏳ Loading permissions for app ...\n")
-    permissions, count = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
-    description = f"Select at least one permission"
-    if (len(permissions) < count):
-        description += f"\n\n({count - len(permissions)} not shown--use `lumos list permissions --app {app_id}` to search all permissions)"
-    if len(permissions) > 1:
-        selected = pick(permissions, description, multiselect=True, min_selection_count=1)
-        return [option for option, _ in selected]
-    elif len(permissions) == 1:
-        return [permissions[0]]
-    else:
-        typer.echo("No permissions found for this app, you're just requesting the app itself.")
-        return None
-    
+    done_selecting = False
+    while not done_selecting:
+        permissions = []
+        count = 100
+        while (len(permissions) < count):
+            permissions, count = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
+            if (count == 0):
+                if permission_like:
+                    typer.echo(f"No permissions found for '{permission_like}'")
+                else:
+                    typer.echo("No permissions found (you're just requesting the app)")
+                    return None
+            if (len(permissions) < count):
+                permission_like = typer.prompt("Too many permissions to show. Give me something to search on")
+        if len(permissions) > 1:
+            already_selected = ', '.join([p.label for p in valid_permissions])
+            description = f"Select permissions {f'(already selected: {already_selected})' if already_selected else ''}"
+            selected = pick(permissions, description, multiselect=True, min_selection_count=1)
+            for option, _ in selected:
+                valid_permissions.append(option)
+        elif len(permissions) == 1:
+            valid_permissions.append(permissions[0])
+        if typer.confirm("Done selecting permissions?", abort=False, default=True):
+            done_selecting = True
+        else:
+            permission_like = None
+    return valid_permissions
+            
 
 def get_valid_permissions(app_id: UUID, permission_ids: list[UUID] | None) -> list[Permission]:
     valid_permissions: list[Permission] = []

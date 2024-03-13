@@ -57,6 +57,13 @@ class Client:
     def __init__(self):
         pass
 
+    def get_current_user_id(self) -> str | None:
+        if not os.environ.get("USER_ID"):
+            user = self.get_current_user()
+            if user:
+                os.environ["USER_ID"] = str(user.id)
+        return os.environ["USER_ID"]
+    
     def get_current_user(self) -> User | None:
         user = client.get("users/current")
         if user:
@@ -91,8 +98,14 @@ class Client:
         self,
         app_id: UUID | None = None,
         target_user_id: UUID | None = None,
-        status: List[str] | None = None) -> Tuple[List[AccessRequest], int]:
-        params: dict[str, Any]= {}
+        status: List[str] | None = None,
+        page: int = 1,
+        count: int = 25
+    ) -> Tuple[List[AccessRequest], int]:
+        params: dict[str, Any]= {
+            "page": page,
+            "count": count
+        }
         if app_id: 
             params["app_id"] = str(app_id)
         if target_user_id:

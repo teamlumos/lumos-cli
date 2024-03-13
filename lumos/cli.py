@@ -26,10 +26,10 @@ def main(
     )
 ) -> None:
     if (os.environ.get("DEV_MODE")):
-        local_api_key = os.environ.get("API_KEY")
-        if local_api_key:
-            os.environ["API_KEY"] = local_api_key
-            return
+        while not os.environ.get("API_KEY"):
+            os.environ["API_KEY"] = typer.prompt("You are in dev mode, but you have not set an API key. Please set one now.")
+        return
+    
     key_file = Path.home() / ".lumos" 
 
     if not key_file.exists():
