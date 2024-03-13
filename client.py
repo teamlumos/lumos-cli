@@ -32,8 +32,10 @@ class BaseClient:
         if response.ok:
             return response.json()
         if response.status_code == 403 or response.status_code == 401:
-            typer.echo("Check your API token.")
-            raise typer.Exit(1)
+            typer.echo("Something went wrong. Check your API token.", err=True)
+        else:
+            typer.echo(f"An error occurred (status code {response.status_code})", err=True)
+            typer.echo(f"    {response.json()['detail']}", err=True)
         raise typer.Exit(1)
 
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
@@ -143,21 +145,20 @@ class Client:
         return permission
 
     def create_access_request(
-            self, 
-            app_id: UUID,
-            permission_ids: List[UUID],
-            note: str,
-            expiration_in_seconds: int | None,
-            target_user_id: UUID | None) -> AccessRequest | None:
+        self, 
+        app_id: UUID,
+        note: str,
+        expiration_in_seconds: int | None,
+        permission_ids: List[UUID] | None = None,
+        target_user_id: UUID | None = None) -> AccessRequest | None:
         body: dict[str, Any] = {
             "app_id": str(app_id),
-            "requestable_permission_ids": [str(p) for p in permission_ids],
             "note": note,
         }
-
+        if permission_ids:
+            body["permission_ids"] = [str(p) for p in permission_ids]
         if expiration_in_seconds:
             body["expiration_in_seconds"] = expiration_in_seconds
-
         if target_user_id:
             body["target_user_id"] = str(target_user_id)
         response = client.post(
@@ -165,4 +166,4 @@ class Client:
             body
         )
 
-        return self.get_request_status(response[0]["id"])
+        return AccessRequest(**response[0]) if response else None

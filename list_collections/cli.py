@@ -4,7 +4,7 @@ from uuid import UUID
 from tabulate import tabulate
 
 from client import Client
-from models import App, Permission, User, AccessRequest
+from models import App, Permission, SupportRequestStatus, User, AccessRequest
 
 app = typer.Typer()
 
@@ -43,16 +43,21 @@ def list_requests(
     user: Optional[UUID] = None,
     mine: bool = False,
     status: Annotated[
-        Optional[str],
-        typer.Option(help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`",),
+        Optional[List[str]],
+        typer.Option(help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc",),
     ] = None,
-    inbound: bool = False,
+    all_statuses: bool = False,
 ) -> None:
     
     if mine:
         user = client.get_current_user().id
 
-    access_requests, count = client.get_access_requests(target_user_id=user, app_id=app, status=([status] if status else None))
+    if all_statuses:
+        status = None
+    elif not status:
+        status = SupportRequestStatus.PENDING_STATUSES
+
+    access_requests, count = client.get_access_requests(target_user_id=user, app_id=app, status=status)
 
     rows = []
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)

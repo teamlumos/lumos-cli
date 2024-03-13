@@ -33,9 +33,14 @@ def main(
     key_file = Path.home() / ".lumos" 
 
     if not key_file.exists():
-        typer.echo("You need to save your API key to ~/.lumos to use this application. (y/n)")
+        typer.echo("You need to save your API key to ~/.lumos to use this application.")
         typer.confirm("Do you want me to do that now?", abort=True, default=True)
-        api_key = typer.prompt("Please paste your API key")
+        typer.echo("Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
+        api_key = typer.prompt("API key")
+        api_key_confirmation = typer.prompt("Confirm API key")
+        if (api_key != api_key_confirmation):
+            typer.echo("API keys do not match.")
+            raise typer.Exit(1)
         with key_file.open("w") as f:
             f.write(api_key)
     else:

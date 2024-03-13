@@ -142,3 +142,10 @@ class SupportRequestStatus:
     REVERTING = "REVERTING"
     # when the request has been fully reverted
     REVERTED = "REVERTED"
+
+    PENDING_STATUSES = [
+        PENDING,
+        PENDING_MANAGER_APPROVAL,
+        PENDING_APPROVAL,
+        PENDING_PROVISIONING
+    ]

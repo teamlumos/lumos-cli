@@ -41,25 +41,22 @@ def request(
         typer.echo(f"Selected app {selected_app.user_friendly_label} [{selected_app.id}]\n")
         
         selected_permissions = select_permissions(selected_app.id, permission, permission_like)
-        if not selected_permissions:
-            return
-        
-        permissible_durations_set = set(selected_permissions[0].duration_options)
-        
-        for permission in selected_permissions[1:]:
-            permissible_durations_set = permissible_durations_set.intersection(permission.duration_options)
-
-        if not length:
-            length, duration = select_duration(permissible_durations_set)
+        if selected_permissions:
+            permissible_durations_set = set(selected_permissions[0].duration_options)
+            for permission in selected_permissions[1:]:
+                permissible_durations_set = permissible_durations_set.intersection(permission.duration_options)
+            if not length:
+                length, duration = select_duration(permissible_durations_set)
 
         if not reason:
             reason = typer.prompt("Enter your business justification for the request")
 
         typer.echo("\nAPP")
         typer.echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
-        typer.echo("\nPERMISSIONS")
-        for permission in selected_permissions:
-            typer.echo(f"   {permission.label} [{permission.id}]")
+        if selected_permissions:
+            typer.echo("\nPERMISSIONS")
+            for permission in selected_permissions:
+                typer.echo(f"   {permission.label} [{permission.id}]")
         typer.echo("\nDURATION")
         typer.echo(f"   {(length/(60*60) if length else 'Unlimited')} hours")
         typer.echo("\nREASON")
@@ -69,19 +66,21 @@ def request(
             typer.echo(f"\nTARGET USER")
             typer.echo(f"   {for_user}")
         
+        typer.echo("\nIf you need to make this same request in the future, use:")
+        permission_flags = ""
+        if (selected_permissions):
+            for permission in selected_permissions:
+                permission_flags += f" --permission {permission.id}"
+        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\"{' --for-user USER_ID' if for_user else ''}`\n")
+        
         create_access_request(
             app_id=selected_app.id, 
-            requestable_permission_ids=[p.id for p in selected_permissions],
+            requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
             note=reason,
             expiration=length,
             target_user_id=for_user)
         
-        typer.echo("If you need to make this same request in the future, use:")
-        permission_flags = ""
-        for permission in selected_permissions:
-            permission_flags += f" --permission {permission.id}"
-        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\"{' --for-user USER_ID]' if for_user else ''}`\n")
-
+       
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None
     while not app_id or not (app := client.get_appstore_app(app_id)):
@@ -94,7 +93,11 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
         app_id = app.id
     return app
 
-def select_permissions(app_id: UUID, permission_ids: list[UUID] | None, permission_like: str | None = None) -> List[Permission]:
+def select_permissions(
+    app_id: UUID,
+    permission_ids: list[UUID] | None, 
+    permission_like: str | None = None
+) -> List[Permission] | None:
     valid_permissions = get_valid_permissions(app_id, permission_ids)
     if len(valid_permissions) > 0:
         return valid_permissions
@@ -110,8 +113,8 @@ def select_permissions(app_id: UUID, permission_ids: list[UUID] | None, permissi
     elif len(permissions) == 1:
         return [permissions[0]]
     else:
-        typer.echo("No permissions found for this app")
-        return []
+        typer.echo("No permissions found for this app, you're just requesting the app itself.")
+        return None
     
 
 def get_valid_permissions(app_id: UUID, permission_ids: list[UUID] | None) -> list[Permission]:
@@ -138,27 +141,27 @@ def select_duration(durations: set[str]) -> Tuple[int | None, str]:
         time_in_seconds = int(match.group(1)) * 60 * 60
         if (re.match(r".*days", duration)):
             time_in_seconds = 24 * time_in_seconds
-    typer.echo(f"Selected duration: {duration}{f' ({time_in_seconds} seconds)'}")
+    typer.echo(f"Selected duration: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else 'Unlimited'}")
     return time_in_seconds, duration
         
 
 def create_access_request(
     app_id: UUID,
-    requestable_permission_ids: List[UUID],
+    requestable_permission_ids: List[UUID] | None,
     note: str,
     expiration: Optional[int] = None,
     target_user_id: Optional[UUID] = None
 ) -> None:
-    request = client.create_access_request(
+    response = client.create_access_request(
         app_id=app_id,
         permission_ids=requestable_permission_ids,
         note=note,
         expiration_in_seconds=expiration,
         target_user_id=target_user_id
     )
-    if request:
+    if response:
         print("\nREQUEST DETAILS")
-        print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
+        print(tabulate([response.tabulate()], headers=AccessRequest.headers()), "\n")
 
     print("\nYour request is in progress! 🏃🌴")
 
