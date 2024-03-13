@@ -35,8 +35,8 @@ def main(
         typer.echo("You need to save your API key to ~/.lumos to use this application.")
         typer.confirm("Do you want me to do that now?", abort=True, default=True)
         typer.echo("Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
-        api_key = typer.prompt("API key")
-        api_key_confirmation = typer.prompt("Confirm API key")
+        api_key = typer.prompt("API key", hide_input=True)
+        api_key_confirmation = typer.prompt("Confirm API key", hide_input=True)
         if (api_key != api_key_confirmation):
             typer.echo("API keys do not match.")
             raise typer.Exit(1)
