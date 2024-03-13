@@ -169,7 +169,7 @@ class Client:
             "note": note,
         }
         if permission_ids:
-            body["permission_ids"] = [str(p) for p in permission_ids]
+            body["requestable_permission_ids"] = [str(p) for p in permission_ids]
         if expiration_in_seconds:
             body["expiration_in_seconds"] = expiration_in_seconds
         if target_user_id:

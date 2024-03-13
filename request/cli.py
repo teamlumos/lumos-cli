@@ -33,11 +33,18 @@ def request(
             count = 100
             while (len(users) < count):
                 users, count = client.get_users(like=user_like)
+                if (count == 0):
+                    if user_like:
+                        typer.echo(f"No users found for '{user_like}'")
+                        user_like = typer.prompt("Give me something to search on")
+                    else:
+                        typer.echo("No users found")
+                        raise typer.Exit(1)
                 if (len(users) < count):
                     user_like = typer.prompt(f"Too many users to show. Give me something to search on")
             description = "Select a user"
             for_user, _ = pick(users, description)
-            typer.echo(f"Selected user {for_user.email}\n")
+            typer.echo(f"Selected user {for_user.email} [{for_user.id}]\n")
             for_user = for_user.id
         
         # Validate parameters or interactively input them
@@ -75,7 +82,10 @@ def request(
         if (selected_permissions):
             for permission in selected_permissions:
                 permission_flags += f" --permission {permission.id}"
-        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\"{' --for-user USER_ID' if for_user else ''}`\n")
+        for_user_flag = '--for-me'
+        if for_user:
+            for_user_flag = '--for-user USER_ID'
+        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\" {for_user_flag}`\n")
         
         create_access_request(
             app_id=selected_app.id, 
@@ -112,6 +122,8 @@ def status(
         request_id = typer.prompt("Please provide a request ID")
     request = client.get_request_status(request_id)
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
+    
+
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None
     while not app_id or not (app := client.get_appstore_app(app_id)):
@@ -120,9 +132,19 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
         count = 100
         while (len(apps) < count):
             apps, count = client.get_appstore_apps(name_search=app_like)
+            if (count == 0):
+                if app_like:
+                    typer.echo(f"No apps found for '{app_like}'")
+                    app_like = typer.prompt("Give me something to search on")
+                else:
+                    typer.echo("No apps found")
+                    raise typer.Exit(1)
             if (len(apps) < count):
-                app_like =typer.prompt(f"Too many apps to show. Give me something to search on")
-        app, _ = pick(apps, f"Select an app")
+                app_like = typer.prompt(f"Too many apps to show. Give me something to search on")
+        if len(apps) == 1:
+            app = apps[0]
+        else:
+            app, _ = pick(apps, f"Select an app")
         app_id = app.id
     return app
 
