@@ -49,7 +49,7 @@ def request(
                 length, duration = select_duration(permissible_durations_set)
 
         if not reason:
-            reason = typer.prompt("Enter your business justification for the request")
+            reason = typer.prompt("\nEnter your business justification for the request")
 
         typer.echo("\nAPP")
         typer.echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
@@ -141,7 +141,7 @@ def select_duration(durations: set[str]) -> Tuple[int | None, str]:
         time_in_seconds = int(match.group(1)) * 60 * 60
         if (re.match(r".*days", duration)):
             time_in_seconds = 24 * time_in_seconds
-    typer.echo(f"Selected duration: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else 'Unlimited'}")
+    typer.echo(f"Selected duration: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
     return time_in_seconds, duration
         
 
