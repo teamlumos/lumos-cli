@@ -1,6 +1,5 @@
 import typer
 from lumos import __version__, __app_name__
-import status
 import list_collections
 import request
 from pathlib import Path
@@ -10,7 +9,6 @@ app = typer.Typer()
 
 app.add_typer(request.app, name="request")
 app.add_typer(list_collections.app, name="list")
-app.add_typer(status.app, name="status")
 
 client = Client()
 
