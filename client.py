@@ -106,8 +106,6 @@ class Client:
             "page": page,
             "count": count
         }
-        if app_id: 
-            params["app_id"] = str(app_id)
         if target_user_id:
             params["target_user_id"] = str(target_user_id)
         if (status and len(status) > 0):

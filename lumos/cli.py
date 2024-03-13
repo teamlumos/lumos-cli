@@ -30,6 +30,7 @@ def main(
     
     key_file = Path.home() / ".lumos" 
 
+    api_key: str | None = None
     if not key_file.exists():
         typer.echo("You need to save your API key to ~/.lumos to use this application.")
         typer.confirm("Do you want me to do that now?", abort=True, default=True)
@@ -43,7 +44,8 @@ def main(
             f.write(api_key)
     else:
         with key_file.open("r") as f:
-            os.environ["API_KEY"] = f.read().strip()
+            api_key = f.read().strip()
+    os.environ["API_KEY"] = api_key
 
 @app.command("whoami")
 def whoami() -> None:

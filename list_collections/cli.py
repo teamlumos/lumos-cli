@@ -39,7 +39,6 @@ def list_permissions(
 
 @app.command("requests")
 def list_requests(
-    app: Optional[UUID] = None,
     user: Optional[UUID] = None,
     mine: bool = False,
     status: Annotated[
@@ -57,7 +56,7 @@ def list_requests(
     elif not status:
         status = SupportRequestStatus.PENDING_STATUSES
 
-    access_requests, count = client.get_access_requests(target_user_id=user, app_id=app, status=status)
+    access_requests, count = client.get_access_requests(target_user_id=user, status=status)
 
     rows = []
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)

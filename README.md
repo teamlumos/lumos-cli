@@ -48,4 +48,11 @@ and run with `DEV_MODE=true` in the command line, like:
 ```
 DEV_MODE=true lumos whoami
 ```
-You can add `alias lumosdev='DEV_MODE=true python -m lumos'` to your shell as well
+You can add `alias lumosdev='DEV_MODE=true python -m lumos'` to your shell as well.
+
+An example of a `.zshrc` function to impersonate for 12h:
+```
+impersonate() {
+    lumos request --app c463381c-1ed1-47ef-9bba-cba1ab4d195c --permission-like $1 --length 43200 --reason $2
+}
+```
