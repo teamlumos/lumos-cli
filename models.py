@@ -57,12 +57,17 @@ class AccessRequest(BaseModel):
     app_name: str
     status: str
     requested_at: str
+    expires_at: Optional[str]
     requester_user: User
     supporter_user: Optional[User]
     target_user: User
+    requestable_permission_ids: list[UUID]
+    permissions: list[Permission] = []
 
     @staticmethod
     def _convert_to_human_date(inp: str) -> str:
+        if not inp:
+            return ""
         import datetime
 
         # Parse the input UTC time string to a datetime object
@@ -86,15 +91,16 @@ class AccessRequest(BaseModel):
         return [
             self.id,
             self.app_name,
+            '\n'.join([p.label for p in self.permissions]) or '-----',
             self.requester_user.given_name + " " + self.requester_user.family_name,
-            self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "",
+            self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "(self)",
             self.status,
             self._convert_to_human_date(self.requested_at),
-            self.supporter_user.email if self.supporter_user else "Pending"]
+            self._convert_to_human_date(self.expires_at)]
     
     @staticmethod
     def headers():
-        return ["ID", "App", "Requester", "For", "Status", "Requested at", "Approver email"]
+        return ["ID", "App", "Permissions", "Requester", "For", "Status", "Requested at", "Expires at"]
 
 
 # If this enum is updated both this table as well as SupportRequestComments must be updated.

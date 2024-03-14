@@ -91,7 +91,10 @@ class Client(BaseClient):
     def get_request_status(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
         if raw_request:
-            return AccessRequest(**raw_request)
+            access_request = AccessRequest(**raw_request)
+            for permission_id in access_request.requestable_permission_ids:
+                access_request.permissions.append(self.get_app_requestable_permission(permission_id))
+            return access_request
         return None
     
     def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int, int]:
@@ -125,7 +128,10 @@ class Client(BaseClient):
         raw_access_requests, count, total, page, pages = self.get_paged("appstore/access_requests", params=params)
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests:
-            access_requests.append(AccessRequest(**item))
+            access_request = AccessRequest(**item)
+            for permission_id in access_request.requestable_permission_ids:
+                access_request.permissions.append(self.get_app_requestable_permission(permission_id))
+            access_requests.append(access_request)
         access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
         return access_requests, count, total, page, pages
     

@@ -1,3 +1,4 @@
+import time
 from typing import Annotated, List, Optional, Tuple
 import typer
 from uuid import UUID
@@ -8,7 +9,7 @@ from functools import reduce
 import re
 
 from client import Client
-from models import AccessRequest, App, Permission, User
+from models import AccessRequest, App, Permission, SupportRequestStatus, User
 
 app = typer.Typer()
 
@@ -53,6 +54,10 @@ def request(
         Optional[str],
         typer.Option(help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
     ] = None,
+    wait: Annotated[
+        Optional[bool],
+        typer.Option(help="Wait for the request to complete")
+    ] = True
 ) -> None:
     if ctx.invoked_subcommand is None:
         if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
@@ -115,12 +120,33 @@ def request(
             for_user_flag = '--for-user USER_ID'
         typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\" {for_user_flag}`\n")
         
-        create_access_request(
+        request_id = create_access_request(
             app_id=selected_app.id, 
             requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
             note=reason,
             expiration=length,
             target_user_id=for_user)
+        
+        if wait and request_id:
+            wait_max = 10
+            while ((status := client.get_request_status(request_id).status) in SupportRequestStatus.PENDING_STATUSES):
+                if (wait_max == 0):
+                    break
+                else:
+                    wait_max -= 1
+                time.sleep(2)
+                print("  ⏰ Waiting for request to complete.  ", end="\r")
+                time.sleep(2)
+                print("  ⏰ Waiting for request to complete.. ", end="\r")
+                time.sleep(2)
+                print("  ⏰ Waiting for request to complete...", end="\r")
+            
+            if (status == SupportRequestStatus.COMPLETED):
+                typer.echo("\n  ✅ Request completed!")
+                return
+            typer.echo(f"\n  ⏰ Request status: {status}")
+            typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
+            
 
 @app.command("status")     
 def status(
@@ -134,7 +160,7 @@ def status(
 ) -> None:
     if last:
         current_user_uuid = UUID(client.get_current_user_id())
-        access_requests, count, total, page, pages = client.get_access_requests(target_user_id=current_user_uuid)
+        access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user_uuid)
         if count == 0:
             typer.echo("No pending requests found")
             return
@@ -250,7 +276,7 @@ def create_access_request(
     note: str,
     expiration: Optional[int] = None,
     target_user_id: Optional[UUID] = None
-) -> None:
+) -> UUID | None:
     response = client.create_access_request(
         app_id=app_id,
         permission_ids=requestable_permission_ids,
@@ -266,6 +292,7 @@ def create_access_request(
 
     typer.echo("\nYour request is in progress! 🏃🌴")
 
+    return response.id
 
 if __name__ == "__main__":
     app()
