@@ -17,11 +17,15 @@ class BaseClient:
         """Function to call an API endpoint and return the response."""
         return self._send_request("GET", endpoint, params=params)
     
-    def get_paged(self, endpoint: str, params: dict | None = None):
+    def get_paged(
+        self,
+        endpoint: str, 
+        params: dict | None = None
+    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return the paged response."""
         response = self.get(endpoint, params=params)
         if response:
-            return response["items"], int(response["size"]), int(response["total"]), int(response["page"]), int(response["pages"])
+            return response["items"], len(response["items"]), int(response["total"]), int(response["page"]), int(response["pages"])
         return [], 0, 0, 0, 0
 
     def post(self, endpoint: str, body: Dict[str, Any]):

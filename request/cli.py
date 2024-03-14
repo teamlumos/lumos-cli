@@ -193,7 +193,7 @@ def select_permissions(
         total = 100
         while (count < total):
             permissions, count, total = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
-            if (count == 0):
+            if (total == 0):
                 if permission_like:
                     typer.echo(f"No permissions found for '{permission_like}'")
                 else:
@@ -258,11 +258,14 @@ def create_access_request(
         expiration_in_seconds=expiration,
         target_user_id=target_user_id
     )
-    if response:
-        print("\nREQUEST DETAILS")
-        print(tabulate([response.tabulate()], headers=AccessRequest.headers()), "\n")
+    if not response:
+        return None
+    
+    typer.echo("\nREQUEST DETAILS")
+    typer.echo(tabulate([response.tabulate()], headers=AccessRequest.headers()))
 
-    print("\nYour request is in progress! 🏃🌴")
+    typer.echo("\nYour request is in progress! 🏃🌴")
+
 
 if __name__ == "__main__":
     app()
