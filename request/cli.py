@@ -57,7 +57,7 @@ def request(
     wait: Annotated[
         Optional[bool],
         typer.Option(help="Wait for the request to complete")
-    ] = True
+    ] = False
 ) -> None:
     if ctx.invoked_subcommand is None:
         if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
@@ -134,12 +134,9 @@ def request(
                     break
                 else:
                     wait_max -= 1
-                time.sleep(2)
-                print("  ⏰ Waiting for request to complete.  ", end="\r")
-                time.sleep(2)
-                print("  ⏰ Waiting for request to complete.. ", end="\r")
-                time.sleep(2)
-                print("  ⏰ Waiting for request to complete...", end="\r")
+                for num_decimals in range(5):
+                    time.sleep(1)
+                    print(" ⏰ Waiting for request to complete" + ("." * num_decimals))
             
             if (status == SupportRequestStatus.COMPLETED):
                 typer.echo("\n  ✅ Request completed!")

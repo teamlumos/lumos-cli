@@ -13,11 +13,11 @@ class App(BaseModel):
         return self.user_friendly_label
     
     def tabulate(self):
-        return [self.user_friendly_label, self.id]
+        return [self.id, self.user_friendly_label]
     
     @staticmethod   
     def headers():
-        return ["App", "ID"]
+        return ["ID", "App"]
 
 class Permission(BaseModel):
     id: UUID
@@ -30,11 +30,11 @@ class Permission(BaseModel):
         return self.label
 
     def tabulate(self):
-        return [self.label, self.id, ', '.join(self.duration_options)]
+        return [self.id, self.label, ', '.join(self.duration_options)]
     
     @staticmethod
     def headers():
-        return ["Permission", "ID", "Access length options"]
+        return ["ID", "Permission", "Access length options"]
 
 class User(BaseModel):
     id: UUID
