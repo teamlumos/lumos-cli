@@ -57,6 +57,33 @@ impersonate() {
 }
 ```
 
+## Documentation
+### Commands
+#### `lumos whoami`
+Give current user details
+
+#### `lumos list [apps|permissions|users|requests] [--like]`
+Lists details of the corresponding collections, with `--like` narrowing the list on partial match (i.e. partial match on name or email for users, partial match on app name, partial match on permissions name)
+
+#### `lumos request`
+
+| Flag | Type | Required? |  Description |
+|------|------|-----------|--------------|
+| `--app`| UUID | ✅ | App UUID. Takes precedence over `--app-like` |
+| `--app-like` | text | | App name like--filters apps shown as options when selecting |
+| `--reason` | text | ✅ |Business justification for request |
+| `--for-user` | UUID  | | user for whom to request access. Takes precedence over --user-like |
+| `--for-me`  | ||  Makes the request for the current user. |
+| `--user-like` | text | | User like--filters users shown as options when requesting for someone else |
+| `--permission` | UUID | ✅ | List of permission UUIDs (i.e. `--permission permission1 --permission permission2`. Takes precedence over `--permission-like` |
+| `--permission-like` | text | | Permission name like--filters permissions shown as options when selecting |
+| `--length` | integer | ✅ | Length of access request in seconds. Don't populate unless you know your app permission's specific settings |
+| `--wait` |  | | Poll request once submitted |
+| `--dry-run` |  | | Don't submit the request, just get the command to do it |
+
+#### `lumos request status [--last]`
+Gets the last request you made, or if `--request-id` is passed/`--last` flag not present, prompts you for a request ID
+
 ## Internal dogfooding gotchas
 - You need to be running python 3.10
 - It seems like you need to be in the CLI directory for this to work (or at least not in the `lumos` repo)
