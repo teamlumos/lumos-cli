@@ -136,14 +136,14 @@ def request(
                     wait_max -= 1
                 for num_decimals in range(5):
                     time.sleep(1)
-                    print(" ⏰ Waiting for request to complete" + ("." * num_decimals))
+                    print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (5-num_decimals)), end='\r')
             
             if (status == SupportRequestStatus.COMPLETED):
-                typer.echo("\n  ✅ Request completed!")
+                print(" ✅ Request completed!")
                 return
-            typer.echo(f"\n  ⏰ Request status: {status}")
+            print(f" ⏰ Request status: {status}" + (' ' * 20) + "\n")
             typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
-            
+            typer.Exit(1)
 
 @app.command("status")     
 def status(
@@ -284,10 +284,7 @@ def create_access_request(
     if not response:
         return None
     
-    typer.echo("\nREQUEST DETAILS")
-    typer.echo(tabulate([response.tabulate()], headers=AccessRequest.headers()))
-
-    typer.echo("\nYour request is in progress! 🏃🌴")
+    typer.echo(f"\nYour request (ID {response.id}) is in progress! 🏃🌴\n")
 
     return response.id
 
