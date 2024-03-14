@@ -1,11 +1,14 @@
-from typing import List, Optional
+from typing import Annotated, List, Optional, Tuple
 import typer
 from uuid import UUID
-from tabulate import tabulate
 from pick import pick
+from tabulate import tabulate
 import pytz
+from functools import reduce
+import re
 
-from request.client import AccessRequest, Client, App, Permission
+from client import Client
+from models import AccessRequest, App, Permission, User
 
 app = typer.Typer()
 
@@ -14,92 +17,252 @@ client = Client()
 @app.callback(invoke_without_command=True)
 def request(
     ctx: typer.Context,
-    app: Optional[UUID] = None,
-    reason: Optional[str] = None,
-    user: Optional[UUID] = None,
-    permission: Optional[UUID] = None,
-    length: Optional[int] = None,
+    app: Annotated[
+        Optional[UUID],
+        typer.Option(help="App UUID. Takes precedence over --app-like"),
+    ] = None,
+    reason: Annotated[
+        Optional[str],
+        typer.Option(help="Business justification for request")
+    ] = None,
+    for_user: Annotated[
+        Optional[UUID],
+        typer.Option(help="UUID of user for whom to request access. Takes precedence over --user-like"),
+    ] = None,
+    for_me: Annotated[
+        Optional[bool],
+        typer.Option(help="Makes the request for the current user.")
+    ] = None,
+    permission:Annotated[
+        Optional[list[UUID]],
+        typer.Option(help="List of permission UUIDs. Takes precedence over --app-like"),
+    ] = None,
+    length: Annotated[
+        Optional[int],
+        typer.Option(help="Length of access request in seconds. Don't populate unless you know your app permission's specific settings")
+    ] = None,
+    app_like: Annotated[
+        Optional[str],
+        typer.Option(help="App name like--filters apps shown as options when selecting")
+    ] = None,
+    permission_like: Annotated[
+        Optional[str],
+        typer.Option(help="Permission name like--filters permissions shown as options when selecting")
+    ] = None,
+    user_like: Annotated[
+        Optional[str],
+        typer.Option(help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
+    ] = None,
 ) -> None:
     if ctx.invoked_subcommand is None:
+        if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
+            users: List[User] = []
+            count = 0
+            total = 100
+            while (count < total):
+                users, count, total = client.get_users(like=user_like)
+                if (total == 0):
+                    if user_like:
+                        typer.echo(f"No users found for '{user_like}'")
+                        user_like = typer.prompt("Give me something to search on")
+                    else:
+                        typer.echo("No users found")
+                        raise typer.Exit(1)
+                if (count < total):
+                    user_like = typer.prompt(f"Too many users to show. Give me something to search on")
+            description = "Select a user"
+            for_user, _ = pick(users, description)
+            typer.echo(f"Selected user {for_user.email} [{for_user.id}]\n")
+            for_user = for_user.id
+        
         # Validate parameters or interactively input them
-        if not app:
-            print("\n⏳ Loading your apps ...\n")
-            apps: List[App] = client.get_appstore_apps()
-            option, _ = pick(apps, "Select an app")
-            app = option.id
-            print(f"Selected app {app}")
-
-        if not permission:
-            print(f"\n⏳ Loading permissions for app {app} ...\n")
-            permissions: List[Permission] = client.get_app_requestable_permissions(app_id=app)
-            if len(permissions) > 1:
-                selected = pick(permissions, "Select a permission", multiselect=True, min_selection_count=1)
-                selected_permissions = [option.id for option, _ in selected]
-            elif len(permissions) == 1:
-                selected_permissions = [permissions[0].id]
-            print(f"Selected permissions: {selected_permissions}\n")
-        else:
-            selected_permissions = [permission]
+        selected_app = get_valid_app(app, app_like)
+        typer.echo(f"Selected app {selected_app.user_friendly_label} [{selected_app.id}]\n")
         
+        selected_permissions = select_permissions(selected_app.id, permission, permission_like)
+        if selected_permissions:
+            permissible_durations_set = set(selected_permissions[0].duration_options)
+            for permission in selected_permissions[1:]:
+                permissible_durations_set = permissible_durations_set.intersection(permission.duration_options)
+            if not length:
+                length, duration = select_duration(permissible_durations_set)
+
         if not reason:
-            reason = typer.prompt("Enter your business justification for the request")
+            reason = typer.prompt("\nEnter your business justification for the request")
 
-        create_access_request(app_id=app, requestable_permission_ids=selected_permissions, note=reason, expiration=length)
+        typer.echo("\nAPP")
+        typer.echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
+        if selected_permissions:
+            typer.echo("\nPERMISSIONS")
+            for permission in selected_permissions:
+                typer.echo(f"   {permission.label} [{permission.id}]")
+        typer.echo("\nDURATION")
+        typer.echo(f"   {(length/(60*60) if length else 'Unlimited')} hours")
+        typer.echo("\nREASON")
+        typer.echo(f"   {reason}")
+
+        if (for_user):
+            typer.echo(f"\nTARGET USER")
+            typer.echo(f"   {for_user}")
         
-@app.command()
-def list_permissions(
-    app_id: str
+        typer.echo("\nIf you need to make this same request in the future, use:")
+        permission_flags = ""
+        if (selected_permissions):
+            for permission in selected_permissions:
+                permission_flags += f" --permission {permission.id}"
+        for_user_flag = '--for-me'
+        if for_user:
+            for_user_flag = '--for-user USER_ID'
+        typer.echo(f"\n   `lumos request --app {selected_app.id}{permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\" {for_user_flag}`\n")
+        
+        create_access_request(
+            app_id=selected_app.id, 
+            requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
+            note=reason,
+            expiration=length,
+            target_user_id=for_user)
+
+@app.command("status")     
+def status(
+    request_id: Annotated[
+        Optional[str],
+        typer.Option(
+            help="Request ID",
+        ),
+    ] = None,
+    last: bool = False
 ) -> None:
-    permissions: List[Permission] = client.get_app_requestable_permissions(app_id=app_id)
-    print(tabulate([[permission.label, permission.id] for permission in permissions], headers=["Permission", "UUID"]), "\n")
+    if last:
+        current_user_uuid = UUID(client.get_current_user_id())
+        access_requests, count, total, page, pages = client.get_access_requests(target_user_id=current_user_uuid)
+        if count == 0:
+            typer.echo("No pending requests found")
+            return
+        if (pages > 1):
+            access_requests, count, total = client.get_access_requests(
+                target_user_id=current_user_uuid,
+                page = pages
+            )
+        print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
+        return
+    if not request_id:
+        request_id = typer.prompt("Please provide a request ID")
+    request = client.get_request_status(request_id)
+    print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 
-@app.command()
-def list() -> None:
-    access_requests: List[AccessRequest] = client.get_access_requests()
 
-    def convert_to_human_date(inp: str) -> str:
-        import datetime
+def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
+    app = None
+    while not app_id or not (app := client.get_appstore_app(app_id)):
+        typer.echo("\n⏳ Loading your apps ...\n")
+        apps = []
+        count = 0
+        total = 100
+        while (count < total):
+            apps, count, total = client.get_appstore_apps(name_search=app_like)
+            if (count == 0):
+                if app_like:
+                    typer.echo(f"No apps found for '{app_like}'")
+                    app_like = typer.prompt("Give me something to search on")
+                else:
+                    typer.echo("No apps found")
+                    raise typer.Exit(1)
+            if (count < total):
+                app_like = typer.prompt(f"Too many apps to show. Give me something to search on")
+        if count == 1:
+            app = apps[0]
+        else:
+            app, _ = pick(apps, f"Select an app")
+        app_id = app.id
+    return app
 
-        # Parse the input UTC time string to a datetime object
-        utc_time = datetime.datetime.strptime(inp, "%Y-%m-%dT%H:%M:%S")
-        
-        # Set the timezone to UTC for the parsed datetime
-        utc_time = utc_time.replace(tzinfo=pytz.utc)
-        
-        # Convert UTC time to EST
-        est_time = utc_time.astimezone(pytz.timezone('America/New_York'))
-        
-        # Format the EST time into a more human-readable string
-        human_date = est_time.strftime("%A, %B %d, %Y %I:%M %p EST")
-        
-        return human_date
+def select_permissions(
+    app_id: UUID,
+    permission_ids: list[UUID] | None, 
+    permission_like: str | None = None
+) -> List[Permission] | None:
+    valid_permissions = get_valid_permissions(app_id, permission_ids)
+    if len(valid_permissions) > 0:
+        return valid_permissions
     
-    rows = []
-    access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)[:1]
-    for ar in access_requests:
-        rows.append(([ar.app_name, ar.status, convert_to_human_date(ar.requested_at), ar.supporter_user.email if ar.supporter_user else "Pending"]))
+    typer.echo("\n⏳ Loading permissions for app ...\n")
+    done_selecting = False
+    while not done_selecting:
+        permissions: List[Permission] = []
+        count = 0
+        total = 100
+        while (count < total):
+            permissions, count, total = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
+            if (count == 0):
+                if permission_like:
+                    typer.echo(f"No permissions found for '{permission_like}'")
+                else:
+                    typer.echo("No permissions found (you're just requesting the app)")
+                    return None
+            if (count < total):
+                permission_like = typer.prompt("Too many permissions to show. Give me something to search on")
+        if count > 1:
+            already_selected = ', '.join([p.label for p in valid_permissions])
+            description = f"Select permissions {f'(already selected: {already_selected})' if already_selected else ''}"
+            selected = pick(permissions, description, multiselect=True, min_selection_count=1)
+            for option, _ in selected:
+                valid_permissions.append(option)
+        elif count == 1:
+            valid_permissions.append(permissions[0])
+        if typer.confirm("Done selecting permissions?", abort=False, default=True):
+            done_selecting = True
+        else:
+            permission_like = None
+    return valid_permissions
+            
 
-    print(tabulate(rows, headers=["App", "Request Status", "Requested At", "Approver Email"]), "\n")
+def get_valid_permissions(app_id: UUID, permission_ids: list[UUID] | None) -> list[Permission]:
+    valid_permissions: list[Permission] = []
+    if not permission_ids:
+        return []
+    for permission_id in permission_ids:
+        if not (permission := client.get_app_requestable_permission(permission_id)):
+            return []
+        if not permission.app_id.__eq__(app_id):
+            return []
+        valid_permissions.append(permission)
+    return valid_permissions
 
-@app.command()
-def list_apps(
-) -> None:
-    apps: List[App] = client.get_appstore_apps()
-    print(tabulate([[app.user_friendly_label, app.id] for app in apps], headers=["App", "UUID"]), "\n")
+def select_duration(durations: set[str]) -> Tuple[int | None, str]:
+    duration: str = ""
+    if (len(durations) == 1):
+        duration = list(durations)[0]
+    elif (len(durations) > 1):
+        duration, _ = pick(list(durations), "Select duration", multiselect=False, min_selection_count=1)
+    
+    time_in_seconds = None
+    if match := re.match(r"(\d+) ", duration):
+        time_in_seconds = int(match.group(1)) * 60 * 60
+        if (re.match(r".*days", duration)):
+            time_in_seconds = 24 * time_in_seconds
+    typer.echo(f"Selected duration: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
+    return time_in_seconds, duration
+        
 
 def create_access_request(
     app_id: UUID,
-    requestable_permission_ids: List[UUID],
+    requestable_permission_ids: List[UUID] | None,
     note: str,
-    expiration: Optional[int] = None
+    expiration: Optional[int] = None,
+    target_user_id: Optional[UUID] = None
 ) -> None:
-    client.create_access_request(
-        app_id=str(app_id),
-        permission_ids=[str(requestable_permission_id) for requestable_permission_id in requestable_permission_ids],
+    response = client.create_access_request(
+        app_id=app_id,
+        permission_ids=requestable_permission_ids,
         note=note,
-        # expiration_in_seconds=expiration,
+        expiration_in_seconds=expiration,
+        target_user_id=target_user_id
     )
-    print("Your request is in progress! 🏃🌴")
+    if response:
+        print("\nREQUEST DETAILS")
+        print(tabulate([response.tabulate()], headers=AccessRequest.headers()), "\n")
+
+    print("\nYour request is in progress! 🏃🌴")
 
 if __name__ == "__main__":
     app()
