@@ -90,9 +90,15 @@ class Client(BaseClient):
     
     def get_request_status(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
-        if raw_request:
-            return AccessRequest(**raw_request)
-        return None
+        return self._create_access_request(raw_request)
+    
+    def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
+        if not raw_request:
+            return None
+        access_request = AccessRequest(**raw_request)
+        for permission_id in access_request.requestable_permission_ids:
+            access_request.permissions.append(self.get_app_requestable_permission(permission_id))
+        return access_request
     
     def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"
@@ -125,9 +131,10 @@ class Client(BaseClient):
         raw_access_requests, count, total, page, pages = self.get_paged("appstore/access_requests", params=params)
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests:
-            access_requests.append(AccessRequest(**item))
-        access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
-        return access_requests, count, total, page, pages
+            access_request = self._create_access_request(item)
+            if (access_request): 
+                access_requests.append(access_request)
+        return sorted(access_requests, key=lambda x: x.requested_at, reverse=True), count, total, page, pages
     
     def get_users(self, like: Optional[str] = None) -> Tuple[List[User], int, int]:
         endpoint = "users"
@@ -155,18 +162,15 @@ class Client(BaseClient):
         
         raw_permissions, count, total, _, _ = self.get_paged(endpoint, params=params)
         
-        permissions: List[Permission] = []
-        for item in raw_permissions:
-            permission = Permission(**item)
-            durations = item["request_config"]["request_fulfillment_config"]["time_based_access"]
-            permission.duration_options = durations
-            permissions.append(permission)
-        return permissions, count, total
+        return [self._create_permission(item) for item in raw_permissions], count, total
     
     def get_app_requestable_permission(self, permission_id: UUID) -> Permission:
         item = self.get(f"appstore/requestable_permissions/{permission_id}")
-        permission = Permission(**item)
-        durations = item["request_config"]["request_fulfillment_config"]["time_based_access"]
+        return self._create_permission(item)
+    
+    def _create_permission(self, raw_permission: dict | None) -> Permission:
+        permission = Permission(**raw_permission)
+        durations = raw_permission["request_config"]["request_fulfillment_config"]["time_based_access"]
         permission.duration_options = durations
         return permission
 
