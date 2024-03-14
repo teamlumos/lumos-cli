@@ -162,7 +162,7 @@ def status(
             typer.echo("No pending requests found")
             return
         if (pages > 1):
-            access_requests, count, total = client.get_access_requests(
+            access_requests, count, total, _, _ = client.get_access_requests(
                 target_user_id=current_user_uuid,
                 page = pages
             )
