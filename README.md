@@ -56,3 +56,8 @@ impersonate() {
     lumos request --app c463381c-1ed1-47ef-9bba-cba1ab4d195c --permission-like $1 --length 43200 --reason $2
 }
 ```
+
+## Internal dogfooding gotchas
+- You need to be running python 3.10
+- It seems like you need to be in the CLI directory for this to work (or at least not in the `lumos` repo)
+    - I'll look into `direnv` to manage this, ultimately the CLI will be packaged so fixing this may not be super fruitful long term 
