@@ -69,7 +69,7 @@ def request(
         
         # Validate parameters or interactively input them
         selected_app = get_valid_app(app, app_like)
-        typer.echo(f"Selected app {selected_app.user_friendly_label} [{selected_app.id}]\n")
+        typer.echo(f"APP: {selected_app.user_friendly_label} [{selected_app.id}]\n")
         
         selected_permissions = select_permissions(selected_app.id, permission, permission_like)
         if selected_permissions:
@@ -195,7 +195,7 @@ def select_user(user_like: Optional[str] = None) -> UUID:
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None
     while not app_id or not (app := client.get_appstore_app(app_id)):
-        typer.echo("\n⏳ Loading your apps ...\n")
+        print("\n⏳ Loading your apps ...", end='\r')
         apps: list[App] = []
         while True:
             apps, count, total = client.get_appstore_apps(name_search=app_like)
@@ -226,7 +226,7 @@ def select_permissions(
     if len(valid_permissions) > 0:
         return valid_permissions
     
-    typer.echo("\n⏳ Loading permissions for app ...\n")
+    print("\n⏳ Loading permissions for app ...", end='\r')
     done_selecting = False
     valid_permissions_dict: dict[str, Permission] = {}
     while not done_selecting:
@@ -250,7 +250,11 @@ def select_permissions(
             for option, _ in selected:
                 valid_permissions_dict[option.id] = option
         elif count == 1:
-            valid_permissions_dict[permissions[0].id] = permissions[0]
+            permission = permissions[0]
+            valid_permissions_dict[permission.id] = permission
+        typer.echo("PERMISSIONS:                          ")
+        for permission in valid_permissions_dict.values():
+            typer.echo(f"   {permission.label} [{permission.id}]")
         if not permission_like:
             break
         if typer.confirm("Done selecting permissions?", abort=False, default=True):
@@ -284,7 +288,7 @@ def select_duration(durations: set[str]) -> Tuple[int | None, str]:
         time_in_seconds = int(match.group(1)) * 60 * 60
         if (re.match(r".*days", duration)):
             time_in_seconds = 24 * time_in_seconds
-    typer.echo(f"Selected duration: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
+    typer.echo(f"DURATION: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
     return time_in_seconds, duration
         
 
