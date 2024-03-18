@@ -65,5 +65,23 @@ impersonate() {
 poetry install
 poetry run pip install pyinstaller
 poetry run pyinstaller --onefile main.py
-./dist/main
+./dist/__main__
 ```
+
+Then, to release:
+
+```
+cp ./dist/__main__ ./dist/lumos
+```
+
+https://github.com/teamlumos/lumos-cli-releases/releases/
+Clone this repo and make a new tag.
+Go to https://github.com/teamlumos/lumos-cli-releases/releases/.
+Confirm you're added as an admin to this repo: https://github.com/teamlumos/lumos-cli-releases/settings/access.
+Make a new release an upload the ./dist/lumos file.
+
+For a customer, once they download the `lumos` file, they will have to:
+
+1. `chmod +x ~/Downloads/lumos`
+2. open Downloads folder in Finder, right-click > Open
+3. `~/Downloads/lumos --help` -> it should work!
