@@ -58,3 +58,12 @@ impersonate() {
     lumos request --app c463381c-1ed1-47ef-9bba-cba1ab4d195c --permission-like $1 --length 43200 --reason $2
 }
 ```
+
+## Releasing
+
+```
+poetry install
+poetry run pip install pyinstaller
+poetry run pyinstaller --onefile main.py
+./dist/main
+```
