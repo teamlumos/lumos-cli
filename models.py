@@ -152,6 +152,13 @@ class SupportRequestStatus:
     PENDING_STATUSES = [
         PENDING,
         PENDING_MANAGER_APPROVAL,
+        PENDING_MANUAL_PROVISIONING,
         PENDING_APPROVAL,
         PENDING_PROVISIONING
+    ]
+
+    SUCCESS_STATUSES = [
+        APPROVED,
+        COMPLETED,
+        PROVISIONED
     ]

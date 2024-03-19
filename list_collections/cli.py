@@ -82,7 +82,17 @@ def list_apps(
     like: Annotated[
         Optional[str],
         typer.Option(help="Filters apps")
-    ] = None,) -> None:
+    ] = None,
+    mine: Annotated[
+        bool,
+        typer.Option(help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
+     ] = False) -> None:
+    if mine:
+        user = client.get_current_user().id
+        statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
+        access_requests, count, total, _, _ = client.get_access_requests(target_user_id=user, status=statuses)
+        print(tabulate([req.tabulate() for req in access_requests], headers=AccessRequest.headers()), "\n")
+        return
     apps, count, total = client.get_appstore_apps(name_search=like)
     print(tabulate([app.tabulate() for app in apps], headers=App.headers()), "\n")
     if (count < total):
