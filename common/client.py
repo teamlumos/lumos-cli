@@ -1,10 +1,10 @@
 
 from typing import Any, Dict, Tuple
 import requests
-from models import App, AccessRequest, Permission, SupportRequestStatus, User
+from common.models import App, AccessRequest, Permission, SupportRequestStatus, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
-from models import App, AccessRequest, Permission, User
+from common.models import App, AccessRequest, Permission, User
 import os
 import typer
 

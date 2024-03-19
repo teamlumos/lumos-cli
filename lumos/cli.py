@@ -4,7 +4,7 @@ from lumos import __version__, __app_name__
 import list_collections
 import request
 from pathlib import Path
-from client import Client
+from common.client import Client
 import os
 app = typer.Typer()
 

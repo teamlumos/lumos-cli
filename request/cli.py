@@ -8,8 +8,8 @@ import pytz
 from functools import reduce
 import re
 
-from client import Client
-from models import AccessRequest, App, Permission, SupportRequestStatus, User
+from common.client import Client
+from common.models import AccessRequest, App, Permission, SupportRequestStatus, User
 
 app = typer.Typer()
 

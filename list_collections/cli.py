@@ -3,8 +3,8 @@ import typer
 from uuid import UUID
 from tabulate import tabulate
 
-from client import Client
-from models import App, Permission, SupportRequestStatus, User, AccessRequest
+from common.client import Client
+from common.models import App, Permission, SupportRequestStatus, User, AccessRequest
 
 app = typer.Typer()
 
