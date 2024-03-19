@@ -18,10 +18,6 @@ client = Client()
 @app.callback(invoke_without_command=True)
 def request(
     ctx: typer.Context,
-    app: Annotated[
-        Optional[UUID],
-        typer.Option(help="App UUID. Takes precedence over --app-like"),
-    ] = None,
     reason: Annotated[
         Optional[str],
         typer.Option(help="Business justification for request")
@@ -34,13 +30,21 @@ def request(
         Optional[bool],
         typer.Option(help="Makes the request for the current user.")
     ] = None,
+    app: Annotated[
+        Optional[UUID],
+        typer.Option(help="App UUID. Takes precedence over --app-like"),
+    ] = None,
     permission:Annotated[
         Optional[list[UUID]],
-        typer.Option(help="List of permission UUIDs. Takes precedence over --app-like"),
+        typer.Option(help="List of permission UUIDs. Takes precedence over --permission-like"),
     ] = None,
     length: Annotated[
         Optional[int],
         typer.Option(help="Length of access request in seconds. Don't populate unless you know your app permission's specific settings")
+    ] = None,
+    user_like: Annotated[
+        Optional[str],
+        typer.Option(help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
     ] = None,
     app_like: Annotated[
         Optional[str],
@@ -49,10 +53,6 @@ def request(
     permission_like: Annotated[
         Optional[str],
         typer.Option(help="Permission name like--filters permissions shown as options when selecting")
-    ] = None,
-    user_like: Annotated[
-        Optional[str],
-        typer.Option(help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
     ] = None,
     wait: Annotated[
         Optional[bool],
