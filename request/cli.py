@@ -145,7 +145,13 @@ def status(
             help="Request ID",
         ),
     ] = None,
-    last: bool = False
+    last: bool = False,
+    status_only: Annotated[
+        Optional[bool],
+        typer.Option(
+            help="Output status only",
+        ),
+    ] = None,
 ) -> None:
     if last:
         current_user_uuid = UUID(client.get_current_user_id())
@@ -160,9 +166,22 @@ def status(
             )
         print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
         return
-    if not request_id:
+    
+    request_uuid: UUID | None = None
+    while not request_uuid:
+        try:
+            request_uuid = UUID(request_id)
+            break
+        except:
+            if request_id:
+                typer.echo("Invalid request ID")
+            request_id = None
         request_id = typer.prompt("Please provide a request ID")
-    request = client.get_request_status(request_id)
+        
+    request = client.get_request_status(request_uuid)
+    if status_only:
+        typer.echo(request.status)
+        return
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 
 def select_user(user_like: Optional[str] = None) -> UUID:

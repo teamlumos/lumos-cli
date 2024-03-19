@@ -1,3 +1,4 @@
+from typing import Annotated, Optional
 import typer
 from lumos import __version__, __app_name__
 import list_collections
@@ -48,7 +49,15 @@ def main(
     os.environ["API_KEY"] = api_key
 
 @app.command("whoami")
-def whoami() -> None:
+def whoami(
+    username: Annotated[
+        Optional[bool],
+        typer.Option(False, help="Show the username and exit"),
+    ] = False,
+) -> None:
     user = client.get_current_user()
+    if username:
+        typer.echo(user.email)
+        return
     typer.echo(f"Logged in as {user.given_name} {user.family_name} ({user.email})")
     typer.echo(f"Your ID is {user.id}, if you need to reference it")
