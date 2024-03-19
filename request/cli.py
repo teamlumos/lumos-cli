@@ -164,6 +164,9 @@ def status(
                 target_user_id=current_user_uuid,
                 page = pages
             )
+        if status_only:
+            typer.echo(request.status)
+            return
         print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
         return
     

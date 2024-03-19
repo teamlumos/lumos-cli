@@ -52,12 +52,19 @@ def main(
 def whoami(
     username: Annotated[
         Optional[bool],
-        typer.Option(False, help="Show the username and exit"),
+        typer.Option(help="Show the current user's username only")
+    ] = False,
+    id: Annotated[
+        Optional[bool],
+        typer.Option(help="Show the current user's ID only")
     ] = False,
 ) -> None:
     user = client.get_current_user()
     if username:
         typer.echo(user.email)
+        return
+    if id:
+        typer.echo(user.id)
         return
     typer.echo(f"Logged in as {user.given_name} {user.family_name} ({user.email})")
     typer.echo(f"Your ID is {user.id}, if you need to reference it")
