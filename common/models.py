@@ -61,8 +61,8 @@ class AccessRequest(BaseModel):
     requester_user: User
     supporter_user: Optional[User]
     target_user: User
-    requestable_permission_ids: list[UUID]
-    permissions: list[Permission] = []
+    requestable_permission_ids: Optional[list[UUID]] = None
+    requestable_permissions: Optional[list[Permission]] = None
 
     @staticmethod
     def _convert_to_human_date(inp: str) -> str:
@@ -91,7 +91,7 @@ class AccessRequest(BaseModel):
         return [
             self.id,
             self.app_name,
-            '\n'.join([p.label for p in self.permissions]) or '-----',
+            '\n'.join([p.label for p in self.requestable_permissions]) if self.requestable_permissions else '-----',
             self.requester_user.given_name + " " + self.requester_user.family_name,
             self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "(self)",
             self.status,
