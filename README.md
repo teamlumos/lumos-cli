@@ -1,17 +1,38 @@
-# Setup
+# Development Setup
 
 ```shell
-python -m venv ./venv
-source venv/bin/activate
-pip install -r requirements.txt
+poetry install
 ```
 
-## Use 
-
 It is recommended that you create this alias:
-`alias lumos='python -m lumos'`
+`alias lumos='poetry run python -m lumos'`
 
-Then you can run commands like:
+
+# Releasing
+
+- Run
+```
+poetry install
+poetry run pip install pyinstaller
+poetry run pyinstaller --onefile lumos/__main__.py
+cp ./dist/__main__ ./dist/lumos
+```
+
+- Make a new version tag in [this repo](https://github.com/teamlumos/lumos-cli-releases).
+
+- Make a new release, upload the `./dist/lumos` file.
+
+For a customer, once they download the `lumos` file, they will have to:
+
+1. `chmod +x ~/Downloads/lumos`
+2. open Downloads folder in Finder, right-click > Open
+3. `~/Downloads/lumos --help` -> it should work!
+
+# Documentation
+### Examples
+
+You can run commands like:
+
 `lumos request`
 
 `lumos list apps --like sales`
@@ -32,24 +53,6 @@ you can narrow down the options presented to you when requesting by using:
 
 `lumos request --app-like github --permission-like dev --user-like sirius`
 
-## Development setup
-
-To point towards local API server, add the following lines to `venv/bin/activate`:
-```
-API_URL=http://localhost:8000
-export API_URL
-
-API_KEY=<YOUR_DEVELOPMENT_API_KEY>
-export API_KEY
-```
-
-and run with `DEV_MODE=true` in the command line, like:
-
-```
-DEV_MODE=true lumos whoami
-```
-You can add `alias lumosdev='DEV_MODE=true python -m lumos'` to your shell as well.
-
 An example of a `.zshrc` function to impersonate for 12h:
 ```
 impersonate() {
@@ -57,7 +60,6 @@ impersonate() {
 }
 ```
 
-## Documentation
 ### Commands
 #### `lumos whoami`
 Give current user details
@@ -84,7 +86,4 @@ Lists details of the corresponding collections, with `--like` narrowing the list
 #### `lumos request status [--last]`
 Gets the last request you made, or if `--request-id` is passed/`--last` flag not present, prompts you for a request ID
 
-## Internal dogfooding gotchas
-- You need to be running python 3.10
-- It seems like you need to be in the CLI directory for this to work (or at least not in the `lumos` repo)
-    - I'll look into `direnv` to manage this, ultimately the CLI will be packaged so fixing this may not be super fruitful long term 
+
