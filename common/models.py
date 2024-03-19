@@ -54,6 +54,7 @@ class User(BaseModel):
 
 class AccessRequest(BaseModel):
     id: UUID
+    app_id: UUID
     app_name: str
     status: str
     requested_at: str
@@ -88,15 +89,21 @@ class AccessRequest(BaseModel):
         return f"{self.app_name} ({self.status})"
     
     def tabulate(self):
+        return [self.id] + self._tabulate()
+
+    def tabulate_as_app(self):
+        return [self.app_id] + self._tabulate()
+    
+    def _tabulate(self):
         return [
-            self.id,
             self.app_name,
             '\n'.join([p.label for p in self.requestable_permissions]) if self.requestable_permissions else '-----',
             self.requester_user.given_name + " " + self.requester_user.family_name,
             self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "(self)",
             self.status,
             self._convert_to_human_date(self.requested_at),
-            self._convert_to_human_date(self.expires_at)]
+            self._convert_to_human_date(self.expires_at)
+        ]
     
     @staticmethod
     def headers():

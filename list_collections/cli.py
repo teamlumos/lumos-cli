@@ -91,7 +91,7 @@ def list_apps(
         user = client.get_current_user().id
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
         access_requests, count, total, _, _ = client.get_access_requests(target_user_id=user, status=statuses)
-        print(tabulate([req.tabulate() for req in access_requests], headers=AccessRequest.headers()), "\n")
+        print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
         return
     apps, count, total = client.get_appstore_apps(name_search=like)
     print(tabulate([app.tabulate() for app in apps], headers=App.headers()), "\n")
