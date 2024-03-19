@@ -95,12 +95,7 @@ class Client(BaseClient):
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:
             return None
-        access_request = AccessRequest(**raw_request)
-        if (access_request.requestable_permission_ids):
-            access_request.requestable_permissions = []
-            for permission_id in access_request.requestable_permission_ids:
-                access_request.requestable_permissions.append(self.get_app_requestable_permission(permission_id))
-        return access_request
+        return AccessRequest(**raw_request)
     
     def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"

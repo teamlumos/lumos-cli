@@ -61,7 +61,6 @@ class AccessRequest(BaseModel):
     requester_user: User
     supporter_user: Optional[User]
     target_user: User
-    requestable_permission_ids: Optional[list[UUID]] = None
     requestable_permissions: Optional[list[Permission]] = None
 
     @staticmethod
