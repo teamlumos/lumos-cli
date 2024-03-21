@@ -4,22 +4,17 @@ request_secrets() {
     lumos request --app "8156588a-2c42-2785-a437-f6aebc7a6197" --permission-like $1 --length 14400 --reason $2 --for-me --wait
     echo "Waiting for role to be created..."
     sleep 25
-    secrets $1 true
+    secrets $(lumos request status --last --id-only)
 }
 
 secrets() {
     #!/bin/sh
-    if [ "$2" != "true" ]; then
-        echo "Request ID? (leave blank if it's your most recent access request)"
+    if ( [ -z "$request_id" ] ); then
+        echo "Request ID: "
         read request_id
     fi
-    
-    request_command="--request-id $request_id"
-    if ( [ -z "$request_id" ] ); then
-        request_command="--last"
-    fi
 
-    request_status=$(lumos request status $request_command --status-only)
+    request_status=$(lumos request status --request-id $request_id --status-only)
 
     if ( [ "COMPLETED" != "$request_status" ] ); then
         echo "Request not completed. Exiting..."
@@ -28,11 +23,10 @@ secrets() {
 
     username=$(lumos whoami --username | awk -F '@' '{print $1}')
 
-    permissions_list=$(lumos request status $request_command --permission-only)
+    permissions_list=$(lumos request status --request-id $request_id --permission-only)
     permissions=("${(@s/; /)permissions_list}")
 
     for permission in "${permissions[@]}"; do
-        echo "Working on permission [$permission]"
         secret $username $permission
     done
 }
@@ -40,8 +34,11 @@ secrets() {
 secret() {
 
     #!/bin/sh
-    username = $1
-    permission = $2
+    username=$1
+    permission=$2
+
+    echo "Working on permission [$permission]"
+    
     arn=""
     # check if arn is empty
     while [ "" = "$arn" ]; do
@@ -54,9 +51,10 @@ secret() {
 
         arn=$(echo $query | grep -o '"Arn": *"[^"]*"' | cut -d'"' -f4)
         roleName=$(echo $query | grep -o '"RoleName": *"[^"]*"' | cut -d'"' -f4)
+        roleName=$(echo ${roleName//AWSReservedSSO_/} | sed 's/_.*//')
     done
     
-    echo -e "\e[1A\e[KGot role: $roleName"
+    echo -e "Got role: $roleName"
     
     original_dir=$(pwd)
 
@@ -71,10 +69,10 @@ secret() {
     echo "region = us-west-2" >> config
     echo "output = json" >> config
 
-    secret=$(aws secretsmanager list-secrets --query "SecretList[?Name == '/prod/$permission']")
+    secret=$(aws secretsmanager list-secrets --profile "$roleName" --query "SecretList[?Name == '/prod/$permission']")
     secret_name=$(echo $secret | grep -o '"Name": *"[^"]*"' | cut -d'"' -f4)
 
-    secret_value=$(aws secretsmanager get-secret-value --secret-id $secret_name --query SecretString --output text)
+    secret_value=$(aws secretsmanager get-secret-value --secret-id $secret_name --query SecretString --output text --profile "$roleName")
 
     echo -e '\e[1A\e[KRestoring AWS config'
     total_lines=$(wc -l < config)
@@ -82,18 +80,25 @@ secret() {
     head -n "$lines_to_keep" config > temp.txt
     mv temp.txt config
 
+    if [ -z "$secret_value" ]; then
+        echo "Secret not found. Exiting..."
+        return
+    fi
+
     secret_file_name="${secret_name//\//_}"
     secret_file_name="${secret_file_name//\\/}"
     secret_file_name="${secret_file_name//./_}.txt"
 
     cd $original_dir
+    rm -f $secret_file_name
     echo $secret_value >> "./$secret_file_name"
     secret_header="************** $secret_name **************"
-    echo -e "\e[1A\e[K$secret_header"
+    echo $secret_header
     echo "${secret_value:0:10}... saved to $secret_file_name"
 
     for (( i=0; i<${#secret_header}; i++ )); do
         echo -n "*"
     done
     echo
+
 }
