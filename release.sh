@@ -25,7 +25,7 @@ echo Creating tag $2
 git tag "$2"
 git push --tags
 echo Creating release $2
-gh release create $2 --title "$2" --notes "$2" --latest lumos.tar.gz
+gh release create $2 --title "$2" --notes "$2" --latest "$release_file"
 
 echo Updating homebrew
 
