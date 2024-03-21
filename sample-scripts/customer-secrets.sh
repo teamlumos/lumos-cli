@@ -1,3 +1,8 @@
+# Using this script
+# Run `source customer-secrets.sh` to load the functions
+
+# Run `request_secrets SITENAME REASON` to request secrets
+# i.e. `request_secrets lumostester.com "Testing CLI"`
 request_secrets() {
     #!/bin/sh
 
@@ -7,8 +12,11 @@ request_secrets() {
     secrets $(lumos request status --last --id-only)
 }
 
+# Run `secrets REQUEST_ID` to get the secrets requested in request ID REQUEST_ID
+# i.e. `secrets 8156588a-2c42-2785-a437-f6aebc7a6197`
 secrets() {
     #!/bin/sh
+    request_id=$1
     if ( [ -z "$request_id" ] ); then
         echo "Request ID: "
         read request_id
@@ -31,6 +39,8 @@ secrets() {
     done
 }
 
+# Run `secret USERNAME SITENAME` to get the secret for USERNAME and SITENAME
+# i.e. `secrets niamh lumostester.com`
 secret() {
 
     #!/bin/sh
