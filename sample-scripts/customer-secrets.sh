@@ -97,7 +97,7 @@ secret() {
 
     secret_file_name="${secret_name//\//_}"
     secret_file_name="${secret_file_name//\\/}"
-    secret_file_name="${secret_file_name//./_}.txt"
+    secret_file_name="${secret_file_name//./_}.json"
 
     cd $original_dir
     rm -f $secret_file_name
