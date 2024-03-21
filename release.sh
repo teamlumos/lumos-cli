@@ -13,11 +13,12 @@ lumo_cli_directory=$(pwd)
 
 poetry install
 rm -rf build dist
-poetry run pyinstaller --onefile lumos/__main__.py
-cd ./dist
+poetry run pyinstaller lumos/__main__.py
+cd ./dist/__main__
 mv __main__ lumos
-release_file=$(pwd)/lumos
-sha=$(sha256sum lumos | cut -d ' ' -f1)
+tar -czf lumos.tar.gz *
+release_file=$(pwd)/lumos.tar.gz
+sha=$(sha256sum lumos.tar.gz | cut -d ' ' -f1)
 
 cd $lumo_cli_directory
 cd ../lumos-cli-releases
