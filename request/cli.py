@@ -152,7 +152,14 @@ def status(
             help="Output status only",
         ),
     ] = None,
+    permission_only: Annotated[
+        Optional[bool],
+        typer.Option(
+            help="Output permission only",
+        ),
+    ] = None,
 ) -> None:
+    request: AccessRequest
     if last:
         current_user_uuid = UUID(client.get_current_user_id())
         access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user_uuid)
@@ -164,26 +171,25 @@ def status(
                 target_user_id=current_user_uuid,
                 page = pages
             )
-        if status_only:
-            typer.echo(request.status)
-            return
-        print(tabulate([access_requests[0].tabulate()], headers=AccessRequest.headers()), "\n")
-        return
-    
-    request_uuid: UUID | None = None
-    while not request_uuid:
-        try:
-            request_uuid = UUID(request_id)
-            break
-        except:
-            if request_id:
-                typer.echo("Invalid request ID")
-            request_id = None
-        request_id = typer.prompt("Please provide a request ID")
-        
-    request = client.get_request_status(request_uuid)
+        request = access_requests[0]
+    else:
+        request_uuid: UUID | None = None
+        while not request_uuid:
+            try:
+                request_uuid = UUID(request_id)
+                break
+            except:
+                if request_id:
+                    typer.echo("Invalid request ID")
+                request_id = None
+            request_id = typer.prompt("Please provide a request ID")
+            
+        request = client.get_request_status(request_uuid)
     if status_only:
         typer.echo(request.status)
+        return
+    if permission_only:
+        typer.echo('; '.join([permission.label for permission in request.requestable_permissions]))
         return
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 
