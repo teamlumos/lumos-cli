@@ -1,3 +1,8 @@
+# Regular Setup
+```shell
+brew install teamlumos/tap/lumos
+```
+
 # Development Setup
 
 ```shell
@@ -10,23 +15,11 @@ It is recommended that you create this alias:
 
 # Releasing
 
-- Run
+- Run 
 ```
-poetry install
-poetry run pip install pyinstaller
-poetry run pyinstaller --onefile lumos/__main__.py
-cp ./dist/__main__ ./dist/lumos
+sh release.sh OLD_VERSION NEW_VERSION
 ```
-
-- Make a new version tag in [this repo](https://github.com/teamlumos/lumos-cli-releases).
-
-- Make a new release, upload the `./dist/lumos` file.
-
-For a customer, once they download the `lumos` file, they will have to:
-
-1. `chmod +x ~/Downloads/lumos`
-2. open Downloads folder in Finder, right-click > Open
-3. `~/Downloads/lumos --help` -> it should work!
+like `sh release.sh 0.6.0 0.6.1`
 
 # Documentation
 ### Examples
