@@ -158,6 +158,12 @@ def status(
             help="Output permission only",
         ),
     ] = None,
+    id_only: Annotated[
+        Optional[bool],
+        typer.Option(
+            help="Output request ID only",
+        ),
+    ] = None,
 ) -> None:
     request: AccessRequest
     if last:
@@ -190,6 +196,9 @@ def status(
         return
     if permission_only:
         typer.echo('; '.join([permission.label for permission in request.requestable_permissions]))
+        return
+    if last and id_only:
+        typer.echo(request.status)
         return
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 
