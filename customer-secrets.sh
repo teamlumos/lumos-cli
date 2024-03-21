@@ -19,19 +19,17 @@ secrets() {
         request_command="--last"
     fi
 
-    status=$(lumos request status $request_command --status-only)
+    request_status=$(lumos request status $request_command --status-only)
 
-    if ( [ "COMPLETED" != "$status" ] ); then
+    if ( [ "COMPLETED" != "$request_status" ] ); then
         echo "Request not completed. Exiting..."
         return
     fi
 
     username=$(lumos whoami --username | awk -F '@' '{print $1}')
 
-    IFS='; '
-
-    # Read the string into an array
-    read -r permissions <<< $(lumos request status $request_command --permission-only)
+    permissions_list=$(lumos request status $request_command --permission-only)
+    permissions=("${(@s/; /)permissions_list}")
 
     for permission in "${permissions[@]}"; do
         echo "Working on permission [$permission]"
