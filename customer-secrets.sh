@@ -4,17 +4,50 @@ request_secrets() {
     lumos request --app "8156588a-2c42-2785-a437-f6aebc7a6197" --permission-like $1 --length 14400 --reason $2 --for-me --wait
     echo "Waiting for role to be created..."
     sleep 25
-    secrets $1
+    secrets $1 true
 }
 
 secrets() {
     #!/bin/sh
-    username=$(lumos whoami --username | awk -F '@' '{print $1}')
+    if [ "$2" != "true" ]; then
+        echo "Request ID? (leave blank if it's your most recent access request)"
+        read request_id
+    fi
     
+    request_command="--request-id $request_id"
+    if ( [ -z "$request_id" ] ); then
+        request_command="--last"
+    fi
+
+    status=$(lumos request status $request_command --status-only)
+
+    if ( [ "COMPLETED" != "$status" ] ); then
+        echo "Request not completed. Exiting..."
+        return
+    fi
+
+    username=$(lumos whoami --username | awk -F '@' '{print $1}')
+
+    IFS='; '
+
+    # Read the string into an array
+    read -r permissions <<< $(lumos request status $request_command --permission-only)
+
+    for permission in "${permissions[@]}"; do
+        echo "Working on permission [$permission]"
+        secret $username $permission
+    done
+}
+
+secret() {
+
+    #!/bin/sh
+    username = $1
+    permission = $2
     arn=""
     # check if arn is empty
     while [ "" = "$arn" ]; do
-        query=$(aws iam list-roles --query "Roles[?contains(Arn, '$username-$1')]")
+        query=$(aws iam list-roles --query "Roles[?contains(Arn, '$username-$permission')]")
         if [ "[]" = "$query" ]; then
             echo "Still waiting for role to be created..."
             sleep 10
@@ -40,7 +73,7 @@ secrets() {
     echo "region = us-west-2" >> config
     echo "output = json" >> config
 
-    secret=$(aws secretsmanager list-secrets --query "SecretList[?Name == '/prod/$1']")
+    secret=$(aws secretsmanager list-secrets --query "SecretList[?Name == '/prod/$permission']")
     secret_name=$(echo $secret | grep -o '"Name": *"[^"]*"' | cut -d'"' -f4)
 
     secret_value=$(aws secretsmanager get-secret-value --secret-id $secret_name --query SecretString --output text)
