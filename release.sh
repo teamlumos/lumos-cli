@@ -1,5 +1,8 @@
 #!/bin/bash
 
+git checkout main
+git pull
+
 escaped_old_version="version = \"$1\""
 escaped_new_version="version = \"$2\""
 
@@ -32,6 +35,10 @@ echo Updating homebrew
 
 cd $lumo_cli_directory
 cd ../homebrew-tap/Formula
+
+git checkout main
+git pull
+
 sed -i '' "s/$1/$2/" "./lumos.rb"
 sed -i '' "s/sha256 \".*\"/sha256 \"$sha\"/" "./lumos.rb"
 git commit -am "Update lumos from $1 to $2"
