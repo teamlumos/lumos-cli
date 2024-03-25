@@ -43,6 +43,16 @@ class BaseClient:
             page += 1
         count = len(all_results)
         return all_results, count, count, 1, 1
+    
+    def get_all_or_paged(self,
+        endpoint: str,
+        params: dict | None = None,
+        all: bool = False
+    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
+        """Function to call an API endpoint and return all the results if the number of results is less than 100."""
+        if all:
+            return self.get_all(endpoint, params=params)
+        return self.get_paged(endpoint, params=params)
 
     def post(self, endpoint: str, body: Dict[str, Any]):
         """Function to call an API endpoint and return the response."""
@@ -123,7 +133,7 @@ class Client(BaseClient):
         params: dict[str, Any] = {}
         if name_search:
             params["name_search"] = name_search
-        raw_apps, count, total, _, _ = self.get_paged(endpoint, params=params) if not all else self.get_all(endpoint, params=params)
+        raw_apps, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
         apps: List[App] = []
         for item in raw_apps:
             apps.append(App(**item))
@@ -147,7 +157,7 @@ class Client(BaseClient):
             params["statuses"] = [str(s) for s in status]
 
         endpoint = "appstore/access_requests"
-        raw_access_requests, count, total, page, pages = self.get_paged(endpoint, params=params) if not all else self.get_all(endpoint, params=params)
+        raw_access_requests, count, total, page, pages = self.get_all_or_paged(endpoint, params=params, all=all)
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests:
             access_request = self._create_access_request(item)
@@ -160,7 +170,7 @@ class Client(BaseClient):
         params: dict[str, Any] = {}
         if like:
             params["search_term"] = like
-        raw_users, count, total, _, _ = self.get_paged(endpoint, params=params) if not all else self.get_all(endpoint, params=params)
+        raw_users, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
 
         users: List[User] = []
         for item in raw_users:
@@ -180,7 +190,7 @@ class Client(BaseClient):
         if (search_term):
             params["search_term"] = search_term
         
-        raw_permissions, count, total, _, _ = self.get_paged(endpoint, params=params) if not all else self.get_all(endpoint, params=params)
+        raw_permissions, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
         
         return [self._create_permission(item) for item in raw_permissions], count, total
     
