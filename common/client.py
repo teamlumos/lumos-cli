@@ -27,6 +27,32 @@ class BaseClient:
         if response:
             return response["items"], len(response["items"]), int(response["total"]), int(response["page"]), int(response["pages"])
         return [], 0, 0, 0, 0
+    
+    def get_all(self,
+        endpoint: str,
+        params: dict | None = None
+    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
+        """Function to call an API endpoint and return all the results."""
+        all_results = []
+        page = 1
+        while True:
+            results, _, _, _, pages = self.get_paged(endpoint, params={**params, "page": page, "size": 100})
+            all_results.extend(results)
+            if page == pages:
+                break
+            page += 1
+        count = len(all_results)
+        return all_results, count, count, 1, 1
+    
+    def get_all_or_paged(self,
+        endpoint: str,
+        params: dict | None = None,
+        all: bool = False
+    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
+        """Function to call an API endpoint and return all the results if the number of results is less than 100."""
+        if all:
+            return self.get_all(endpoint, params=params)
+        return self.get_paged(endpoint, params=params)
 
     def post(self, endpoint: str, body: Dict[str, Any]):
         """Function to call an API endpoint and return the response."""
@@ -102,12 +128,12 @@ class Client(BaseClient):
                 access_request.requestable_permissions.append(self.get_app_requestable_permission(permission_id))
         return access_request
     
-    def get_appstore_apps(self, name_search: str | None = None) -> Tuple[List[App], int, int]:
+    def get_appstore_apps(self, name_search: str | None = None, all: bool =False) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"
         params: dict[str, Any] = {}
         if name_search:
             params["name_search"] = name_search
-        raw_apps, count, total, _, _ = self.get_paged(endpoint, params=params)
+        raw_apps, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
         apps: List[App] = []
         for item in raw_apps:
             apps.append(App(**item))
@@ -119,18 +145,19 @@ class Client(BaseClient):
         target_user_id: UUID | None = None,
         status: List[str] | None = None,
         page: int = 1,
-        count: int = 25
+        count: int = 25,
+        all: bool = False
     ) -> Tuple[List[AccessRequest], int, int, int, int]:
         params: dict[str, Any]= {
-            "page": page,
-            "count": count
+            "size": count
         }
         if target_user_id:
             params["target_user_id"] = str(target_user_id)
         if (status and len(status) > 0):
             params["statuses"] = [str(s) for s in status]
 
-        raw_access_requests, count, total, page, pages = self.get_paged("appstore/access_requests", params=params)
+        endpoint = "appstore/access_requests"
+        raw_access_requests, count, total, page, pages = self.get_all_or_paged(endpoint, params=params, all=all)
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests:
             access_request = self._create_access_request(item)
@@ -138,12 +165,12 @@ class Client(BaseClient):
                 access_requests.append(access_request)
         return sorted(access_requests, key=lambda x: x.requested_at, reverse=True), count, total, page, pages
     
-    def get_users(self, like: Optional[str] = None) -> Tuple[List[User], int, int]:
+    def get_users(self, like: Optional[str] = None, all: bool = False) -> Tuple[List[User], int, int]:
         endpoint = "users"
         params: dict[str, Any] = {}
         if like:
             params["search_term"] = like
-        raw_users, count, total, _, _ = self.get_paged(endpoint, params=params)
+        raw_users, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
 
         users: List[User] = []
         for item in raw_users:
@@ -153,7 +180,8 @@ class Client(BaseClient):
     def get_app_requestable_permissions(
         self,
         app_id: UUID,
-        search_term: str | None = None
+        search_term: str | None = None,
+        all: bool = False
     ) -> Tuple[List[Permission], int, int]:
         endpoint = f"appstore/requestable_permissions"
         params: dict[str, Any] = {
@@ -162,7 +190,7 @@ class Client(BaseClient):
         if (search_term):
             params["search_term"] = search_term
         
-        raw_permissions, count, total, _, _ = self.get_paged(endpoint, params=params)
+        raw_permissions, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
         
         return [self._create_permission(item) for item in raw_permissions], count, total
     
