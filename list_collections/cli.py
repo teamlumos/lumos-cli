@@ -106,8 +106,9 @@ def display(description: str, tabular_data: List[List[Any]], headers: List[str],
             print(",".join([str(cell).replace(", ", "|") for cell in row]))
         return
     if id_only:
-        for row in tabular_data:
-            print(row[0])
+        if len(tabular_data) > 0:
+            for row in tabular_data:
+                print(row[0])
         return
     print(tabulate(tabular_data, headers=headers), "\n")
     if (count < total):
