@@ -68,10 +68,10 @@ def request(
             for_user = select_user(user_like)
         
         # Validate parameters or interactively input them
-        selected_app = get_valid_app(app, app_like)
+        selected_app: App = get_valid_app(app, app_like)
         typer.echo(f"APP: {selected_app.user_friendly_label} [{selected_app.id}]\n")
         
-        selected_permissions = select_permissions(selected_app.id, permission, permission_like)
+        selected_permissions = select_permissions(selected_app, permission, permission_like)
         if selected_permissions:
             permissible_durations_set = set(selected_permissions[0].duration_options)
             for permission in selected_permissions[1:]:
@@ -255,21 +255,20 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
     return app
 
 def select_permissions(
-    app_id: UUID,
+    app: App,
     permission_ids: list[UUID] | None, 
     permission_like: str | None = None
 ) -> List[Permission] | None:
-    valid_permissions = get_valid_permissions(app_id, permission_ids)
+    valid_permissions = get_valid_permissions(app, permission_ids)
     if len(valid_permissions) > 0:
         return valid_permissions
-    
     print("\n⏳ Loading permissions for app ...", end='\r')
     done_selecting = False
     valid_permissions_dict: dict[str, Permission] = {}
     while not done_selecting:
         permissions: List[Permission] = []
         while True:
-            permissions, count, total = client.get_app_requestable_permissions(app_id=app_id, search_term=permission_like)
+            permissions, count, total = client.get_app_requestable_permissions(app_id=app.id, search_term=permission_like)
             if (total == 0):
                 if permission_like:
                     permission_like = typer.prompt(f"No permissions found for '{permission_like}'. Give me something to search on")
@@ -282,9 +281,13 @@ def select_permissions(
                 break
         if count > 1:
             already_selected = ', '.join([p.label for p in valid_permissions_dict.values()])
-            description = f"Select at least one permissions{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
-            selected = pick(permissions, description, multiselect=True, min_selection_count=1)
-            for option, _ in selected:
+            if app.allow_multiple_permission_selection:
+                description = f"Select at least one permissions{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
+                selected = pick(permissions, description, multiselect=True, min_selection_count=1)
+                for option, _ in selected:
+                    valid_permissions_dict[option.id] = option
+            else:
+                option, _ = pick(permissions, "Select permission (use ENTER to confirm)")
                 valid_permissions_dict[option.id] = option
         elif count == 1:
             permission = permissions[0]
@@ -292,7 +295,7 @@ def select_permissions(
         typer.echo("PERMISSIONS:                          ")
         for permission in valid_permissions_dict.values():
             typer.echo(f"   {permission.label} [{permission.id}]")
-        if not permission_like:
+        if not permission_like or not app.allow_multiple_permission_selection:
             break
         if typer.confirm("Done selecting permissions?", abort=False, default=True):
             done_selecting = True
@@ -301,14 +304,16 @@ def select_permissions(
     return list(valid_permissions_dict.values())
             
 
-def get_valid_permissions(app_id: UUID, permission_ids: list[UUID] | None) -> list[Permission]:
+def get_valid_permissions(app: App, permission_ids: list[UUID] | None) -> list[Permission]:
     valid_permissions: list[Permission] = []
     if not permission_ids:
+        return []
+    if len(permission_ids) > 1 and not app.allow_multiple_permission_selection:
         return []
     for permission_id in permission_ids:
         if not (permission := client.get_app_requestable_permission(permission_id)):
             return []
-        if not permission.app_id.__eq__(app_id):
+        if not permission.app_id.__eq__(app.id):
             return []
         valid_permissions.append(permission)
     return valid_permissions

@@ -8,7 +8,8 @@ class App(BaseModel):
     user_friendly_label: str
     app_class_id: str
     instance_id: str
-
+    allow_multiple_permission_selection: bool
+    
     def __str__(self):
         return self.user_friendly_label
     
