@@ -1,4 +1,5 @@
 
+import time
 from typing import Any, Dict, Tuple
 import requests
 from common.models import App, AccessRequest, Permission, SupportRequestStatus, User
@@ -62,17 +63,27 @@ class BaseClient:
         method: str,
         endpoint: str,
         body: dict | None = None,
-        params: dict | None = None
+        params: dict | None = None,
+        retry: int = 0,
     ):
+        if retry > 3:
+            typer.echo("Too many retries. Exiting.", err=True)
+            raise typer.Exit(1)
         url, headers = self._get_url_and_headers(endpoint)
         response = requests.request(method, url, headers=headers, json=body, params=params)
-        if response.ok:
-            return response.json()
-        if response.status_code == 403 or response.status_code == 401:
-            typer.echo("Something went wrong. Check your API token.", err=True)
+        response.status_code = 429
+        # if response.ok:
+        #     return response.json()
+        if response.status_code == 429:
+            typer.echo("We're being rate limited. Waiting a sec.", err=True)
+            time.sleep(retry + 1)
+            return self._send_request(method, endpoint, body, params, retry + 1)
+        if response.status_code == 401:
+            typer.echo("Something went wrong with authorization--try logging in again.", err=True)
+        elif response.status_code == 403:
+            typer.echo("You don't have permission to do that.", err=True)
         else:
-            typer.echo(f"An error occurred (status code {response.status_code})", err=True)
-            typer.echo(f"    {response.json()['detail']}", err=True)
+            typer.echo(f"An error occurred (status code {response.status_code}). Check the IDs provided--they may not exist.", err=True)
         raise typer.Exit(1)
 
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
@@ -80,7 +91,7 @@ class BaseClient:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "lumos-cli/0.1.0",
+            "User-Agent": "lumos-cli/0.8.0",
         }
         return f"{self._get_api_url()}/{endpoint}", headers
     
