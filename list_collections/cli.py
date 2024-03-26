@@ -76,7 +76,7 @@ def list_requests(
     for ar in access_requests:
         rows.append(ar.tabulate())
 
-    display("requests", rows, AccessRequest.headers(), count, total, csv, id_only=id_only)
+    display("requests", rows, AccessRequest.headers(), count, total, csv, id_only=id_only, search=False)
 
 @app.command("apps")
 def list_apps(
@@ -100,7 +100,15 @@ def list_apps(
     apps, count, total = client.get_appstore_apps(name_search=like, all=csv)
     display("apps", [app.tabulate() for app in apps], App.headers(), count, total, csv, id_only=id_only)
 
-def display(description: str, tabular_data: List[List[Any]], headers: List[str], count: int, total: int, csv: bool, id_only: bool = False):
+def display(description: str,
+    tabular_data: List[List[Any]],
+    headers: List[str],
+    count: int,
+    total: int,
+    csv: bool,
+    id_only: bool = False,
+    search: bool = True,
+):
     if csv:
         for row in tabular_data:
             print(",".join([str(cell).replace(", ", "|") for cell in row]))
@@ -112,4 +120,7 @@ def display(description: str, tabular_data: List[List[Any]], headers: List[str],
         return
     print(tabulate(tabular_data, headers=headers), "\n")
     if (count < total):
-        print(f"There are {total - count} more {description} that match your search. Use --like to search.\n")
+        if search:
+            print(f"There are {total - count} more {description} that match your search. Use --like to search.\n")
+        else:
+            print(f"There are {total - count} more {description} not shown.\n")
