@@ -71,9 +71,8 @@ class BaseClient:
             raise typer.Exit(1)
         url, headers = self._get_url_and_headers(endpoint)
         response = requests.request(method, url, headers=headers, json=body, params=params)
-        response.status_code = 429
-        # if response.ok:
-        #     return response.json()
+        if response.ok:
+            return response.json()
         if response.status_code == 429:
             typer.echo("We're being rate limited. Waiting a sec.", err=True)
             time.sleep(retry + 1)
