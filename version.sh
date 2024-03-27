@@ -17,14 +17,8 @@ escaped_new_version="version = \"$1\""
 
 sed -i '' "s/$escaped_old_version/$escaped_new_version/" "./pyproject.toml"
 sed -i '' "s/$old_version/$1/" "./lumos/__init__.py"
-<<<<<<< HEAD
 sed -i '' "s/$old_version/$1/" "./common/client.py"
 
 echo $1 > version.txt
 
 git commit -am "Update lumos from $old_version to $1"
-=======
-
-git commit -am "Update lumos from $old_version to $1"
-echo $1 > version.txt
->>>>>>> 287ff39 (Update lumos from 0.8.0 to 0.8.1)

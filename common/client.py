@@ -90,7 +90,7 @@ class BaseClient:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "lumos-cli/0.8.1",
+            "User-Agent": "lumos-cli/0.8.2",
         }
         return f"{self._get_api_url()}/{endpoint}", headers
     
