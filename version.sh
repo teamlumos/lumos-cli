@@ -19,5 +19,6 @@ sed -i '' "s/$escaped_old_version/$escaped_new_version/" "./pyproject.toml"
 sed -i '' "s/$old_version/$1/" "./lumos/__init__.py"
 sed -i '' "s/$old_version/$1/" "./common/client.py"
 
-git commit -am "Update lumos from $old_version to $1"
 echo $1 > version.txt
+
+git commit -am "Update lumos from $old_version to $1"
