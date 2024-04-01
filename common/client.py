@@ -2,6 +2,7 @@
 import time
 from typing import Any, Dict, Tuple
 import requests
+from lumos import __version__
 from common.models import App, AccessRequest, Permission, SupportRequestStatus, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
@@ -90,7 +91,7 @@ class BaseClient:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
-            "User-Agent": "lumos-cli/0.8.1",
+            "User-Agent": f"lumos-cli/{__version__}",
         }
         return f"{self._get_api_url()}/{endpoint}", headers
     
