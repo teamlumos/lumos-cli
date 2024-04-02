@@ -1,5 +1,6 @@
 import time
 from typing import Annotated, List, Optional, Tuple
+from common.helpers import authenticate
 import typer
 from uuid import UUID
 from pick import pick
@@ -15,7 +16,8 @@ app = typer.Typer()
 
 client = Client()
 
-@app.callback(invoke_without_command=True)
+@app.callback(invoke_without_command=True, help="Request access to an app")
+@authenticate
 def request(
     ctx: typer.Context,
     reason: Annotated[
@@ -137,7 +139,8 @@ def request(
             typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
             typer.Exit(1)
 
-@app.command("status")     
+@app.command("status", help="Check the status of a request by ID or `--last` for the most recent request")     
+@authenticate
 def status(
     request_id: Annotated[
         Optional[str],

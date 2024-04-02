@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
 import os
 import typer
+import webbrowser
 
 class BaseClient:
     API_URL="https://api.lumos.com"
@@ -101,10 +102,63 @@ class BaseClient:
             api_url = os.environ.get("API_URL")
         return api_url or self.API_URL
     
+    
+    
 class Client(BaseClient):
+    AUTH_URL="https://b.app.lumosidentity.com"
+    GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+
     def __init__(self):
         pass
 
+    def _get_auth_url(self) -> str:
+        auth_url: str | None = None
+        if (os.environ.get("DEV_MODE")):
+            auth_url = os.environ.get("AUTH_URL")
+        return auth_url or self.AUTH_URL
+    
+    def _get_client_id(self) -> str:
+        if (os.environ.get("DEV_MODE")):
+            return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
+        return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
+
+    def authenticate(self) -> str:
+        SCOPES = ["admin"]
+        HEADERS = {
+            "content-type": "application/x-www-form-urlencoded",
+        }
+        base_url = f"{self._get_auth_url()}/b/oauth"
+        client_id = self._get_client_id()
+        uri =f"{base_url}/device/code?client_id={client_id}&scope={SCOPES[0]}"
+        response = requests.post(uri, headers=HEADERS)
+        device_auth_data = response.json()
+
+        uri = device_auth_data["verification_uri_complete"]
+        if (base_url.startswith("http://")):
+            uri = uri.replace("https://", "http://")
+        webbrowser.open(uri)
+
+        while True:
+            token_response = requests.post(f"{base_url}/token",
+                data={
+                    "client_id": client_id,
+                    "device_code": device_auth_data["device_code"],
+                    "grant_type": self.GRANT_TYPE,
+                },
+                headers=HEADERS
+            )
+            if token_response.status_code == 400:
+                typer.echo(f"Bad request: {token_response.json()}")
+                raise typer.Exit(1)
+            if not token_response.ok:
+                time.sleep(1)
+            else:
+                token_data = token_response.json()
+                token = token_data["access_token"]
+                break
+        typer.echo(" ✅ Authenticated!")
+        return token
+    
     def get_current_user_id(self) -> str | None:
         if not os.environ.get("USER_ID"):
             user = self.get_current_user()
