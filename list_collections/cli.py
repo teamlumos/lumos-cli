@@ -97,10 +97,10 @@ def list_apps(
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
     if mine:
-        current_user = client.get_current_user_id()
+        user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
         access_requests, count, total, _, _ = client.get_access_requests(
-            target_user_id=current_user,
+            target_user_id=user,
             status=statuses,
             all=csv
         )

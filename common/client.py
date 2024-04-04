@@ -106,7 +106,6 @@ class AuthClient(BaseClient):
         super().__init__(auth_url or "https://b.app.lumosidentity.com")
     
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
-        
         return f"{self.url}/b/oauth/{endpoint}", self.HEADERS
     
     def _get_client_id(self) -> str:
@@ -149,14 +148,6 @@ class AuthClient(BaseClient):
                 break
         typer.echo(" ✅ Authenticated!")
         return token
-    
-class ApiClient(BaseClient):
-    def __init__(self):
-        api_url: str | None = None
-        if (os.environ.get("DEV_MODE")):
-            api_url = os.environ.get("API_URL")
-        super().__init__(api_url or "https://api.lumos.com")
-
     
 class ApiClient(BaseClient):
     def __init__(self):
