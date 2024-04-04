@@ -3,24 +3,6 @@
 brew install teamlumos/tap/lumos
 ```
 
-# Development Setup
-
-```shell
-poetry install
-```
-
-It is recommended that you create this alias:
-`alias lumos='poetry run python -m lumos'`
-
-
-# Releasing
-
-- Run 
-```
-sh release.sh OLD_VERSION NEW_VERSION
-```
-like `sh release.sh 0.6.0 0.6.1`
-
 # Documentation
 ### Examples
 
@@ -78,5 +60,26 @@ Lists details of the corresponding collections, with `--like` narrowing the list
 
 #### `lumos request status [--last]`
 Gets the last request you made, or if `--request-id` is passed/`--last` flag not present, prompts you for a request ID
+
+
+# Development Setup
+
+```shell
+poetry install
+```
+
+It is recommended that you create this alias:
+`alias lumosdev='poetry run python -m lumos'`
+
+
+## Releasing
+
+- Run 
+```
+sh release.sh NEW_VERSION
+```
+like `sh version.sh 0.6.1` will 
+- update the version
+- commit the current set of changes
 
 
