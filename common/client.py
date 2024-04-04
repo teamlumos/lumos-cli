@@ -157,7 +157,15 @@ class ApiClient(BaseClient):
             api_url = os.environ.get("API_URL")
         super().__init__(api_url or "https://api.lumos.com")
 
-    def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
+    
+class ApiClient(BaseClient):
+    def __init__(self):
+        api_url: str | None = None
+        if (os.environ.get("DEV_MODE")):
+            api_url = os.environ.get("API_URL")
+        super().__init__(api_url or "https://api.lumos.com")
+
+    def _get_url_and_headers(self, endpoint: str) -> Tuple[str, Dict[str, str]]:
         api_key = os.environ.get("API_KEY")
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -172,7 +180,7 @@ class ApiClient(BaseClient):
             if user:
                 os.environ["USER_ID"] = str(user.id)
                 return user.id
-            typer.echo("You are not logged in.")
+            typer.echo("You are not logged in", err=True)
             raise typer.Exit(1)
         return UUID(os.environ["USER_ID"])
     
@@ -266,9 +274,9 @@ class ApiClient(BaseClient):
     
     def get_app_requestable_permission(self, permission_id: UUID) -> Permission | None:
         item = self.get(f"appstore/requestable_permissions/{permission_id}")
-        if item:
-            return self._create_permission(item)
-        return None
+        if not item:
+            return None
+        return self._create_permission(item)
     
     def _create_permission(self, raw_permission: dict) -> Permission:
         permission = Permission(**raw_permission)

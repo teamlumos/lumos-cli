@@ -66,8 +66,7 @@ def list_requests(
 ) -> None:
     
     if mine:
-        current_user = client.get_current_user_id()
-        for_user = current_user
+        for_user = client.get_current_user_id()
 
     if all_statuses:
         status = None

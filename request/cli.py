@@ -5,14 +5,13 @@ import typer
 from uuid import UUID
 from pick import pick
 from tabulate import tabulate
-from functools import reduce
 import re
 
 from common.client import ApiClient
 from common.models import AccessRequest, App, Permission, SupportRequestStatus, User
 
 app = typer.Typer()
-
+POLLING_INTERVAL = 6
 client = ApiClient()
 
 @app.callback(invoke_without_command=True, help="Request access to an app")
@@ -97,7 +96,7 @@ def request(
         if for_user:
             typer.echo(f"\nTARGET USER")
             typer.echo(f"   {for_user}")
-        
+
         permission_flags = ''
         if selected_permissions:
             permission_flags = ' '.join([f"--permission {permission.id}" for permission in selected_permissions])
@@ -160,15 +159,14 @@ def status(
 ) -> None:
     request: AccessRequest | None
     if last:
-        current_user = client.get_current_user_id()
-    
-        access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user)
+        current_user_uuid = client.get_current_user_id()
+        access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user_uuid)
         if count == 0:
             typer.echo("No pending requests found")
             return
         if (pages > 1):
             access_requests, count, total, _, _ = client.get_access_requests(
-                target_user_id=current_user,
+                target_user_id=current_user_uuid,
                 page = pages
             )
         request = access_requests[0]
@@ -192,10 +190,9 @@ def status(
         typer.echo(request.status)
         return
     if permission_only:
-        if not request.requestable_permissions:
-            typer.echo("No permissions associated with this request")
-            return
-        typer.echo('; '.join([permission.label for permission in request.requestable_permissions]))
+        if request.requestable_permissions:
+            for permission in request.requestable_permissions:
+                typer.echo(permission.label)
         return
     if last and id_only:
         typer.echo(request.status)
@@ -208,7 +205,7 @@ def poll(
     wait: Annotated[
         Optional[int],
         typer.Option(help="How many minutes to wait. Max 5.")
-    ] = None
+    ] = 2
 ) -> None:
     _poll(request_id, (wait or 2) * 60)
 
@@ -218,11 +215,11 @@ def _poll(request_id: UUID, wait_seconds: int = 120):
     while ((request := client.get_request_status(request_id)) is not None):
         if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
             break
-        for num_decimals in range(6):
-            wait_max -= 1
+        wait_max -= POLLING_INTERVAL
+        for num_decimals in range(POLLING_INTERVAL):
             time.sleep(1)
-            print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (5-num_decimals)), end='\r')
-    
+            print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (POLLING_INTERVAL-num_decimals)), end='\r')
+
     if not request:
         typer.echo("Request not found")
         raise typer.Exit(1)
@@ -317,13 +314,14 @@ def select_permissions(
                 description = f"Select at least one permissions{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
                 selected = pick(permissions, description, multiselect=True, min_selection_count=1)
                 for option, _ in selected:
-                    valid_permissions_dict[option.id] = option
+                    valid_permissions_dict[str(option.id)] = option
             else:
                 option, _ = pick(permissions, "Select permission (use ENTER to confirm)")
-                valid_permissions_dict[option.id] = option
+                valid_permissions_dict[str(option.id)] = option
         elif count == 1:
             permission = permissions[0]
             valid_permissions_dict[str(permission.id)] = permission
+            permission_like = None
         typer.echo("PERMISSIONS:                          ")
         for permission in valid_permissions_dict.values():
             typer.echo(f"   {permission.label} [{permission.id}]")
