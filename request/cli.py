@@ -200,6 +200,7 @@ def status(
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 
 @app.command("poll", help="Poll a request by ID for up to 5 minutes")
+@authenticate
 def poll(
     request_id: UUID,
     wait: Annotated[
