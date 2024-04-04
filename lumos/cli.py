@@ -48,7 +48,10 @@ def whoami(
     if id:
         typer.echo(user.id)
         return
-    typer.echo(f"Logged in as {user.given_name} {user.family_name} ({user.email})")
+    msg = f"Logged in as {user.given_name} {user.family_name} ({user.email})"
+    if (scope := os.environ.get("SCOPE")):
+        msg += f" as {scope}"
+    typer.echo(msg)
     typer.echo(f"Your ID is {user.id}, if you need to reference it")
 
 @app.command("setup", help="Setup your Lumos CLI. Can be used to login or change your authentication method.")

@@ -37,8 +37,8 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
     read_key()
 
 def login(admin: bool | None = False):
-    key = AuthClient().authenticate(admin or False)
-    write_key(key)
+    key, scope = AuthClient().authenticate(admin or False)
+    write_key(key, scope)
 
 def logout():
     key_file = key_file_path()
@@ -51,9 +51,11 @@ def key_file_path() -> Path:
         return Path.home() / ".lumos-dev"
     return Path.home() / ".lumos"
 
-def write_key(key: str | None) -> None:
+def write_key(key: str | None, scope: str | None = None) -> None:
     if not key:
         return
+    if scope:
+        key = f"{scope}:{key}"
     key_file = key_file_path()
     with key_file.open("w") as f:
         f.write(key)
@@ -66,5 +68,8 @@ def read_key() -> str:
     key_file = key_file_path()
     with key_file.open("r") as f:
         api_key = f.read().strip()
+    if api_key.count(":") == 1:
+        scope, api_key = api_key.split(":")
+        os.environ["SCOPE"] = scope
     os.environ["API_KEY"] = api_key
     return api_key

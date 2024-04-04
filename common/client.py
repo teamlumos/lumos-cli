@@ -114,12 +114,13 @@ class AuthClient(BaseClient):
             return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
         return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
     
-    def authenticate(self, admin: bool = False) -> str:
+    def authenticate(self, admin: bool = False) -> Tuple[str, str]:
         url, headers = self._get_url_and_headers("device/code")
         client_id = self._get_client_id()
+        scope = "admin" if admin else "user"
         params = {
             "client_id": client_id,
-            "scope": "admin" if admin else "user",
+            "scope": scope,
         }
         response = requests.post(url, headers=headers, params=params)
         device_auth_data = response.json()
@@ -156,7 +157,7 @@ class AuthClient(BaseClient):
                 token = token_data["access_token"]
                 break
         typer.echo(" ✅ Authenticated!")
-        return token
+        return token, scope
     
 class ApiClient(BaseClient):
     def __init__(self):
