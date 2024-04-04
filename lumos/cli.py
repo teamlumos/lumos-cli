@@ -4,14 +4,14 @@ from lumos import __version__, __app_name__
 import list_collections
 import request
 from pathlib import Path
-from common.client import Client
+from common.client import ApiClient
 import os
 app = typer.Typer()
 
 app.add_typer(request.app, name="request")
 app.add_typer(list_collections.app, name="list")
 
-client = Client()
+client = ApiClient()
 
 def _version_callback(value: bool):
     if value:

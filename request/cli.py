@@ -8,12 +8,12 @@ import pytz
 from functools import reduce
 import re
 
-from common.client import Client
+from common.client import ApiClient
 from common.models import AccessRequest, App, Permission, SupportRequestStatus, User
 
 app = typer.Typer()
 
-client = Client()
+client = ApiClient()
 
 @app.callback(invoke_without_command=True)
 def request(
@@ -135,7 +135,6 @@ def request(
                 return
             print(f" ⏰ Request status: {status}" + (' ' * 20) + "\n")
             typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
-            typer.Exit(1)
 
 @app.command("status")     
 def status(
@@ -167,7 +166,7 @@ def status(
 ) -> None:
     request: AccessRequest
     if last:
-        current_user_uuid = UUID(client.get_current_user_id())
+        current_user_uuid = client.get_current_user_id()
         access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user_uuid)
         if count == 0:
             typer.echo("No pending requests found")
