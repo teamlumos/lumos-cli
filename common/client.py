@@ -4,7 +4,7 @@ import time
 from typing import Any, Dict, Tuple
 import requests
 from lumos import __version__
-from common.models import App, AccessRequest, Permission, SupportRequestStatus, User
+from common.models import App, AccessRequest, Permission, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
@@ -112,19 +112,17 @@ class ApiClient(BaseClient):
     def get_current_user_id(self) -> UUID:
         if not os.environ.get("USER_ID"):
             user = self.get_current_user()
-            if user:
-                os.environ["USER_ID"] = str(user.id)
-                return user.id
-            typer.echo("You are not logged in", err=True)
-            raise typer.Exit(1)
+            os.environ["USER_ID"] = str(user.id)
+            return user.id
         return UUID(os.environ["USER_ID"])
     
-    def get_current_user(self) -> User | None:
+    def get_current_user(self) -> User:
         user = self.get("users/current")
         if user:
             os.environ["USER_ID"] = user["id"]
             return User(**user)
-        return None
+        typer.echo("You are not logged in", err=True)
+        raise typer.Exit(1)
 
     def get_appstore_app(self, id: UUID) -> App | None:
         raw_app = self.get(f"appstore/apps/{id}")
