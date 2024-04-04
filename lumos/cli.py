@@ -5,7 +5,7 @@ from lumos import __version__, __app_name__
 import list_collections
 import request
 from pathlib import Path
-from common.client import Client
+from common.client import ApiClient
 import os
 from pick import pick
 
@@ -14,7 +14,7 @@ app = typer.Typer()
 app.add_typer(request.app, name="request")
 app.add_typer(list_collections.app, name="list")
 
-client = Client()
+client = ApiClient()
 
 def _version_callback(value: bool):
     if value:
@@ -56,9 +56,13 @@ def setup():
     _setup(show_overwrite_prompt=True)
 
 @app.command("login", help="Login to your Lumos account via OAuth.")
-def login():
+def login(
+    admin: Annotated[
+        Optional[bool],
+        typer.Option(help="Log in as an admin, if you have the permission to do so")
+    ] = False,):
     _logout()
-    _login()
+    _login(admin)
 
 @app.command("logout", help="Logout of your Lumos account.")
 def logout():

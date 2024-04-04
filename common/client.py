@@ -1,9 +1,10 @@
 
+from abc import abstractmethod
 import time
 from typing import Any, Dict, Tuple
 import requests
 from lumos import __version__
-from common.models import App, AccessRequest, Permission, SupportRequestStatus, User
+from common.models import App, AccessRequest, Permission, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
@@ -12,18 +13,19 @@ import typer
 import webbrowser
 
 class BaseClient:
-    API_URL="https://api.lumos.com"
-    def __init__(self):
-        pass
+    url: str
+
+    def __init__(self, url: str):
+        self.url = url
     
-    def get(self, endpoint: str, params: dict | None = None):
+    def get(self, endpoint: str, params: dict = {}):
         """Function to call an API endpoint and return the response."""
         return self._send_request("GET", endpoint, params=params)
     
     def get_paged(
         self,
         endpoint: str, 
-        params: dict | None = None
+        params: dict = {}
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return the paged response."""
         response = self.get(endpoint, params=params)
@@ -33,7 +35,7 @@ class BaseClient:
     
     def get_all(self,
         endpoint: str,
-        params: dict | None = None
+        params: dict = {}
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results."""
         all_results = []
@@ -49,7 +51,7 @@ class BaseClient:
     
     def get_all_or_paged(self,
         endpoint: str,
-        params: dict | None = None,
+        params: dict = {},
         all: bool = False
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results if the number of results is less than 100."""
@@ -65,7 +67,7 @@ class BaseClient:
         method: str,
         endpoint: str,
         body: dict | None = None,
-        params: dict | None = None,
+        params: dict = {},
         retry: int = 0,
     ):
         if retry > 3:
@@ -87,66 +89,55 @@ class BaseClient:
             typer.echo(f"An error occurred (status code {response.status_code}). Check the IDs provided--they may not exist.", err=True)
         raise typer.Exit(1)
 
+    @abstractmethod
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
-        api_key = os.environ.get("API_KEY")
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Accept": "application/json",
-            "User-Agent": f"lumos-cli/{__version__}",
-        }
-        return f"{self._get_api_url()}/{endpoint}", headers
+        pass
     
-    def _get_api_url(self) -> str:
-        api_url: str | None = None
-        if (os.environ.get("DEV_MODE")):
-            api_url = os.environ.get("API_URL")
-        return api_url or self.API_URL
-    
-    
-    
-class Client(BaseClient):
-    AUTH_URL="https://b.app.lumosidentity.com"
+class AuthClient(BaseClient):
     GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+    HEADERS = {
+        "content-type": "application/x-www-form-urlencoded",
+    }
 
     def __init__(self):
-        pass
-
-    def _get_auth_url(self) -> str:
         auth_url: str | None = None
         if (os.environ.get("DEV_MODE")):
             auth_url = os.environ.get("AUTH_URL")
-        return auth_url or self.AUTH_URL
+        super().__init__(auth_url or "https://b.app.lumosidentity.com")
+    
+    def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
+        
+        return f"{self.url}/b/oauth/{endpoint}", self.HEADERS
     
     def _get_client_id(self) -> str:
         if (os.environ.get("DEV_MODE")):
             return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
         return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
-
-    def authenticate(self) -> str:
-        SCOPES = ["admin"]
-        HEADERS = {
-            "content-type": "application/x-www-form-urlencoded",
-        }
-        base_url = f"{self._get_auth_url()}/b/oauth"
+    
+    def authenticate(self, admin: bool = False) -> str:
+        url, headers = self._get_url_and_headers("device/code")
         client_id = self._get_client_id()
-        uri =f"{base_url}/device/code?client_id={client_id}&scope={SCOPES[0]}"
-        response = requests.post(uri, headers=HEADERS)
+        params = {
+            "client_id": client_id,
+            "scope": "admin" if admin else "user",
+        }
+        response = requests.post(url, headers=headers, params=params)
         device_auth_data = response.json()
 
-        uri = device_auth_data["verification_uri_complete"]
-        if (base_url.startswith("http://")):
-            uri = uri.replace("https://", "http://")
-        webbrowser.open(uri)
+        verification_uri_complete = device_auth_data["verification_uri_complete"]
+        if (url.startswith("http://")):
+            verification_uri_complete = verification_uri_complete.replace("https://", "http://")
+        webbrowser.open(verification_uri_complete)
+
+        token_data = {
+            "client_id": client_id,
+            "device_code": device_auth_data["device_code"],
+            "grant_type": self.GRANT_TYPE,
+        }
+        token_url, _ = self._get_url_and_headers("token")
 
         while True:
-            token_response = requests.post(f"{base_url}/token",
-                data={
-                    "client_id": client_id,
-                    "device_code": device_auth_data["device_code"],
-                    "grant_type": self.GRANT_TYPE,
-                },
-                headers=HEADERS
-            )
+            token_response = requests.post(token_url, headers=headers, data=token_data)
             if token_response.status_code == 400:
                 typer.echo(f"Bad request: {token_response.json()}")
                 raise typer.Exit(1)
@@ -159,12 +150,31 @@ class Client(BaseClient):
         typer.echo(" ✅ Authenticated!")
         return token
     
-    def get_current_user_id(self) -> str | None:
+class ApiClient(BaseClient):
+    def __init__(self):
+        api_url: str | None = None
+        if (os.environ.get("DEV_MODE")):
+            api_url = os.environ.get("API_URL")
+        super().__init__(api_url or "https://api.lumos.com")
+
+    def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
+        api_key = os.environ.get("API_KEY")
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Accept": "application/json",
+            "User-Agent": f"lumos-cli/{__version__}",
+        }
+        return f"{self.url}/{endpoint}", headers
+    
+    def get_current_user_id(self) -> UUID:
         if not os.environ.get("USER_ID"):
             user = self.get_current_user()
             if user:
                 os.environ["USER_ID"] = str(user.id)
-        return os.environ["USER_ID"]
+                return user.id
+            typer.echo("You are not logged in.")
+            raise typer.Exit(1)
+        return UUID(os.environ["USER_ID"])
     
     def get_current_user(self) -> User | None:
         user = self.get("users/current")
@@ -186,12 +196,7 @@ class Client(BaseClient):
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:
             return None
-        access_request = AccessRequest(**raw_request)
-        if (access_request.requestable_permission_ids):
-            access_request.requestable_permissions = []
-            for permission_id in access_request.requestable_permission_ids:
-                access_request.requestable_permissions.append(self.get_app_requestable_permission(permission_id))
-        return access_request
+        return AccessRequest(**raw_request)
     
     def get_appstore_apps(self, name_search: str | None = None, all: bool =False) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"
@@ -259,11 +264,13 @@ class Client(BaseClient):
         
         return [self._create_permission(item) for item in raw_permissions], count, total
     
-    def get_app_requestable_permission(self, permission_id: UUID) -> Permission:
+    def get_app_requestable_permission(self, permission_id: UUID) -> Permission | None:
         item = self.get(f"appstore/requestable_permissions/{permission_id}")
-        return self._create_permission(item)
+        if item:
+            return self._create_permission(item)
+        return None
     
-    def _create_permission(self, raw_permission: dict | None) -> Permission:
+    def _create_permission(self, raw_permission: dict) -> Permission:
         permission = Permission(**raw_permission)
         durations = raw_permission["request_config"]["request_fulfillment_config"]["time_based_access"]
         permission.duration_options = durations

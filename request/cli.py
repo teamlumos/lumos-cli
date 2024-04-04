@@ -5,16 +5,15 @@ import typer
 from uuid import UUID
 from pick import pick
 from tabulate import tabulate
-import pytz
 from functools import reduce
 import re
 
-from common.client import Client
+from common.client import ApiClient
 from common.models import AccessRequest, App, Permission, SupportRequestStatus, User
 
 app = typer.Typer()
 
-client = Client()
+client = ApiClient()
 
 @app.callback(invoke_without_command=True, help="Request access to an app")
 @authenticate
@@ -81,7 +80,7 @@ def request(
             if not length:
                 length, duration = select_duration(permissible_durations_set)
 
-        if not reason:
+        while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
 
         typer.echo("\nAPP")
@@ -95,17 +94,23 @@ def request(
         typer.echo("\nREASON")
         typer.echo(f"   {reason}")
 
-        if (for_user):
+        if for_user:
             typer.echo(f"\nTARGET USER")
             typer.echo(f"   {for_user}")
         
         permission_flags = ''
         if selected_permissions:
             permission_flags = ' '.join([f"--permission {permission.id}" for permission in selected_permissions])
+
+        command = f"lumos request --app {selected_app.id} {permission_flags} --reason \"{reason}\""
+        if length:
+            command += f" --length {length}"
         for_user_flag = '--for-me'
         if for_user:
             for_user_flag = '--for-user USER_ID'
-        command = f"lumos request --app {selected_app.id} {permission_flags}{(f' --length {length}' if length else '')} --reason \"{reason}\" {for_user_flag}"
+        command += f" {for_user_flag}"
+        if wait:
+            command += " --wait"
         if dry_run:
             typer.echo(f"\nCOMMAND")
             typer.echo(f"   {command}")
@@ -122,22 +127,7 @@ def request(
             target_user_id=for_user)
         
         if wait and request_id:
-            wait_max = 10
-            while ((status := client.get_request_status(request_id).status) in SupportRequestStatus.PENDING_STATUSES):
-                if (wait_max == 0):
-                    break
-                else:
-                    wait_max -= 1
-                for num_decimals in range(5):
-                    time.sleep(1)
-                    print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (5-num_decimals)), end='\r')
-            
-            if (status == SupportRequestStatus.COMPLETED):
-                print(" ✅ Request completed!")
-                return
-            print(f" ⏰ Request status: {status}" + (' ' * 20) + "\n")
-            typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
-            typer.Exit(1)
+            _poll(request_id)
 
 @app.command("status", help="Check the status of a request by ID or `--last` for the most recent request")     
 @authenticate
@@ -168,16 +158,17 @@ def status(
         ),
     ] = None,
 ) -> None:
-    request: AccessRequest
+    request: AccessRequest | None
     if last:
-        current_user_uuid = UUID(client.get_current_user_id())
-        access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user_uuid)
+        current_user = client.get_current_user_id()
+    
+        access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user)
         if count == 0:
             typer.echo("No pending requests found")
             return
         if (pages > 1):
             access_requests, count, total, _, _ = client.get_access_requests(
-                target_user_id=current_user_uuid,
+                target_user_id=current_user,
                 page = pages
             )
         request = access_requests[0]
@@ -194,16 +185,53 @@ def status(
             request_id = typer.prompt("Please provide a request ID")
             
         request = client.get_request_status(request_uuid)
+    if not request:
+        typer.echo("Request not found")
+        return
     if status_only:
         typer.echo(request.status)
         return
     if permission_only:
+        if not request.requestable_permissions:
+            typer.echo("No permissions associated with this request")
+            return
         typer.echo('; '.join([permission.label for permission in request.requestable_permissions]))
         return
     if last and id_only:
         typer.echo(request.status)
         return
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
+
+@app.command("poll", help="Poll a request by ID for up to 5 minutes")
+def poll(
+    request_id: UUID,
+    wait: Annotated[
+        Optional[int],
+        typer.Option(help="How many minutes to wait. Max 5.")
+    ] = None
+) -> None:
+    _poll(request_id, (wait or 2) * 60)
+
+def _poll(request_id: UUID, wait_seconds: int = 120):
+    if wait_seconds == 0 or wait_seconds > 300:
+        wait_max = 120
+    while ((request := client.get_request_status(request_id)) is not None):
+        if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
+            break
+        for num_decimals in range(6):
+            wait_max -= 1
+            time.sleep(1)
+            print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (5-num_decimals)), end='\r')
+    
+    if not request:
+        typer.echo("Request not found")
+        raise typer.Exit(1)
+
+    if (request.status == SupportRequestStatus.COMPLETED):
+        typer.echo(" ✅ Request completed!")
+        return
+    typer.echo(f" ⏰ Request status: {request.status}" + (' ' * 20) + "\n")
+    typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
 
 def select_user(user_like: Optional[str] = None) -> UUID:
     users: List[User] = []
@@ -254,7 +282,8 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
             app = apps[0]
         else:
             app, _ = pick(apps, f"Select an app (press ENTER to confirm)")
-        app_id = app.id
+        if app:
+            app_id = app.id
     return app
 
 def select_permissions(
@@ -294,7 +323,7 @@ def select_permissions(
                 valid_permissions_dict[option.id] = option
         elif count == 1:
             permission = permissions[0]
-            valid_permissions_dict[permission.id] = permission
+            valid_permissions_dict[str(permission.id)] = permission
         typer.echo("PERMISSIONS:                          ")
         for permission in valid_permissions_dict.values():
             typer.echo(f"   {permission.label} [{permission.id}]")

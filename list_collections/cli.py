@@ -4,12 +4,12 @@ import typer
 from uuid import UUID
 from tabulate import tabulate
 
-from common.client import Client
+from common.client import ApiClient
 from common.models import App, Permission, SupportRequestStatus, User, AccessRequest
 
 app = typer.Typer()
 
-client = Client()
+client = ApiClient()
 
 @app.command("users", help="List users in Lumos")
 @authenticate
@@ -66,7 +66,8 @@ def list_requests(
 ) -> None:
     
     if mine:
-        for_user = client.get_current_user().id
+        current_user = client.get_current_user_id()
+        for_user = current_user
 
     if all_statuses:
         status = None
@@ -97,9 +98,13 @@ def list_apps(
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
     if mine:
-        user = client.get_current_user().id
+        current_user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
-        access_requests, count, total, _, _ = client.get_access_requests(target_user_id=user, status=statuses, all=csv)
+        access_requests, count, total, _, _ = client.get_access_requests(
+            target_user_id=current_user,
+            status=statuses,
+            all=csv
+        )
         print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
         return
     apps, count, total = client.get_appstore_apps(name_search=like, all=csv)

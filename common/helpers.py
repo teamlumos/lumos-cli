@@ -1,7 +1,7 @@
 import functools
 import os
 from pathlib import Path
-from common.client import Client
+from common.client import AuthClient
 import typer
 from pick import pick
 
@@ -36,12 +36,12 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
 
     read_key()
 
-def login():
-    key = Client().authenticate()
+def login(admin: bool = False):
+    key = AuthClient().authenticate(admin)
     write_key(key)
 
 def key_file_path() -> Path:
-    if os.environ["DEV_MODE"]:
+    if os.environ.get("DEV_MODE"):
         return Path.home() / ".lumos-dev"
     return Path.home() / ".lumos"
 
