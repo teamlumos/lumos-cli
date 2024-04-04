@@ -124,8 +124,12 @@ class AuthClient(BaseClient):
         device_auth_data = response.json()
 
         verification_uri_complete = device_auth_data["verification_uri_complete"]
-        if (url.startswith("http://")):
-            verification_uri_complete = verification_uri_complete.replace("https://", "http://")
+        if (os.environ.get("DEV_MODE")):
+            if (url.startswith("http://")):
+                verification_uri_complete = verification_uri_complete.replace("https://", "http://")
+            if (verification_uri_complete.__contains__("localhost:3000")):
+                verification_uri_complete = verification_uri_complete.replace("localhost:3000", "localhost:8080")
+        
         webbrowser.open(verification_uri_complete)
 
         token_data = {
@@ -134,14 +138,18 @@ class AuthClient(BaseClient):
             "grant_type": self.GRANT_TYPE,
         }
         token_url, _ = self._get_url_and_headers("token")
+        typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must be logged in to Lumos on your browser.")
 
+        wait = 0
         while True:
+            print(" ⏰ Waiting" + ("." * (wait % 10)) + (' ' * (10-(wait % 10))), end='\r')
             token_response = requests.post(token_url, headers=headers, data=token_data)
             if token_response.status_code == 400:
                 typer.echo(f"Bad request: {token_response.json()}")
                 raise typer.Exit(1)
             if not token_response.ok:
                 time.sleep(1)
+                wait += 1
             else:
                 token_data = token_response.json()
                 token = token_data["access_token"]
