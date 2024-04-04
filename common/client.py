@@ -54,7 +54,7 @@ class BaseClient:
         params: dict = {},
         all: bool = False
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
-        """Function to call an API endpoint and return all the results if the number of results is less than 100."""
+        """Function to call an API endpoint and return all the results."""
         if all:
             return self.get_all(endpoint, params=params)
         return self.get_paged(endpoint, params=params)
@@ -79,8 +79,9 @@ class BaseClient:
             return response.json()
         if response.status_code == 429:
             typer.echo("We're being rate limited. Waiting a sec.", err=True)
-            time.sleep(retry + 1)
-            return self._send_request(method, endpoint, body, params, retry + 1)
+            retry += 1
+            time.sleep(retry)
+            return self._send_request(method, endpoint, body, params, retry)
         if response.status_code == 401:
             typer.echo("Something went wrong with authorization--try logging in again.", err=True)
         elif response.status_code == 403:

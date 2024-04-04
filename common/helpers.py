@@ -36,9 +36,15 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
 
     read_key()
 
-def login(admin: bool = False):
-    key = AuthClient().authenticate(admin)
+def login(admin: bool | None = False):
+    key = AuthClient().authenticate(admin or False)
     write_key(key)
+
+def logout():
+    key_file = key_file_path()
+    key_file.unlink(missing_ok=True)
+    if (os.environ.get("API_KEY")):
+        os.environ["API_KEY"] = None
 
 def key_file_path() -> Path:
     if os.environ.get("DEV_MODE"):

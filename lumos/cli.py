@@ -1,5 +1,5 @@
 from typing import Annotated, Optional
-from common.helpers import authenticate, write_key, key_file_path, login as _login, setup as _setup
+from common.helpers import authenticate, write_key, key_file_path, login as _login, setup as _setup, logout as _logout
 import typer
 from lumos import __version__, __app_name__
 import list_collections
@@ -68,7 +68,3 @@ def login(
 def logout():
     _logout()
     typer.echo(" 👋 Logged out!")
-
-def _logout():
-    key_file = key_file_path()
-    key_file.unlink(missing_ok=True)
