@@ -82,7 +82,7 @@ class BaseClient:
         logdebug('METHOD: ' + method)
 
         response = requests.request(method, url, headers=headers, json=body, params=params)
-        logdebug('RESPONSE: ' + response.status_code)
+        logdebug('RESPONSE: ' + str(response.status_code))
         logdebug('CONTENT: ' + str(response.content))
         if response.ok:
             return response.json()

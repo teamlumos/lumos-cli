@@ -212,11 +212,11 @@ def poll(
 
 def _poll(request_id: UUID, wait_seconds: int = 120):
     if wait_seconds == 0 or wait_seconds > 300:
-        wait_max = 120
+        wait_seconds = 120
     while ((request := client.get_request_status(request_id)) is not None):
-        if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
+        if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_seconds <= 0:
             break
-        wait_max -= POLLING_INTERVAL
+        wait_seconds -= POLLING_INTERVAL
         for num_decimals in range(POLLING_INTERVAL):
             time.sleep(1)
             print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (POLLING_INTERVAL-num_decimals)), end='\r')
