@@ -31,7 +31,7 @@ def main(
         os.environ["DEBUG"] = "1"
         logdebug("🐞 Debug mode enabled")
 
-@app.command("whoami", help="Show information about the currently logged in user")
+@app.command("whoami", help="Show information about the currently logged in user.")
 @authenticate
 def whoami(
     username: Annotated[
@@ -50,7 +50,7 @@ def whoami(
     if id:
         typer.echo(user.id)
         return
-    msg = f"Logged in as {user.given_name} {user.family_name} ({user.email})"
+    msg = f" 💻 Logged in as {user.given_name} {user.family_name} ({user.email})"
     if (scope := os.environ.get("SCOPE")):
         msg += f" as {scope}"
     typer.echo(msg)
@@ -59,8 +59,9 @@ def whoami(
 @app.command("setup", help="Setup your Lumos CLI. Can be used to login or change your authentication method.")
 def setup():
     _setup(show_overwrite_prompt=True)
+    whoami()
 
-@app.command("login", help="Login to your Lumos account via OAuth.")
+@app.command("login", help="Login to your Lumos account via OAuth. You must be logged in to Lumos on your browser.")
 def login(
     admin: Annotated[
         Optional[bool],
@@ -68,6 +69,8 @@ def login(
     ] = False,):
     _logout()
     _login(admin)
+    whoami()
+
 
 @app.command("logout", help="Logout of your Lumos account.")
 def logout():

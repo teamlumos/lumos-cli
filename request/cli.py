@@ -14,7 +14,7 @@ app = typer.Typer()
 POLLING_INTERVAL = 6
 client = ApiClient()
 
-@app.callback(invoke_without_command=True, help="Request access to an app")
+@app.callback(invoke_without_command=True, help="Request access to an app.")
 @authenticate
 def request(
     ctx: typer.Context,
