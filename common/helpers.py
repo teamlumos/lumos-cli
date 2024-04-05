@@ -2,8 +2,10 @@ import functools
 import os
 from pathlib import Path
 from common.client import AuthClient
+from common.logging import logdebug
 import typer
 from pick import pick
+from colorama import Fore, Back, Style
 
 def authenticate(func):
     """Makes sure client is authenticated first"""
@@ -25,11 +27,7 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
     selected, _ = pick(["OAuth", "API key"], "How do you want to authenticate?")
     if selected == "API key":
         typer.echo(" ⚙️ Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
-        api_key = typer.prompt("API key", hide_input=True)
-        api_key_confirmation = typer.prompt("Confirm API key", hide_input=True)
-        if (api_key != api_key_confirmation):
-            typer.echo("API keys do not match.")
-            raise typer.Exit(1)
+        api_key = typer.prompt("API key", hide_input=True, confirmation_prompt=True)
         write_key(api_key)
     else:
         login()
@@ -50,13 +48,13 @@ def key_file_path() -> Path:
     if os.environ.get("DEV_MODE"):
         return Path.home() / ".lumos-dev"
     return Path.home() / ".lumos"
-
 def write_key(key: str | None, scope: str | None = None) -> None:
     if not key:
         return
     if scope:
         key = f"{scope}:{key}"
     key_file = key_file_path()
+    logdebug(f'Writing token [{key}] to {key_file}')
     with key_file.open("w") as f:
         f.write(key)
 

@@ -1,13 +1,12 @@
 from typing import Annotated, Optional
-from common.helpers import authenticate, write_key, key_file_path, login as _login, setup as _setup, logout as _logout
+from common.helpers import authenticate, login as _login, setup as _setup, logout as _logout
+from common.logging import logdebug
 import typer
 from lumos import __version__, __app_name__
 import list_collections
 import request
-from pathlib import Path
 from common.client import ApiClient
 import os
-from pick import pick
 
 app = typer.Typer()
 
@@ -25,9 +24,12 @@ def _version_callback(value: bool):
 def main(
     version: bool = typer.Option(
         None, "--version", "-v", help="Show the applications version and exit", callback=_version_callback, is_eager=True
-    )
+    ),
+    debug: bool = False,
 ) -> None:
-    pass
+    if debug and os.environ.get("DEV_MODE"):
+        os.environ["DEBUG"] = "1"
+        logdebug("🐞 Debug mode enabled")
 
 @app.command("whoami", help="Show information about the currently logged in user")
 @authenticate

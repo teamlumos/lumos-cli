@@ -8,6 +8,7 @@ from common.models import App, AccessRequest, Permission, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
+from common.logging import logdebug
 import os
 import typer
 import webbrowser
@@ -74,7 +75,15 @@ class BaseClient:
             typer.echo("Too many retries. Exiting.", err=True)
             raise typer.Exit(1)
         url, headers = self._get_url_and_headers(endpoint)
+        logdebug('URL: ' + url)
+        logdebug('HEADERS: ' + str(headers))
+        logdebug('BODY: ' + str(body))
+        logdebug('PARAMETERS: ' + str(params))
+        logdebug('METHOD: ' + method)
+
         response = requests.request(method, url, headers=headers, json=body, params=params)
+        logdebug('RESPONSE: ' + response.status_code)
+        logdebug('CONTENT: ' + str(response.content))
         if response.ok:
             return response.json()
         if response.status_code == 429:
@@ -110,8 +119,13 @@ class AuthClient(BaseClient):
         return f"{self.url}/b/oauth/{endpoint}", self.HEADERS
     
     def _get_client_id(self) -> str:
-        if (os.environ.get("DEV_MODE")):
-            return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
+        if (auth_url := os.environ.get("AUTH_URL")):
+            if auth_url.__contains__("localhost"):
+                return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
+            if auth_url.__contains__("qa"):
+                return "37o8paGpj1BvV6NOFmVO21cG8L9ePSCs"
+            if auth_url.__contains__("staging"):
+                return "tLPbUcyJZZyEvuxTo5deyFQXkO9iXZyx"
         return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
     
     def authenticate(self, admin: bool = False) -> Tuple[str, str]:
@@ -122,7 +136,18 @@ class AuthClient(BaseClient):
             "client_id": client_id,
             "scope": scope,
         }
+        logdebug('METHOD: POST')
+        logdebug('URL: ' + url)
+        logdebug('HEADERS: ' + str(headers))
+        logdebug('PARAMETERS: ' + str(params))
+
         response = requests.post(url, headers=headers, params=params)
+        if not response.ok:
+            typer.echo(f"Something went wrong")
+            logdebug('RESPONSE: ' + str(response.status_code))
+            logdebug('CONTENT: ' + str(response.content))
+            raise typer.Exit(1)
+        
         device_auth_data = response.json()
 
         verification_uri_complete = device_auth_data["verification_uri_complete"]
@@ -142,6 +167,11 @@ class AuthClient(BaseClient):
         token_url, _ = self._get_url_and_headers("token")
         typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must be logged in to Lumos on your browser.")
 
+        logdebug('METHOD: POST')
+        logdebug('URL: ' + token_url)
+        logdebug('HEADERS: ' + str(headers))
+        logdebug('BODY: ' + str(token_data))
+
         wait = 0
         while True:
             print(" ⏰ Waiting" + ("." * (wait % 10)) + (' ' * (10-(wait % 10))), end='\r')
@@ -149,7 +179,9 @@ class AuthClient(BaseClient):
             if token_response.status_code == 400:
                 typer.echo(f"Bad request: {token_response.json()}")
                 raise typer.Exit(1)
-            if not token_response.ok:
+            logdebug('RESPONSE: ' + str(token_response.status_code))
+            logdebug('CONTENT: ' + str(token_response.content))
+            if token_response.status_code != 200:
                 time.sleep(1)
                 wait += 1
             else:
