@@ -179,7 +179,7 @@ class AuthClient(BaseClient):
             if token_response.status_code == 400:
                 typer.echo(f"Bad request: {token_response.json()}")
                 raise typer.Exit(1)
-            logdebug('RESPONSE: ' + str(token_response.status_code))
+            logdebug('\nRESPONSE: ' + str(token_response.status_code))
             logdebug('CONTENT: ' + str(token_response.content))
             if token_response.status_code != 200:
                 time.sleep(1)
@@ -188,6 +188,9 @@ class AuthClient(BaseClient):
                 token_data = token_response.json()
                 token = token_data["access_token"]
                 break
+            if wait > 60:
+                typer.echo("Timed out waiting for authentication.")
+                raise typer.Exit(1)
         typer.echo(" ✅ Authenticated!")
         return token, scope
     
