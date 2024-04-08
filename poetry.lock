@@ -525,6 +525,20 @@ files = [
 ]
 
 [[package]]
+name = "types-requests"
+version = "2.31.0.20240403"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "types-requests-2.31.0.20240403.tar.gz", hash = "sha256:e1e0cd0b655334f39d9f872b68a1310f0e343647688bf2cee932ec4c2b04de59"},
+    {file = "types_requests-2.31.0.20240403-py3-none-any.whl", hash = "sha256:06abf6a68f5c4f2a62f6bb006672dfb26ed50ccbfddb281e1ee6f09a65707d5d"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "types-tabulate"
 version = "0.9.0.20240106"
 description = "Typing stubs for tabulate"
@@ -589,4 +603,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "3.10.6"
-content-hash = "53e103694c3aa04b2337fac661ca6703dd26dee475b11c36c339755078ce7a64"
+content-hash = "08016edf24724ad6a3371cc25a76c1c2cbdd2b6c6b88385f4caa12f76e5fd224"

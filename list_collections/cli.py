@@ -3,12 +3,12 @@ import typer
 from uuid import UUID
 from tabulate import tabulate
 
-from common.client import Client
+from common.client import ApiClient
 from common.models import App, Permission, SupportRequestStatus, User, AccessRequest
 
 app = typer.Typer()
 
-client = Client()
+client = ApiClient()
 
 @app.command("users", help="List users in the system")
 def list_users(
@@ -62,7 +62,7 @@ def list_requests(
 ) -> None:
     
     if mine:
-        for_user = client.get_current_user().id
+        for_user = client.get_current_user_id()
 
     if all_statuses:
         status = None
@@ -92,7 +92,7 @@ def list_apps(
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
     if mine:
-        user = client.get_current_user().id
+        user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
         access_requests, count, total, _, _ = client.get_access_requests(target_user_id=user, status=statuses, all=csv)
         print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")

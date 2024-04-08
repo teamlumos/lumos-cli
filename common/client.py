@@ -1,9 +1,10 @@
 
+from abc import abstractmethod
 import time
 from typing import Any, Dict, Tuple
 import requests
 from lumos import __version__
-from common.models import App, AccessRequest, Permission, SupportRequestStatus, User
+from common.models import App, AccessRequest, Permission, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
@@ -11,18 +12,19 @@ import os
 import typer
 
 class BaseClient:
-    API_URL="https://api.lumos.com"
-    def __init__(self):
-        pass
+    url: str
+
+    def __init__(self, url: str):
+        self.url = url
     
-    def get(self, endpoint: str, params: dict | None = None):
+    def get(self, endpoint: str, params: dict = {}):
         """Function to call an API endpoint and return the response."""
         return self._send_request("GET", endpoint, params=params)
     
     def get_paged(
         self,
         endpoint: str, 
-        params: dict | None = None
+        params: dict = {}
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return the paged response."""
         response = self.get(endpoint, params=params)
@@ -32,7 +34,7 @@ class BaseClient:
     
     def get_all(self,
         endpoint: str,
-        params: dict | None = None
+        params: dict = {}
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results."""
         all_results = []
@@ -48,7 +50,7 @@ class BaseClient:
     
     def get_all_or_paged(self,
         endpoint: str,
-        params: dict | None = None,
+        params: dict = {},
         all: bool = False
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results if the number of results is less than 100."""
@@ -64,7 +66,7 @@ class BaseClient:
         method: str,
         endpoint: str,
         body: dict | None = None,
-        params: dict | None = None,
+        params: dict = {},
         retry: int = 0,
     ):
         if retry > 3:
@@ -86,38 +88,41 @@ class BaseClient:
             typer.echo(f"An error occurred (status code {response.status_code}). Check the IDs provided--they may not exist.", err=True)
         raise typer.Exit(1)
 
+    @abstractmethod
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
+        pass
+    
+    
+class ApiClient(BaseClient):
+    def __init__(self):
+        api_url: str | None = None
+        if (os.environ.get("DEV_MODE")):
+            api_url = os.environ.get("API_URL")
+        super().__init__(api_url or "https://api.lumos.com")
+
+    def _get_url_and_headers(self, endpoint: str) -> Tuple[str, Dict[str, str]]:
         api_key = os.environ.get("API_KEY")
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
             "User-Agent": f"lumos-cli/{__version__}",
         }
-        return f"{self._get_api_url()}/{endpoint}", headers
-    
-    def _get_api_url(self) -> str:
-        api_url: str | None = None
-        if (os.environ.get("DEV_MODE")):
-            api_url = os.environ.get("API_URL")
-        return api_url or self.API_URL
-    
-class Client(BaseClient):
-    def __init__(self):
-        pass
+        return f"{self.url}/{endpoint}", headers
 
-    def get_current_user_id(self) -> str | None:
+    def get_current_user_id(self) -> UUID:
         if not os.environ.get("USER_ID"):
             user = self.get_current_user()
-            if user:
-                os.environ["USER_ID"] = str(user.id)
-        return os.environ["USER_ID"]
+            os.environ["USER_ID"] = str(user.id)
+            return user.id
+        return UUID(os.environ["USER_ID"])
     
-    def get_current_user(self) -> User | None:
+    def get_current_user(self) -> User:
         user = self.get("users/current")
         if user:
             os.environ["USER_ID"] = user["id"]
             return User(**user)
-        return None
+        typer.echo("You are not logged in", err=True)
+        raise typer.Exit(1)
 
     def get_appstore_app(self, id: UUID) -> App | None:
         raw_app = self.get(f"appstore/apps/{id}")
@@ -132,12 +137,7 @@ class Client(BaseClient):
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:
             return None
-        access_request = AccessRequest(**raw_request)
-        if (access_request.requestable_permission_ids):
-            access_request.requestable_permissions = []
-            for permission_id in access_request.requestable_permission_ids:
-                access_request.requestable_permissions.append(self.get_app_requestable_permission(permission_id))
-        return access_request
+        return AccessRequest(**raw_request)
     
     def get_appstore_apps(self, name_search: str | None = None, all: bool =False) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"
@@ -205,11 +205,13 @@ class Client(BaseClient):
         
         return [self._create_permission(item) for item in raw_permissions], count, total
     
-    def get_app_requestable_permission(self, permission_id: UUID) -> Permission:
+    def get_app_requestable_permission(self, permission_id: UUID) -> Permission | None:
         item = self.get(f"appstore/requestable_permissions/{permission_id}")
+        if not item:
+            return None
         return self._create_permission(item)
     
-    def _create_permission(self, raw_permission: dict | None) -> Permission:
+    def _create_permission(self, raw_permission: dict) -> Permission:
         permission = Permission(**raw_permission)
         durations = raw_permission["request_config"]["request_fulfillment_config"]["time_based_access"]
         permission.duration_options = durations
