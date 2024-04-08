@@ -206,8 +206,8 @@ def poll(
 ) -> None:
     _poll(request_id, (wait or 2) * 60)
 
-def _poll(request_id: UUID, wait_seconds: int = 120):
-    if wait_seconds == 0 or wait_seconds > 300:
+def _poll(request_id: UUID, wait_max: int = 120):
+    if wait_max < 10 or wait_max > 300:
         wait_max = 120
     while ((request := client.get_request_status(request_id)) is not None):
         if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
