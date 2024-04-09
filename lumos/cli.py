@@ -25,9 +25,9 @@ def main(
     version: bool = typer.Option(
         None, "--version", "-v", help="Show the applications version and exit", callback=_version_callback, is_eager=True
     ),
-    debug: bool = False,
+    debug: bool = typer.Option(False, "--debug", help="Enable debug mode", hidden=True),
 ) -> None:
-    if debug and os.environ.get("DEV_MODE"):
+    if debug:
         os.environ["DEBUG"] = "1"
         logdebug("🐞 Debug mode enabled")
 
