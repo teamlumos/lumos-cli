@@ -160,7 +160,7 @@ class AuthClient(BaseClient):
         if (os.environ.get("DEV_MODE")):
             if (url.startswith("http://")):
                 verification_uri_complete = verification_uri_complete.replace("https://", "http://")
-            if ("localhost:3000" in verification_uri_complete)):
+            if ("localhost:3000" in verification_uri_complete):
                 verification_uri_complete = verification_uri_complete.replace("localhost:3000", "localhost:8080")
         
         webbrowser.open(verification_uri_complete)
