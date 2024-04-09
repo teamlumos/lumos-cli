@@ -1,2 +1,2 @@
 __app_name__ = "lumos"
-__version__ = "0.9.1"
+__version__ = "0.9.2"
