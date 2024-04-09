@@ -97,9 +97,7 @@ class BaseClient:
                 typer.echo("Something went wrong with authorization. Try logging in again.", err=True)
                 raise typer.Exit(1)
             typer.echo("Something went wrong with authorization. Trying to log in again.", err=True)
-            auth_client = AuthClient()
-            token, scope = auth_client.authenticate(scope == "admin")
-            write_key(token, scope)
+            AuthClient().authenticate(scope == "admin")
             return self._send_request(method, endpoint, body, params, retry + 1)
         elif response.status_code == 403:
             typer.echo("You don't have permission to do that.", err=True)
@@ -136,7 +134,7 @@ class AuthClient(BaseClient):
                 return "tLPbUcyJZZyEvuxTo5deyFQXkO9iXZyx"
         return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
     
-    def authenticate(self, admin: bool = False) -> Tuple[str, str]:
+    def authenticate(self, admin: bool = False):
         url, headers = self._get_url_and_headers("device/code")
         client_id = self._get_client_id()
         scope = "admin" if admin else "user"
@@ -200,7 +198,7 @@ class AuthClient(BaseClient):
                 typer.echo("Timed out waiting for authentication.")
                 raise typer.Exit(1)
         typer.echo(" ✅ Authenticated!")
-        return token, scope
+        write_key(token, scope)
     
 class ApiClient(BaseClient):
     def __init__(self):

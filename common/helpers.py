@@ -36,8 +36,7 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
     read_key()
 
 def login(admin: bool | None = False):
-    key, scope = AuthClient().authenticate(admin or False)
-    write_key(key, scope)
+    AuthClient().authenticate(admin or False)
 
 def logout():
     key_file = key_file_path()
