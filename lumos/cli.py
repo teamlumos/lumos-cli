@@ -1,11 +1,13 @@
 from typing import Annotated, Optional
+from common.helpers import authenticate, login as _login, setup as _setup, logout as _logout
+from common.logging import logdebug
 import typer
 from lumos import __version__, __app_name__
 import list_collections
 import request
-from pathlib import Path
 from common.client import ApiClient
 import os
+
 app = typer.Typer()
 
 app.add_typer(request.app, name="request")
@@ -22,33 +24,15 @@ def _version_callback(value: bool):
 def main(
     version: bool = typer.Option(
         None, "--version", "-v", help="Show the applications version and exit", callback=_version_callback, is_eager=True
-    )
+    ),
+    debug: bool = typer.Option(False, "--debug", help="Enable debug mode", hidden=True),
 ) -> None:
-    if (os.environ.get("DEV_MODE")):
-        while not os.environ.get("API_KEY"):
-            os.environ["API_KEY"] = typer.prompt("You are in dev mode, but you have not set an API key. Please set one now.")
-        return
-    
-    key_file = Path.home() / ".lumos" 
+    if debug:
+        os.environ["DEBUG"] = "1"
+        logdebug("🐞 Debug mode enabled")
 
-    api_key: str | None = None
-    if not key_file.exists():
-        typer.echo("You need to save your API key to ~/.lumos to use this application.")
-        typer.confirm("Do you want me to do that now?", abort=True, default=True)
-        typer.echo("Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
-        api_key = typer.prompt("API key", hide_input=True)
-        api_key_confirmation = typer.prompt("Confirm API key", hide_input=True)
-        if (api_key != api_key_confirmation):
-            typer.echo("API keys do not match.")
-            raise typer.Exit(1)
-        with key_file.open("w") as f:
-            f.write(api_key)
-    else:
-        with key_file.open("r") as f:
-            api_key = f.read().strip()
-    os.environ["API_KEY"] = api_key
-
-@app.command("whoami")
+@app.command("whoami", help="Show information about the currently logged in user.")
+@authenticate
 def whoami(
     username: Annotated[
         Optional[bool],
@@ -66,5 +50,29 @@ def whoami(
     if id:
         typer.echo(user.id)
         return
-    typer.echo(f"Logged in as {user.given_name} {user.family_name} ({user.email})")
+    msg = f" 💻 Logged in as {user.given_name} {user.family_name} ({user.email})"
+    if (scope := os.environ.get("SCOPE")):
+        msg += f" as {scope}"
+    typer.echo(msg)
     typer.echo(f"Your ID is {user.id}, if you need to reference it")
+
+@app.command("setup", help="Setup your Lumos CLI. Can be used to login or change your authentication method.")
+def setup():
+    _setup(show_overwrite_prompt=True)
+    whoami()
+
+@app.command("login", help="Login to your Lumos account via OAuth. You must be logged in to Lumos on your browser.")
+def login(
+    admin: Annotated[
+        Optional[bool],
+        typer.Option(help="Log in as an admin, if you have the permission to do so")
+    ] = False,):
+    _logout()
+    _login(admin)
+    whoami()
+
+
+@app.command("logout", help="Logout of your Lumos account.")
+def logout():
+    _logout()
+    typer.echo(" 👋 Logged out!")

@@ -1,4 +1,5 @@
 from typing import Any, List, Optional, Tuple, Annotated
+from common.helpers import authenticate
 import typer
 from uuid import UUID
 from tabulate import tabulate
@@ -10,7 +11,8 @@ app = typer.Typer()
 
 client = ApiClient()
 
-@app.command("users", help="List users in the system")
+@app.command("users", help="List users in Lumos")
+@authenticate
 def list_users(
     like: Annotated[
         Optional[str],
@@ -26,6 +28,7 @@ def list_users(
 
 
 @app.command("permissions")
+@authenticate
 def list_permissions(
     app: UUID,
     like: Annotated[
@@ -39,7 +42,8 @@ def list_permissions(
 
     display("permissions", [permission.tabulate() for permission in permissions], Permission.headers(), count, total, csv, id_only=id_only)
 
-@app.command("requests")
+@app.command("requests", help="List access requests")
+@authenticate
 def list_requests(
     for_user: Annotated[
         Optional[UUID],
@@ -78,7 +82,8 @@ def list_requests(
 
     display("requests", rows, AccessRequest.headers(), count, total, csv, id_only=id_only, search=False)
 
-@app.command("apps")
+@app.command("apps", help="List apps in the appstore")
+@authenticate
 def list_apps(
     like: Annotated[
         Optional[str],
@@ -94,7 +99,11 @@ def list_apps(
     if mine:
         user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
-        access_requests, count, total, _, _ = client.get_access_requests(target_user_id=user, status=statuses, all=csv)
+        access_requests, count, total, _, _ = client.get_access_requests(
+            target_user_id=user,
+            status=statuses,
+            all=csv
+        )
         print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
         return
     apps, count, total = client.get_appstore_apps(name_search=like, all=csv)
