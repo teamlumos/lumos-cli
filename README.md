@@ -39,6 +39,15 @@ impersonate() {
 #### `lumos whoami`
 Give current user details
 
+#### `lumos login`
+Logs into Lumos via OAuth
+
+#### `lumos setup`
+Lets you setup/re-setup your authentication
+
+#### `lumos logout`
+Clears stored credentials
+
 #### `lumos list [apps|permissions|users|requests] [--like]`
 Lists details of the corresponding collections, with `--like` narrowing the list on partial match (i.e. partial match on name or email for users, partial match on app name, partial match on permissions name)
 

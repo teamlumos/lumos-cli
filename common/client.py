@@ -8,8 +8,11 @@ from common.models import App, AccessRequest, Permission, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
+from common.logging import logdebug
 import os
 import typer
+from common.keyhelpers import write_key
+import webbrowser
 
 class BaseClient:
     url: str
@@ -53,7 +56,7 @@ class BaseClient:
         params: dict = {},
         all: bool = False
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
-        """Function to call an API endpoint and return all the results if the number of results is less than 100."""
+        """Function to call an API endpoint and return all the results."""
         if all:
             return self.get_all(endpoint, params=params)
         return self.get_paged(endpoint, params=params)
@@ -73,15 +76,29 @@ class BaseClient:
             typer.echo("Too many retries. Exiting.", err=True)
             raise typer.Exit(1)
         url, headers = self._get_url_and_headers(endpoint)
+        logdebug('URL: ' + url)
+        logdebug('HEADERS: ' + str(headers))
+        logdebug('BODY: ' + str(body))
+        logdebug('PARAMETERS: ' + str(params))
+        logdebug('METHOD: ' + method)
+
         response = requests.request(method, url, headers=headers, json=body, params=params)
+        logdebug('RESPONSE: ' + str(response.status_code))
+        logdebug('CONTENT: ' + str(response.content))
         if response.ok:
             return response.json()
         if response.status_code == 429:
             typer.echo("We're being rate limited. Waiting a sec.", err=True)
-            time.sleep(retry + 1)
-            return self._send_request(method, endpoint, body, params, retry + 1)
+            retry += 1
+            time.sleep(retry)
+            return self._send_request(method, endpoint, body, params, retry)
         if response.status_code == 401:
-            typer.echo("Something went wrong with authorization--try logging in again.", err=True)
+            if retry > 1 or not (scope := os.environ.get("SCOPE")):
+                typer.echo("Something went wrong with authorization. Try logging in again.", err=True)
+                raise typer.Exit(1)
+            typer.echo("Something went wrong with authorization. Trying to log in again.", err=True)
+            AuthClient().authenticate(scope == "admin")
+            return self._send_request(method, endpoint, body, params, retry + 1)
         elif response.status_code == 403:
             typer.echo("You don't have permission to do that.", err=True)
         else:
@@ -92,6 +109,96 @@ class BaseClient:
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
         pass
     
+class AuthClient(BaseClient):
+    GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
+    HEADERS = {
+        "content-type": "application/x-www-form-urlencoded",
+    }
+
+    def __init__(self):
+        auth_url: str | None = None
+        if (os.environ.get("DEV_MODE")):
+            auth_url = os.environ.get("AUTH_URL")
+        super().__init__(auth_url or "https://b.app.lumosidentity.com")
+    
+    def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
+        return f"{self.url}/b/oauth/{endpoint}", self.HEADERS
+    
+    def _get_client_id(self) -> str:
+        if (auth_url := os.environ.get("AUTH_URL")):
+            if "localhost" in auth_url:
+                return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
+            if "qa" in auth_url:
+                return "37o8paGpj1BvV6NOFmVO21cG8L9ePSCs"
+            if "staging" in auth_url:
+                return "tLPbUcyJZZyEvuxTo5deyFQXkO9iXZyx"
+        return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
+    
+    def authenticate(self, admin: bool = False):
+        url, headers = self._get_url_and_headers("device/code")
+        client_id = self._get_client_id()
+        scope = "admin" if admin else "user"
+        params = {
+            "client_id": client_id,
+            "scope": scope,
+        }
+        logdebug('METHOD: POST')
+        logdebug('URL: ' + url)
+        logdebug('HEADERS: ' + str(headers))
+        logdebug('PARAMETERS: ' + str(params))
+
+        response = requests.post(url, headers=headers, params=params)
+        if not response.ok:
+            typer.echo(f"Something went wrong.")
+            logdebug('RESPONSE: ' + str(response.status_code))
+            logdebug('CONTENT: ' + str(response.content))
+            raise typer.Exit(1)
+        
+        device_auth_data = response.json()
+
+        verification_uri_complete = device_auth_data["verification_uri_complete"]
+        if (os.environ.get("DEV_MODE")):
+            if (url.startswith("http://")):
+                verification_uri_complete = verification_uri_complete.replace("https://", "http://")
+            if ("localhost:3000" in verification_uri_complete)):
+                verification_uri_complete = verification_uri_complete.replace("localhost:3000", "localhost:8080")
+        
+        webbrowser.open(verification_uri_complete)
+
+        token_data = {
+            "client_id": client_id,
+            "device_code": device_auth_data["device_code"],
+            "grant_type": self.GRANT_TYPE,
+        }
+        token_url, _ = self._get_url_and_headers("token")
+        typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser.")
+
+        logdebug('METHOD: POST')
+        logdebug('URL: ' + token_url)
+        logdebug('HEADERS: ' + str(headers))
+        logdebug('BODY: ' + str(token_data))
+
+        wait = 0
+        while True:
+            print(" ⏰ Waiting" + ("." * (wait % 10)) + (' ' * (10-(wait % 10))), end='\r')
+            token_response = requests.post(token_url, headers=headers, data=token_data)
+            if token_response.status_code == 400:
+                typer.echo(f"Bad request: {token_response.json()}")
+                raise typer.Exit(1)
+            logdebug('\nRESPONSE: ' + str(token_response.status_code))
+            logdebug('CONTENT: ' + str(token_response.content))
+            if token_response.status_code != 200:
+                time.sleep(1)
+                wait += 1
+            else:
+                token_data = token_response.json()
+                token = token_data["access_token"]
+                break
+            if wait > 60:
+                typer.echo("Timed out waiting for authentication.")
+                raise typer.Exit(1)
+        typer.echo(" ✅ Authenticated!")
+        write_key(token, scope)
     
 class ApiClient(BaseClient):
     def __init__(self):
@@ -108,7 +215,7 @@ class ApiClient(BaseClient):
             "User-Agent": f"lumos-cli/{__version__}",
         }
         return f"{self.url}/{endpoint}", headers
-
+    
     def get_current_user_id(self) -> UUID:
         if not os.environ.get("USER_ID"):
             user = self.get_current_user()

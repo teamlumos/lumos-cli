@@ -1,5 +1,6 @@
 import time
 from typing import Annotated, List, Optional, Tuple
+from common.helpers import authenticate
 import typer
 from uuid import UUID
 from pick import pick
@@ -13,7 +14,8 @@ app = typer.Typer()
 POLLING_INTERVAL = 6
 client = ApiClient()
 
-@app.callback(invoke_without_command=True)
+@app.callback(invoke_without_command=True, help="Request access to an app.")
+@authenticate
 def request(
     ctx: typer.Context,
     reason: Annotated[
@@ -126,7 +128,8 @@ def request(
         if wait and request_id:
             _poll(request_id)
 
-@app.command("status")     
+@app.command("status", help="Check the status of a request by ID or `--last` for the most recent request")     
+@authenticate
 def status(
     request_id: Annotated[
         Optional[str],
@@ -197,6 +200,7 @@ def status(
     print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
 
 @app.command("poll", help="Poll a request by ID for up to 5 minutes")
+@authenticate
 def poll(
     request_id: UUID,
     wait: Annotated[
@@ -226,7 +230,6 @@ def _poll(request_id: UUID, wait_max: int = 120):
         return
     typer.echo(f" ⏰ Request status: {request.status}" + (' ' * 20) + "\n")
     typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
-
 
 def select_user(user_like: Optional[str] = None) -> UUID:
     users: List[User] = []
