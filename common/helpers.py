@@ -25,7 +25,7 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
             return
     if show_prompt:
         typer.confirm(" 🛠️ You need to authenticate to use this application. Do you want to do that now?", abort=True, default=True)
-    selected, _ = pick(["OAuth", "API key"], "How do you want to authenticate?")
+    selected, _ = pick(["OAuth 2.0", "API key"], "How do you want to authenticate?")
     if selected == "API key":
         typer.echo(" ⚙️ Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
         api_key = typer.prompt("API key", hide_input=True, confirmation_prompt=True)

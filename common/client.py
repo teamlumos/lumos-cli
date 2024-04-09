@@ -126,11 +126,11 @@ class AuthClient(BaseClient):
     
     def _get_client_id(self) -> str:
         if (auth_url := os.environ.get("AUTH_URL")):
-            if auth_url.__contains__("localhost"):
+            if "localhost" in auth_url:
                 return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
-            if auth_url.__contains__("qa"):
+            if "qa" in auth_url:
                 return "37o8paGpj1BvV6NOFmVO21cG8L9ePSCs"
-            if auth_url.__contains__("staging"):
+            if "staging" in auth_url:
                 return "tLPbUcyJZZyEvuxTo5deyFQXkO9iXZyx"
         return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
     
@@ -160,7 +160,7 @@ class AuthClient(BaseClient):
         if (os.environ.get("DEV_MODE")):
             if (url.startswith("http://")):
                 verification_uri_complete = verification_uri_complete.replace("https://", "http://")
-            if (verification_uri_complete.__contains__("localhost:3000")):
+            if ("localhost:3000" in verification_uri_complete)):
                 verification_uri_complete = verification_uri_complete.replace("localhost:3000", "localhost:8080")
         
         webbrowser.open(verification_uri_complete)
@@ -171,7 +171,7 @@ class AuthClient(BaseClient):
             "grant_type": self.GRANT_TYPE,
         }
         token_url, _ = self._get_url_and_headers("token")
-        typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must be logged in to Lumos on your browser.")
+        typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser.")
 
         logdebug('METHOD: POST')
         logdebug('URL: ' + token_url)
