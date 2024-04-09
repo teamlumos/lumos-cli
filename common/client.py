@@ -11,6 +11,7 @@ from common.models import App, AccessRequest, Permission, User
 from common.logging import logdebug
 import os
 import typer
+from common.keyhelpers import write_key
 import webbrowser
 
 class BaseClient:
@@ -92,7 +93,14 @@ class BaseClient:
             time.sleep(retry)
             return self._send_request(method, endpoint, body, params, retry)
         if response.status_code == 401:
-            typer.echo("Something went wrong with authorization--try logging in again.", err=True)
+            if retry > 1 or not (scope := os.environ.get("SCOPE")):
+                typer.echo("Something went wrong with authorization. Try logging in again.", err=True)
+                raise typer.Exit(1)
+            typer.echo("Something went wrong with authorization. Trying to log in again.", err=True)
+            auth_client = AuthClient()
+            token, scope = auth_client.authenticate(scope == "admin")
+            write_key(token, scope)
+            return self._send_request(method, endpoint, body, params, retry + 1)
         elif response.status_code == 403:
             typer.echo("You don't have permission to do that.", err=True)
         else:
@@ -143,7 +151,7 @@ class AuthClient(BaseClient):
 
         response = requests.post(url, headers=headers, params=params)
         if not response.ok:
-            typer.echo(f"Something went wrong")
+            typer.echo(f"Something went wrong.")
             logdebug('RESPONSE: ' + str(response.status_code))
             logdebug('CONTENT: ' + str(response.content))
             raise typer.Exit(1)
