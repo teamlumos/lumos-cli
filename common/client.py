@@ -113,6 +113,7 @@ class AuthClient(BaseClient):
     GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
     HEADERS = {
         "content-type": "application/x-www-form-urlencoded",
+        "User-Agent": f"lumos-cli/{__version__}",
     }
 
     def __init__(self):
