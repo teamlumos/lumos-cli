@@ -21,10 +21,14 @@ def list_users(
         ),
     ] = None,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
+    page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    users, count, total = client.get_users(like=like, all=csv)
-    display("users", [user.tabulate() for user in users], User.headers(), count, total, csv, id_only=id_only)
+    all=csv or no_paginate
+    users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
+    display("users", [user.tabulate() for user in users], User.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
 
 
 @app.command("permissions")
@@ -36,11 +40,15 @@ def list_permissions(
         typer.Option(help="Filters permissions")
     ] = None,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
+    page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    permissions, count, total = client.get_app_requestable_permissions(app_id=app, search_term=like, all=csv)
+    all=csv or no_paginate
+    permissions, count, total = client.get_app_requestable_permissions(app_id=app, search_term=like, all=all, page=page, page_size=page_size)
 
-    display("permissions", [permission.tabulate() for permission in permissions], Permission.headers(), count, total, csv, id_only=id_only)
+    display("permissions", [permission.tabulate() for permission in permissions], Permission.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
 
 @app.command("requests", help="List access requests")
 @authenticate
@@ -59,9 +67,12 @@ def list_requests(
     ] = None,
     all_statuses: Annotated[
         bool,
-        typer.Option(help="Show requests of all statuses (not just pending)")
+        typer.Option(help="Show requests of all statuses (not just pending). Takes precedence over a specific set of statuses specified by --status flags")
     ] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
+    page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
     
@@ -73,14 +84,30 @@ def list_requests(
     elif not status:
         status = SupportRequestStatus.PENDING_STATUSES
 
-    access_requests, count, total, _, _ = client.get_access_requests(target_user_id=for_user, status=status, all=csv)
+    all=csv or no_paginate
+    access_requests, count, total, _, _ = client.get_access_requests(
+        target_user_id=for_user,
+        status=status,
+        all=all,
+        page=page, 
+        page_size=page_size
+    )
 
     rows = []
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
     for ar in access_requests:
         rows.append(ar.tabulate())
 
-    display("requests", rows, AccessRequest.headers(), count, total, csv, id_only=id_only, search=False)
+    display("requests",
+        rows,
+        AccessRequest.headers(),
+        count,
+        total,
+        csv,
+        page_size=page_size,
+        page=page,
+        id_only=id_only,
+        search=False)
 
 @app.command("apps", help="List apps in the appstore")
 @authenticate
@@ -94,20 +121,29 @@ def list_apps(
         typer.Option(help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
     ] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
+    page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
+    all=csv or no_paginate
     if mine:
         user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
         access_requests, count, total, _, _ = client.get_access_requests(
             target_user_id=user,
             status=statuses,
-            all=csv
+            all=all,
+            page_size=page_size,
+            page=page,
         )
         print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
         return
-    apps, count, total = client.get_appstore_apps(name_search=like, all=csv)
-    display("apps", [app.tabulate() for app in apps], App.headers(), count, total, csv, id_only=id_only)
+    apps, count, total = client.get_appstore_apps(name_search=like,
+        all=all,
+        page_size=page_size,
+        page=page)
+    display("apps", [app.tabulate() for app in apps], App.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
 
 def display(description: str,
     tabular_data: List[List[Any]],
@@ -115,6 +151,8 @@ def display(description: str,
     count: int,
     total: int,
     csv: bool,
+    page: int,
+    page_size: int,
     id_only: bool = False,
     search: bool = True,
 ):
@@ -128,8 +166,9 @@ def display(description: str,
                 print(row[0])
         return
     print(tabulate(tabular_data, headers=headers), "\n")
-    if (count < total):
+    remaining = total - count - page_size * (page - 1)
+    if (remaining > 0):
         if search:
-            print(f"There are {total - count} more {description} that match your search. Use --like to search.\n")
+            print(f"There are {remaining} more {description} that match your search. Use --like to search.\n")
         else:
-            print(f"There are {total - count} more {description} not shown.\n")
+            print(f"There are {remaining} more {description} not shown.\n")

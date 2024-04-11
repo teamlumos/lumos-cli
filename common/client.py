@@ -26,10 +26,13 @@ class BaseClient:
     
     def get_paged(
         self,
-        endpoint: str, 
-        params: dict = {}
+        endpoint: str,
+        params: dict = {},
+        page_size: int = 100,
+        page: int = 1,
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return the paged response."""
+        params={**params, "size": page_size, "page": page}
         response = self.get(endpoint, params=params)
         if response:
             return response["items"], len(response["items"]), int(response["total"]), int(response["page"]), int(response["pages"])
@@ -37,29 +40,34 @@ class BaseClient:
     
     def get_all(self,
         endpoint: str,
-        params: dict = {}
+        params: dict = {},
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results."""
-        all_results = []
+        all_results: List[Any] = []
         page = 1
         while True:
-            results, _, _, _, pages = self.get_paged(endpoint, params={**params, "page": page, "size": 100})
+            results, _, total, _, pages = self.get_paged(endpoint, params=params, page=page, page_size=100)
             all_results.extend(results)
             if page == pages:
                 break
+            if page == 1 and total > 5000:
+                typer.confirm(f"Warning: {total} results found. This may take a while. Do you want to continue?", abort=True, default=True)
             page += 1
+            time.sleep(0.15)
         count = len(all_results)
         return all_results, count, count, 1, 1
     
     def get_all_or_paged(self,
         endpoint: str,
         params: dict = {},
-        all: bool = False
+        all: bool = False,
+        page_size: int = 100,
+        page: int = 1,
     ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results."""
         if all:
             return self.get_all(endpoint, params=params)
-        return self.get_paged(endpoint, params=params)
+        return self.get_paged(endpoint, params=params, page_size=page_size, page=page)
 
     def post(self, endpoint: str, body: Dict[str, Any]):
         """Function to call an API endpoint and return the response."""
@@ -247,12 +255,17 @@ class ApiClient(BaseClient):
             return None
         return AccessRequest(**raw_request)
     
-    def get_appstore_apps(self, name_search: str | None = None, all: bool =False) -> Tuple[List[App], int, int]:
+    def get_appstore_apps(self, 
+        name_search: str | None = None,
+        all: bool = False,
+        page_size: int = 100,
+        page: int = 1,
+    ) -> Tuple[List[App], int, int]:
         endpoint = "appstore/apps"
         params: dict[str, Any] = {}
         if name_search:
             params["name_search"] = name_search
-        raw_apps, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
+        raw_apps, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all, page_size=page_size, page=page)
         apps: List[App] = []
         for item in raw_apps:
             apps.append(App(**item))
@@ -260,23 +273,20 @@ class ApiClient(BaseClient):
     
     def get_access_requests(
         self,
-        app_id: UUID | None = None,
         target_user_id: UUID | None = None,
         status: List[str] | None = None,
+        all: bool = False,
+        page_size: int = 100,
         page: int = 1,
-        count: int = 25,
-        all: bool = False
     ) -> Tuple[List[AccessRequest], int, int, int, int]:
-        params: dict[str, Any]= {
-            "size": count
-        }
+        params: dict[str, Any]= {}
         if target_user_id:
             params["target_user_id"] = str(target_user_id)
         if (status and len(status) > 0):
             params["statuses"] = [str(s) for s in status]
 
         endpoint = "appstore/access_requests"
-        raw_access_requests, count, total, page, pages = self.get_all_or_paged(endpoint, params=params, all=all)
+        raw_access_requests, count, total, page, pages = self.get_all_or_paged(endpoint, params=params, all=all, page=page, page_size=page_size)
         access_requests: List[AccessRequest] = []
         for item in raw_access_requests:
             access_request = self._create_access_request(item)
@@ -284,12 +294,17 @@ class ApiClient(BaseClient):
                 access_requests.append(access_request)
         return sorted(access_requests, key=lambda x: x.requested_at, reverse=True), count, total, page, pages
     
-    def get_users(self, like: Optional[str] = None, all: bool = False) -> Tuple[List[User], int, int]:
+    def get_users(self,
+        like: Optional[str] = None,
+        all: bool = False,
+        page_size: int = 100,
+        page: int = 1,
+    ) -> Tuple[List[User], int, int]:
         endpoint = "users"
         params: dict[str, Any] = {}
         if like:
             params["search_term"] = like
-        raw_users, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
+        raw_users, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all, page_size=page_size, page=page)
 
         users: List[User] = []
         for item in raw_users:
@@ -300,7 +315,9 @@ class ApiClient(BaseClient):
         self,
         app_id: UUID,
         search_term: str | None = None,
-        all: bool = False
+        all: bool = False,
+        page_size: int = 100,
+        page: int = 1,
     ) -> Tuple[List[Permission], int, int]:
         endpoint = f"appstore/requestable_permissions"
         params: dict[str, Any] = {
@@ -309,7 +326,12 @@ class ApiClient(BaseClient):
         if (search_term):
             params["search_term"] = search_term
         
-        raw_permissions, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all)
+        raw_permissions, count, total, _, _ = self.get_all_or_paged(
+            endpoint,
+            params=params,
+            all=all,
+            page_size=page_size,
+            page=page)
         
         return [self._create_permission(item) for item in raw_permissions], count, total
     
