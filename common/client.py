@@ -8,7 +8,7 @@ from common.models import App, AccessRequest, Permission, User
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
-from common.logging import logdebug
+from common.logging import logdebug, logdebug_request, logdebug_response
 import os
 import typer
 from common.keyhelpers import write_key
@@ -76,15 +76,11 @@ class BaseClient:
             typer.echo("Too many retries. Exiting.", err=True)
             raise typer.Exit(1)
         url, headers = self._get_url_and_headers(endpoint)
-        logdebug('URL: ' + url)
-        logdebug('HEADERS: ' + str(headers))
-        logdebug('BODY: ' + str(body))
-        logdebug('PARAMETERS: ' + str(params))
-        logdebug('METHOD: ' + method)
+        logdebug_request(url, headers, body, params, method)
 
         response = requests.request(method, url, headers=headers, json=body, params=params)
-        logdebug('RESPONSE: ' + str(response.status_code))
-        logdebug('CONTENT: ' + str(response.content))
+        logdebug_response(response)
+
         if response.ok:
             return response.json()
         if response.status_code == 429:
@@ -143,16 +139,12 @@ class AuthClient(BaseClient):
             "client_id": client_id,
             "scope": scope,
         }
-        logdebug('METHOD: POST')
-        logdebug('URL: ' + url)
-        logdebug('HEADERS: ' + str(headers))
-        logdebug('PARAMETERS: ' + str(params))
+        logdebug_request(url, headers, None, params, 'POST')
 
         response = requests.post(url, headers=headers, params=params)
         if not response.ok:
             typer.echo(f"Something went wrong.")
-            logdebug('RESPONSE: ' + str(response.status_code))
-            logdebug('CONTENT: ' + str(response.content))
+            logdebug_response(response)
             raise typer.Exit(1)
         
         device_auth_data = response.json()
@@ -174,10 +166,7 @@ class AuthClient(BaseClient):
         token_url, _ = self._get_url_and_headers("token")
         typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser.")
 
-        logdebug('METHOD: POST')
-        logdebug('URL: ' + token_url)
-        logdebug('HEADERS: ' + str(headers))
-        logdebug('BODY: ' + str(token_data))
+        logdebug_request(token_url, headers, token_data, None, 'POST')
 
         wait = 0
         while True:
@@ -186,8 +175,7 @@ class AuthClient(BaseClient):
             if token_response.status_code == 400:
                 typer.echo(f"Bad request: {token_response.json()}")
                 raise typer.Exit(1)
-            logdebug('\nRESPONSE: ' + str(token_response.status_code))
-            logdebug('CONTENT: ' + str(token_response.content))
+            logdebug_response(token_response)
             if token_response.status_code != 200:
                 time.sleep(1)
                 wait += 1

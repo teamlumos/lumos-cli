@@ -13,12 +13,12 @@ def write_key(key: str | None, scope: str | None = None) -> None:
     
     os.environ["API_KEY"] = key
     os.environ["SCOPE"] = scope or ""
-    
+
     if scope:
         key = f"{scope}:{key}"
 
     key_file = key_file_path()
-    logdebug(f'Writing token [{key}] to {key_file}')
+    logdebug(f'Writing token [{key[:9]}...] to {key_file}')
     with key_file.open("w") as f:
         f.write(key)
 
