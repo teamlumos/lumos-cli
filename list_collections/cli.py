@@ -21,17 +21,17 @@ def list_users(
         ),
     ] = None,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    all=csv or no_paginate
+    all=csv or not paginate
     users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
     display("users", [user.tabulate() for user in users], User.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
 
 
-@app.command("permissions")
+@app.command("permissions", help="List permissions for a given app")
 @authenticate
 def list_permissions(
     app: UUID,
@@ -40,12 +40,12 @@ def list_permissions(
         typer.Option(help="Filters permissions")
     ] = None,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    all=csv or no_paginate
+    all=csv or not paginate
     permissions, count, total = client.get_app_requestable_permissions(app_id=app, search_term=like, all=all, page=page, page_size=page_size)
 
     display("permissions", [permission.tabulate() for permission in permissions], Permission.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
@@ -70,7 +70,7 @@ def list_requests(
         typer.Option(help="Show requests of all statuses (not just pending). Takes precedence over a specific set of statuses specified by --status flags")
     ] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
@@ -84,7 +84,7 @@ def list_requests(
     elif not status:
         status = SupportRequestStatus.PENDING_STATUSES
 
-    all=csv or no_paginate
+    all=csv or not paginate
     access_requests, count, total, _, _ = client.get_access_requests(
         target_user_id=for_user,
         status=status,
@@ -114,19 +114,19 @@ def list_requests(
 def list_apps(
     like: Annotated[
         Optional[str],
-        typer.Option(help="Filters apps")
+        typer.Option(help="Filters apps by search term")
     ] = None,
     mine: Annotated[
         bool,
-        typer.Option(help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
+        typer.Option(help="Show only my apps.")
     ] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    no_paginate: Annotated[bool, typer.Option(help="No pagination")] = False,
+    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    all=csv or no_paginate
+    all=csv or not paginate
     if mine:
         user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
