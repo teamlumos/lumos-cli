@@ -30,6 +30,10 @@ def request(
         Optional[bool],
         typer.Option(help="Makes the request for the current user.")
     ] = None,
+    mine: Annotated[
+        Optional[bool],
+        typer.Option(help="Makes the request for the current user. Duplicate of --for-me for convenience.")
+    ] = None,
     app: Annotated[
         Optional[UUID],
         typer.Option(help="App UUID. Takes precedence over --app-like"),
@@ -64,7 +68,7 @@ def request(
     ] = False
 ) -> None:
     if ctx.invoked_subcommand is None:
-        if for_me is not True and not typer.confirm("This request is for you?", abort=False, default=True):
+        if for_me is not True and mine is not True and not typer.confirm("This request is for you?", abort=False, default=True):
             for_user = select_user(user_like)
         
         # Validate parameters or interactively input them
@@ -82,6 +86,7 @@ def request(
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
 
+        wait = wait or typer.confirm("Do you want to wait for the request to complete?", abort=False, default=True)
         typer.echo("\nAPP")
         typer.echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
         if selected_permissions:
@@ -240,7 +245,7 @@ def select_user(user_like: Optional[str] = None) -> UUID:
             if (total == 0):
                 if user_like:
                     typer.echo(f"No users found for '{user_like}'")
-                    user_like = typer.prompt("Give me something to search on")
+                    user_like = typer.prompt("🔍 Give me something to search on")
                 else:
                     typer.echo("No users found")
                     raise typer.Exit(1)
@@ -248,7 +253,8 @@ def select_user(user_like: Optional[str] = None) -> UUID:
                 for_user = users[0]
                 break
             elif (count < total):
-                user_like = typer.prompt(f"Too many users to show. Give me something to search on")
+                typer.echo("Too many users to show.")
+                user_like = typer.prompt(f"🔍 Give me something to search on")
             else:
                 break
         if not for_user:
@@ -261,19 +267,20 @@ def select_user(user_like: Optional[str] = None) -> UUID:
 def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None) -> App:
     app = None
     while not app_id or not (app := client.get_appstore_app(app_id)):
-        print("\n⏳ Loading your apps ...", end='\r')
         apps: list[App] = []
         while True:
-            apps, count, total = client.get_appstore_apps(name_search=app_like)
+            print("\n⏳ Loading your apps ...", end='\r')
+            apps, count, total = client.get_appstore_apps(name_search=app_like, page_size=25)
+            print("                          ", end='\r')
             if (total == 0):
                 if app_like:
-                    typer.echo(f"No apps found for '{app_like}'")
-                    app_like = typer.prompt("Give me something to search on")
+                    app_like = typer.prompt(f"No apps found for '{app_like}'\n🔍 Give me something to search on")
                 else:
                     typer.echo("No apps found")
                     raise typer.Exit(1)
             elif (count < total):
-                app_like = typer.prompt(f"Too many apps to show. Give me something to search on")
+                typer.echo("")
+                app_like = typer.prompt(f"Too many apps to show.\n🔍 Give me something to search on")
             else:
                 break
         if count == 1:
@@ -292,27 +299,28 @@ def select_permissions(
     valid_permissions = get_valid_permissions(app, permission_ids)
     if len(valid_permissions) > 0:
         return valid_permissions
-    print("\n⏳ Loading permissions for app ...", end='\r')
     done_selecting = False
     valid_permissions_dict: dict[str, Permission] = {}
     while not done_selecting:
         permissions: List[Permission] = []
         while True:
-            permissions, count, total = client.get_app_requestable_permissions(app_id=app.id, search_term=permission_like)
+            print("\n⏳ Loading permissions for app ...", end='\r')
+            permissions, count, total = client.get_app_requestable_permissions(app_id=app.id, search_term=permission_like, page_size=25)
+            print("                                    ", end='\r')
             if (total == 0):
                 if permission_like:
-                    permission_like = typer.prompt(f"No permissions found for '{permission_like}'. Give me something to search on")
+                    permission_like = typer.prompt(f"No permissions found for '{permission_like}'\n🔍 Give me something to search on")
                 else:
                     typer.echo("No permissions found (you're just requesting the app)")
                     return None
             elif (count < total):
-                permission_like = typer.prompt("Too many permissions to show. Give me something to search on")
+                permission_like = typer.prompt("Too many permissions to show.\n🔍 Give me something to search on")
             else:
                 break
         if count > 1:
             already_selected = ', '.join([p.label for p in valid_permissions_dict.values()])
             if app.allow_multiple_permission_selection:
-                description = f"Select at least one permissions{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
+                description = f"Select at least one permissions\n{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
                 selected = pick(permissions, description, multiselect=True, min_selection_count=1)
                 for option, _ in selected:
                     valid_permissions_dict[str(option.id)] = option
@@ -331,7 +339,7 @@ def select_permissions(
         if typer.confirm("Done selecting permissions?", abort=False, default=True):
             done_selecting = True
         else:
-            permission_like = typer.prompt("Give me something to search on")
+            permission_like = typer.prompt("🔍 Give me something to search on")
     return list(valid_permissions_dict.values())
             
 

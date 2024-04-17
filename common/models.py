@@ -1,7 +1,16 @@
+from abc import abstractmethod
 from uuid import UUID
 from pydantic import BaseModel
-from typing import Optional
+from typing import Any, List, Optional
 import pytz
+import json
+from uuid import UUID
+
+
+class LumosModel(BaseModel):
+    @abstractmethod
+    def tabulate(self)-> List[str]:
+        pass
 
 class App(BaseModel):
     id: UUID
@@ -14,9 +23,9 @@ class App(BaseModel):
         return self.user_friendly_label
     
     def tabulate(self):
-        return [self.id, self.user_friendly_label]
+        return [str(self.id), self.user_friendly_label]
     
-    @staticmethod   
+    @staticmethod
     def headers():
         return ["ID", "App"]
 
@@ -31,11 +40,12 @@ class Permission(BaseModel):
         return self.label
 
     def tabulate(self):
-        return [self.id, self.label, ', '.join(self.duration_options)]
+        return [str(self.id), self.label, ', '.join(self.duration_options)]
     
     @staticmethod
     def headers():
         return ["ID", "Permission", "Access length options"]
+
 
 class User(BaseModel):
     id: UUID
@@ -47,12 +57,12 @@ class User(BaseModel):
         return f"{self.given_name} {self.family_name} ({self.email})"
     
     def tabulate(self):
-        return [f"{self.given_name} {self.family_name}", self.email, self.id]
+        return [f"{self.given_name} {self.family_name}", self.email, str(self.id)]
     
     @staticmethod
     def headers():
         return ["Name", "Email", "ID"]
-
+    
 class AccessRequest(BaseModel):
     id: UUID
     app_id: UUID
@@ -90,7 +100,7 @@ class AccessRequest(BaseModel):
         return f"{self.app_name} ({self.status})"
     
     def tabulate(self):
-        return [self.id] + self._tabulate()
+        return [str(self.id)] + self._tabulate()
 
     def tabulate_as_app(self):
         return [self.app_id] + self._tabulate()

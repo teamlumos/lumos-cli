@@ -1,11 +1,12 @@
-from typing import Any, List, Optional, Tuple, Annotated
+from typing import Any, List, Optional, Annotated
 from common.helpers import authenticate
 import typer
 from uuid import UUID
 from tabulate import tabulate
+from json import dumps
 
 from common.client import ApiClient
-from common.models import App, Permission, SupportRequestStatus, User, AccessRequest
+from common.models import AccessRequest, LumosModel, SupportRequestStatus
 
 app = typer.Typer()
 
@@ -21,14 +22,15 @@ def list_users(
         ),
     ] = None,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
     paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    all=csv or not paginate
+    all=csv or json or not paginate
     users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
-    display("users", [user.tabulate() for user in users], User.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
+    display("users", users, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
 
 
 @app.command("permissions", help="List permissions for a given app")
@@ -40,15 +42,16 @@ def list_permissions(
         typer.Option(help="Filters permissions")
     ] = None,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
     paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    all=csv or not paginate
+    all=csv or json or not paginate
     permissions, count, total = client.get_app_requestable_permissions(app_id=app, search_term=like, all=all, page=page, page_size=page_size)
 
-    display("permissions", [permission.tabulate() for permission in permissions], Permission.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
+    display("permissions", permissions, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
 
 @app.command("requests", help="List access requests")
 @authenticate
@@ -70,6 +73,7 @@ def list_requests(
         typer.Option(help="Show requests of all statuses (not just pending). Takes precedence over a specific set of statuses specified by --status flags")
     ] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
     paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
@@ -84,7 +88,7 @@ def list_requests(
     elif not status:
         status = SupportRequestStatus.PENDING_STATUSES
 
-    all=csv or not paginate
+    all=csv or json or not paginate
     access_requests, count, total, _, _ = client.get_access_requests(
         target_user_id=for_user,
         status=status,
@@ -93,17 +97,14 @@ def list_requests(
         page_size=page_size
     )
 
-    rows = []
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
-    for ar in access_requests:
-        rows.append(ar.tabulate())
 
     display("requests",
-        rows,
-        AccessRequest.headers(),
+        access_requests,
         count,
         total,
         csv,
+        json,
         page_size=page_size,
         page=page,
         id_only=id_only,
@@ -121,12 +122,13 @@ def list_apps(
         typer.Option(help="Show only my apps.")
     ] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
     paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
     page_size: Annotated[int, typer.Option(help="Page size")] = 100,
     page: Annotated[int, typer.Option(help="Page")] = 1,
     id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
 ) -> None:
-    all=csv or not paginate
+    all=csv or json or not paginate
     if mine:
         user = client.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
@@ -137,35 +139,45 @@ def list_apps(
             page_size=page_size,
             page=page,
         )
-        print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
+        if count > 0:
+            print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
+        else:
+            print("No apps found.")
         return
     apps, count, total = client.get_appstore_apps(name_search=like,
         all=all,
         page_size=page_size,
         page=page)
-    display("apps", [app.tabulate() for app in apps], App.headers(), count, total, csv, page=page, page_size=page_size, id_only=id_only)
+    display("apps", apps, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
 
 def display(description: str,
-    tabular_data: List[List[Any]],
-    headers: List[str],
+    data: List[LumosModel],
     count: int,
     total: int,
     csv: bool,
+    json: bool,
     page: int,
     page_size: int,
     id_only: bool = False,
     search: bool = True,
 ):
+    if len(data) == 0:
+        print(f"No {description} found.")
+        return
     if csv:
-        for row in tabular_data:
-            print(",".join([str(cell).replace(", ", "|") for cell in row]))
+        for row in data:
+            print(",".join([str(cell).replace(", ", "|") for cell in row.tabulate()]))
+        return
+    if json:
+        print(dumps([d.__dict__ for d in data], default=str, indent=2))
         return
     if id_only:
-        if len(tabular_data) > 0:
-            for row in tabular_data:
-                print(row[0])
+        if len(data) > 0:
+            for row in data:
+                print(row.tabulate()[0])
         return
-    print(tabulate(tabular_data, headers=headers), "\n")
+    headers = data[0].headers()
+    print(tabulate([d.tabulate() for d in data], headers=headers), "\n")
     remaining = total - count - page_size * (page - 1)
     if (remaining > 0):
         if search:

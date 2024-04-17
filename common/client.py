@@ -47,6 +47,8 @@ class BaseClient:
         page = 1
         while True:
             results, _, total, _, pages = self.get_paged(endpoint, params=params, page=page, page_size=100)
+            if total == 0:
+                break
             all_results.extend(results)
             if page == pages:
                 break
