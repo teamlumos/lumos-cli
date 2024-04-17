@@ -61,15 +61,16 @@ def request(
     wait: Annotated[
         Optional[bool],
         typer.Option(help="Wait for the request to complete")
-    ] = False,
+    ] = None,
     dry_run: Annotated[
         bool,
         typer.Option(help="Print the request command without actually making the request")
     ] = False
 ) -> None:
     if ctx.invoked_subcommand is None:
-        if for_me is not True and mine is not True and not typer.confirm("This request is for you?", abort=False, default=True):
-            for_user = select_user(user_like)
+        if for_me is not True and mine is not True:
+            if user_like is not None or not typer.confirm("This request is for you?", abort=False, default=True):
+                for_user = select_user(user_like)
         
         # Validate parameters or interactively input them
         selected_app: App = get_valid_app(app, app_like)
@@ -85,8 +86,9 @@ def request(
 
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
-
-        wait = wait or typer.confirm("Do you want to wait for the request to complete?", abort=False, default=True)
+        
+        if wait is None:
+            wait = typer.confirm("Do you want to wait for the request to complete?", abort=False, default=True)
         typer.echo("\nAPP")
         typer.echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
         if selected_permissions:
@@ -260,7 +262,7 @@ def select_user(user_like: Optional[str] = None) -> UUID:
         if not for_user:
             description = "Select user (use ENTER to confirm)"
             for_user, _ = pick(users, description)
-    typer.echo(f"Selected user {for_user.email} [{for_user.id}]\n")
+    typer.echo(f"USER: {for_user.email} [{for_user.id}]\n")
     return for_user.id
 
 
