@@ -311,7 +311,8 @@ class ApiClient(BaseClient):
     ) -> Tuple[List[Permission], int, int]:
         endpoint = f"appstore/requestable_permissions"
         params: dict[str, Any] = {
-            "app_id": str(app_id)
+            "app_id": str(app_id),
+            "in_app_store": True,
         }
         if (search_term):
             params["search_term"] = search_term
