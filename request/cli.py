@@ -84,6 +84,16 @@ def request(
             if not length:
                 length, duration = select_duration(permissible_durations_set)
 
+        open_requests = client.get_my_apps()
+        for req in open_requests:
+            if str(req.app_id) == str(selected_app.id):
+                if len(req.requestable_permissions) > 0 and selected_permissions:
+                    for permission in [str(r.id) for r in req.requestable_permissions]:
+                        if permission in [str(r.id)for r in selected_permissions]:
+                            raise typer.Exit("You already have a request for this app and permission")
+                elif len(req.requestable_permissions) == 0 and not selected_permissions:
+                    raise typer.Exit("You already have a request for this app")
+
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
         

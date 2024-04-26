@@ -130,16 +130,8 @@ def list_apps(
 ) -> None:
     all=csv or json or not paginate
     if mine:
-        user = client.get_current_user_id()
-        statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
-        access_requests, count, total, _, _ = client.get_access_requests(
-            target_user_id=user,
-            status=statuses,
-            all=all,
-            page_size=page_size,
-            page=page,
-        )
-        if count > 0:
+        access_requests = client.get_my_apps()
+        if len(access_requests) > 0:
             print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
         else:
             print("No apps found.")
