@@ -13,6 +13,19 @@ from common.models import AccessRequest, App, Permission, SupportRequestStatus, 
 app = typer.Typer()
 POLLING_INTERVAL = 6
 client = ApiClient()
+ACCESS_DURATIONS_HOURS = {
+    "2hours": 2,
+    "4hours": 4,
+    "12hours": 12,
+    "2days": 24 * 2,
+    "7days": 24 * 7,
+    "14days": 24 * 14,
+    "30days": 24 * 30,
+    "90days": 24 * 90,
+}
+
+ACCESS_DURATIONS_FRIENDLY = {v: k for k, v in ACCESS_DURATIONS_HOURS.items()}
+
 
 @app.callback(invoke_without_command=True, help="Request access to an app.")
 @authenticate
@@ -43,7 +56,7 @@ def request(
         typer.Option(help="List of permission UUIDs. Takes precedence over --permission-like"),
     ] = None,
     length: Annotated[
-        Optional[int],
+        Optional[str],
         typer.Option(help="Length of access request in seconds. Don't populate unless you know your app permission's specific settings")
     ] = None,
     user_like: Annotated[
@@ -77,12 +90,32 @@ def request(
         typer.echo(f"APP: {selected_app.user_friendly_label} [{selected_app.id}]\n")
         
         selected_permissions = select_permissions(selected_app, permission, permission_like)
+        duration_options = set(selected_app.time_based_access_options)
         if selected_permissions:
-            permissible_durations_set = set(selected_permissions[0].duration_options)
+            duration_options = set(selected_permissions[0].duration_options)
             for permission in selected_permissions[1:]:
-                permissible_durations_set = permissible_durations_set.intersection(permission.duration_options)
-            if not length:
-                length, duration = select_duration(permissible_durations_set)
+                duration_options = duration_options.intersection(permission.duration_options)
+
+        duration: int | None = None
+        if length:
+            try:
+                duration = int(length)
+                duration_friendly = None
+                for key, v in ACCESS_DURATIONS_FRIENDLY.items():
+                    if key == duration:
+                        duration_friendly = " ".join(re.match(r"(\d+)(\D+)", v).groups())
+                        break
+                if not duration_friendly:
+                    duration = None
+            except:
+                for key, v in ACCESS_DURATIONS_HOURS.items():
+                    if key.startswith(length.replace(' ', '').lower()):
+                        duration = v
+                        duration_friendly = " ".join(re.match(r"(\d+)(\D+)", key).groups())
+                        break
+
+        if not duration:  
+            duration, duration_friendly = select_duration(duration_options)
 
         open_requests = client.get_my_apps()
         for req in open_requests:
@@ -106,7 +139,7 @@ def request(
             for permission in selected_permissions:
                 typer.echo(f"   {permission.label} [{permission.id}]")
         typer.echo("\nDURATION")
-        typer.echo(f"   {(length/(60*60) if length else 'Unlimited')} hours")
+        typer.echo(f"   {duration_friendly or 'Unlimited'}")
         typer.echo("\nREASON")
         typer.echo(f"   {reason}")
 
@@ -119,8 +152,8 @@ def request(
             permission_flags = ' '.join([f"--permission {permission.id}" for permission in selected_permissions])
 
         command = f"lumos request --app {selected_app.id} {permission_flags} --reason \"{reason}\""
-        if length:
-            command += f" --length {length}"
+        if duration:
+            command += f" --length {duration}"
         for_user_flag = '--for-me'
         if for_user:
             for_user_flag = '--for-user USER_ID'
@@ -139,7 +172,7 @@ def request(
             app_id=selected_app.id, 
             requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
             note=reason,
-            expiration=length,
+            expiration=duration,
             target_user_id=for_user)
         
         if wait and request_id:

@@ -18,6 +18,7 @@ class App(BaseModel):
     app_class_id: str
     instance_id: str
     allow_multiple_permission_selection: bool
+    time_based_access_options: list[str] = []
     
     def __str__(self):
         return self.user_friendly_label
