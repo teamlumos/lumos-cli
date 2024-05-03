@@ -13,19 +13,7 @@ from common.models import AccessRequest, App, Permission, ProvisioningMethodOpti
 app = typer.Typer()
 POLLING_INTERVAL = 6
 client = ApiClient()
-ACCESS_DURATIONS_HOURS = {
-    "2hours": 2,
-    "4hours": 4,
-    "12hours": 12,
-    "2days": 24 * 2,
-    "7days": 24 * 7,
-    "14days": 24 * 14,
-    "30days": 24 * 30,
-    "90days": 24 * 90,
-    "unlimited": None,
-}
 
-ACCESS_DURATIONS_FRIENDLY = {v: k for k, v in ACCESS_DURATIONS_HOURS.items()}
 
 
 @app.callback(invoke_without_command=True, help="Request access to an app.")
@@ -58,7 +46,7 @@ def request(
     ] = None,
     length: Annotated[
         Optional[str],
-        typer.Option(help="Length of access request in seconds. Don't populate unless you know your app permission's specific settings")
+        typer.Option(help="Length of access request in seconds, or a string like '12 hours', '2d', 'unlimited', etc. Every app/permission has different configurations.")
     ] = None,
     user_like: Annotated[
         Optional[str],
@@ -98,35 +86,23 @@ def request(
                 for permission in selected_permissions[1:]:
                     duration_options = duration_options.intersection(permission.duration_options)
 
-        duration_friendly: str | None = None
-        if length:
-            try:
-                duration = int(length)
-                duration_friendly = None
-                for key, v in ACCESS_DURATIONS_FRIENDLY.items():
-                    if key == duration:
-                        duration_friendly = " ".join(re.match(r"(\d+)(\D+)", v).groups())
-                        break
-            except:
-                for key, v in ACCESS_DURATIONS_HOURS.items():
-                    if key.startswith(length.replace(' ', '').lower()):
-                        if (match := re.match(r"(\d+)(\D+)", key)):
-                            duration_friendly = " ".join(match.groups())
-                        else:
-                            duration_friendly = "Unlimited"
-                        break
+        duration, duration_friendly = get_duration(duration_options, length)
 
-        duration, duration_friendly = select_duration(duration_options, duration_friendly)
-
-        open_requests = client.get_my_apps()
+        open_requests = client.get_my_apps(for_user)
         for req in open_requests:
             if str(req.app_id) == str(selected_app.id):
+                error = None
                 if len(req.requestable_permissions) > 0 and selected_permissions:
                     for permission in [str(r.id) for r in req.requestable_permissions]:
                         if permission in [str(r.id)for r in selected_permissions]:
-                            raise typer.Exit("You already have a request for this app and permission")
+                            error = "There's already a request for this app and permission"
+                            break
                 elif len(req.requestable_permissions) == 0 and not selected_permissions:
-                    raise typer.Exit("You already have a request for this app")
+                    error = "There's already a request for this app"
+                if error:
+                    if dry_run and typer.confirm(f"{error}. Do you want to continue?", abort=True, default=False):
+                        break
+                    raise typer.Exit(error)
 
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
@@ -422,7 +398,41 @@ def select_duration(durations: set[str], duration_friendly: str | None) -> Tuple
             time_in_seconds = 24 * time_in_seconds
     typer.echo(f"DURATION: {selected}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
     return time_in_seconds, selected
-        
+
+def parse_duration(duration: str) -> Tuple[int | None, str]:
+    time_in_seconds = None
+    if match := re.match(r"(\d+) ", duration):
+        time_in_seconds = int(match.group(1)) * 60 * 60
+        if (re.match(r".* d", duration)):
+            time_in_seconds = 24 * time_in_seconds
+    return time_in_seconds, duration.replace(" ", "").lower()
+
+def get_duration(possible_durations: set[str], input_length: str | None) -> Tuple[int | None, str]:
+    duration_friendly: str | None = None
+    durations = {}
+    for possible_duration in possible_durations:
+        length, key = parse_duration(possible_duration)
+
+        durations[key] = {
+            "label": possible_duration,
+            "length": length,
+        }
+    if input_length:
+        try:
+            duration = int(input_length)
+            duration_friendly = None
+            for key, v in durations.items():
+                if v["length"] == duration:
+                    duration_friendly = v["label"]
+                    break
+        except:
+            for key, v in durations.items():
+                if key.startswith(input_length.replace(' ', '').lower()):
+                    duration_friendly = v["label"]
+                    break
+
+    duration, duration_friendly = select_duration(possible_durations, duration_friendly)
+    return duration, duration_friendly
 
 def create_access_request(
     app_id: UUID,
