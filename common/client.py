@@ -4,11 +4,11 @@ import time
 from typing import Any, Dict, Tuple
 import requests
 from lumos import __version__
-from common.models import App, AccessRequest, Permission, User
+from common.models import App, AccessRequest, Permission, User, Group
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
-from common.logging import logdebug, logdebug_request, logdebug_response
+from common.logging import logdebug_request, logdebug_response
 import os
 import typer
 from common.keyhelpers import write_key
@@ -325,6 +325,30 @@ class ApiClient(BaseClient):
             page=page)
         
         return [self._create_permission(item) for item in raw_permissions], count, total
+
+    def get_groups(
+        self,
+        app_id: UUID,
+        search_term: str | None = None,
+        all: bool = False,
+        page_size: int = 25,
+        page: int = 1,
+    ) -> Tuple[List[Permission], int, int]:
+        endpoint = f"groups"
+        params: dict[str, Any] = {
+            "app_id": str(app_id),
+        }
+        if (search_term):
+            params["name"] = search_term
+        
+        raw_permissions, count, total, _, _ = self.get_all_or_paged(
+            endpoint,
+            params=params,
+            all=all,
+            page_size=page_size,
+            page=page)
+        
+        return [Group(**item) for item in raw_permissions], count, total
     
     def get_app_requestable_permission(self, permission_id: UUID) -> Permission | None:
         item = self.get(f"appstore/requestable_permissions/{permission_id}")
