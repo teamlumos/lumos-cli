@@ -53,6 +53,26 @@ def list_permissions(
 
     display("permissions", permissions, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
 
+@app.command("groups", help="List groups for a given app")
+@authenticate
+def list_groups(
+    app: UUID,
+    like: Annotated[
+        Optional[str],
+        typer.Option(help="Filters groups")
+    ] = None,
+    csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
+    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
+    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
+    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
+    page: Annotated[int, typer.Option(help="Page")] = 1,
+    id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
+) -> None:
+    all=csv or json or not paginate
+    groups, count, total = client.get_groups(app_id=app, search_term=like, all=all, page=page, page_size=page_size)
+
+    display("groups", groups, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
+
 @app.command("requests", help="List access requests")
 @authenticate
 def list_requests(
