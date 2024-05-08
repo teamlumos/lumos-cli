@@ -4,7 +4,7 @@ import time
 from typing import Any, Dict, Tuple
 import requests
 from lumos import __version__
-from common.models import App, AccessRequest, Permission, User, Group
+from common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
@@ -235,6 +235,10 @@ class ApiClient(BaseClient):
         if raw_app:
             return App(**raw_app)
         return None
+
+    def get_appstore_app_setting(self, id: UUID) -> AppSetting:
+        raw_setting = self.get(f"appstore/apps/{id}/settings")
+        return AppSetting(**raw_setting)
     
     def get_request_status(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
@@ -260,6 +264,16 @@ class ApiClient(BaseClient):
         for item in raw_apps:
             apps.append(App(**item))
         return apps, count, total
+    
+    def get_my_apps(self, for_user: UUID | None = None) -> List[App]:
+        user = for_user or self.get_current_user_id()
+        statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
+        access_requests, count, total, _, _ = self.get_access_requests(
+            target_user_id=user,
+            status=statuses,
+            all=True,
+        )
+        return access_requests
     
     def get_access_requests(
         self,

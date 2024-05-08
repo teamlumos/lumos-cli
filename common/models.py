@@ -1,16 +1,29 @@
 from abc import abstractmethod
+from enum import Enum
 from uuid import UUID
 from pydantic import BaseModel
-from typing import Any, List, Optional
+from typing import List, Optional
 import pytz
-import json
 from uuid import UUID
 
+
+class ProvisioningMethodOption(Enum):
+    DIRECT_TO_USER = "DIRECT_TO_USER"
+    GROUPS_AND_HIDDEN = "GROUPS_AND_HIDDEN"
+    GROUPS_AND_VISIBLE = "GROUPS_AND_VISIBLE"
 
 class LumosModel(BaseModel):
     @abstractmethod
     def tabulate(self)-> List[str]:
         pass
+
+class AppSettingProvisioning(BaseModel):
+    groups_provisioning: ProvisioningMethodOption
+    time_based_access: list[str] = []
+
+class AppSetting(BaseModel):
+    custom_request_instructions: str
+    provisioning: AppSettingProvisioning
 
 class App(BaseModel):
     id: UUID

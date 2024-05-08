@@ -8,11 +8,13 @@ from tabulate import tabulate
 import re
 
 from common.client import ApiClient
-from common.models import AccessRequest, App, Permission, SupportRequestStatus, User
+from common.models import AccessRequest, App, Permission, ProvisioningMethodOption, SupportRequestStatus, User
 
 app = typer.Typer()
 POLLING_INTERVAL = 6
 client = ApiClient()
+
+
 
 @app.callback(invoke_without_command=True, help="Request access to an app.")
 @authenticate
@@ -43,8 +45,8 @@ def request(
         typer.Option(help="List of permission UUIDs. Takes precedence over --permission-like"),
     ] = None,
     length: Annotated[
-        Optional[int],
-        typer.Option(help="Length of access request in seconds. Don't populate unless you know your app permission's specific settings")
+        Optional[str],
+        typer.Option(help="Length of access request in seconds, or a string like '12 hours', '2d', 'unlimited', etc. Every app/permission has different configurations.")
     ] = None,
     user_like: Annotated[
         Optional[str],
@@ -74,15 +76,33 @@ def request(
         
         # Validate parameters or interactively input them
         selected_app: App = get_valid_app(app, app_like)
-        typer.echo(f"APP: {selected_app.user_friendly_label} [{selected_app.id}]\n")
-        
-        selected_permissions = select_permissions(selected_app, permission, permission_like)
-        if selected_permissions:
-            permissible_durations_set = set(selected_permissions[0].duration_options)
-            for permission in selected_permissions[1:]:
-                permissible_durations_set = permissible_durations_set.intersection(permission.duration_options)
-            if not length:
-                length, duration = select_duration(permissible_durations_set)
+        app_settings = client.get_appstore_app_setting(selected_app.id)
+        duration_options = set(app_settings.provisioning.time_based_access)
+        selected_permissions = None
+        if app_settings.provisioning.groups_provisioning == ProvisioningMethodOption.GROUPS_AND_VISIBLE:
+            selected_permissions = select_permissions(selected_app, permission, permission_like)
+            if selected_permissions:
+                duration_options = set(selected_permissions[0].duration_options)
+                for permission in selected_permissions[1:]:
+                    duration_options = duration_options.intersection(permission.duration_options)
+
+        duration, duration_friendly = get_duration(duration_options, length)
+
+        open_requests = client.get_my_apps(for_user)
+        for req in open_requests:
+            if str(req.app_id) == str(selected_app.id):
+                error = None
+                if len(req.requestable_permissions) > 0 and selected_permissions:
+                    for permission in [str(r.id) for r in req.requestable_permissions]:
+                        if permission in [str(r.id)for r in selected_permissions]:
+                            error = "There's already a request for this app and permission"
+                            break
+                elif len(req.requestable_permissions) == 0 and not selected_permissions:
+                    error = "There's already a request for this app"
+                if error:
+                    if dry_run and typer.confirm(f"{error}. Do you want to continue?", abort=True, default=False):
+                        break
+                    raise typer.Exit(error)
 
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
@@ -96,7 +116,7 @@ def request(
             for permission in selected_permissions:
                 typer.echo(f"   {permission.label} [{permission.id}]")
         typer.echo("\nDURATION")
-        typer.echo(f"   {(length/(60*60) if length else 'Unlimited')} hours")
+        typer.echo(f"   {duration_friendly or 'Unlimited'} {f'({duration} seconds)' if duration else ''}")
         typer.echo("\nREASON")
         typer.echo(f"   {reason}")
 
@@ -109,14 +129,16 @@ def request(
             permission_flags = ' '.join([f"--permission {permission.id}" for permission in selected_permissions])
 
         command = f"lumos request --app {selected_app.id} {permission_flags} --reason \"{reason}\""
-        if length:
-            command += f" --length {length}"
+        if duration:
+            command += f" --length {duration}"
         for_user_flag = '--for-me'
         if for_user:
             for_user_flag = '--for-user USER_ID'
         command += f" {for_user_flag}"
         if wait:
             command += " --wait"
+        else:
+            command += " --no-wait"
         if dry_run:
             typer.echo(f"\nCOMMAND")
             typer.echo(f"   {command}")
@@ -129,7 +151,7 @@ def request(
             app_id=selected_app.id, 
             requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
             note=reason,
-            expiration=length,
+            expiration=duration,
             target_user_id=for_user)
         
         if wait and request_id:
@@ -291,6 +313,7 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
             app, _ = pick(apps, f"Select an app (press ENTER to confirm)")
         if app:
             app_id = app.id
+    typer.echo(f"APP: {app.user_friendly_label} [{app.id}]\n")
     return app
 
 def select_permissions(
@@ -359,21 +382,57 @@ def get_valid_permissions(app: App, permission_ids: list[UUID] | None) -> list[P
         valid_permissions.append(permission)
     return valid_permissions
 
-def select_duration(durations: set[str]) -> Tuple[int | None, str]:
-    duration: str = ""
+def select_duration(durations: set[str], duration_friendly: str | None) -> Tuple[int | None, str]:
+    selected: str = ""
     if (len(durations) == 1):
-        duration = list(durations)[0]
+        selected = list(durations)[0]
+    elif duration_friendly in durations:
+        selected = duration_friendly
     elif (len(durations) > 1):
-        duration, _ = pick(list(durations), "Select duration (use ENTER to confirm)", multiselect=False, min_selection_count=1)
+        selected, _ = pick(list(durations), "Select duration (use ENTER to confirm)", multiselect=False, min_selection_count=1)
     
+    time_in_seconds = None
+    if match := re.match(r"(\d+) ", selected):
+        time_in_seconds = int(match.group(1)) * 60 * 60
+        if (re.match(r".*days", selected)):
+            time_in_seconds = 24 * time_in_seconds
+    typer.echo(f"DURATION: {selected}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
+    return time_in_seconds, selected
+
+def parse_duration(duration: str) -> Tuple[int | None, str]:
     time_in_seconds = None
     if match := re.match(r"(\d+) ", duration):
         time_in_seconds = int(match.group(1)) * 60 * 60
-        if (re.match(r".*days", duration)):
+        if (re.match(r".* d", duration)):
             time_in_seconds = 24 * time_in_seconds
-    typer.echo(f"DURATION: {duration}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
-    return time_in_seconds, duration
-        
+    return time_in_seconds, duration.replace(" ", "").lower()
+
+def get_duration(possible_durations: set[str], input_length: str | None) -> Tuple[int | None, str]:
+    duration_friendly: str | None = None
+    durations = {}
+    for possible_duration in possible_durations:
+        length, key = parse_duration(possible_duration)
+
+        durations[key] = {
+            "label": possible_duration,
+            "length": length,
+        }
+    if input_length:
+        try:
+            duration = int(input_length)
+            duration_friendly = None
+            for key, v in durations.items():
+                if v["length"] == duration:
+                    duration_friendly = v["label"]
+                    break
+        except:
+            for key, v in durations.items():
+                if key.startswith(input_length.replace(' ', '').lower()):
+                    duration_friendly = v["label"]
+                    break
+
+    duration, duration_friendly = select_duration(possible_durations, duration_friendly)
+    return duration, duration_friendly
 
 def create_access_request(
     app_id: UUID,
