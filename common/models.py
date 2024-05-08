@@ -42,6 +42,21 @@ class App(BaseModel):
     def headers():
         return ["ID", "App"]
 
+class Group(BaseModel):
+    id: UUID
+    name: str
+    description: str
+    app_id: str
+    source_app_id: str
+    integration_specific_id: str
+
+    @staticmethod
+    def headers():
+        return ["ID", "Name", "Description"]
+
+    def tabulate(self):
+        return [str(self.id), self.name, self.description]
+
 class Permission(BaseModel):
     id: UUID
     label: str
