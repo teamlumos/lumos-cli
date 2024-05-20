@@ -25,7 +25,7 @@ class AppSetting(BaseModel):
     custom_request_instructions: str
     provisioning: AppSettingProvisioning
 
-class App(BaseModel):
+class App(LumosModel):
     id: UUID
     user_friendly_label: str
     app_class_id: str
@@ -42,7 +42,7 @@ class App(BaseModel):
     def headers():
         return ["ID", "App"]
 
-class Group(BaseModel):
+class Group(LumosModel):
     id: UUID
     name: str
     description: str
@@ -57,7 +57,7 @@ class Group(BaseModel):
     def tabulate(self):
         return [str(self.id), self.name, self.description]
 
-class Permission(BaseModel):
+class Permission(LumosModel):
     id: UUID
     label: str
     app_id: str
@@ -75,7 +75,7 @@ class Permission(BaseModel):
         return ["ID", "Permission", "Access length options"]
 
 
-class User(BaseModel):
+class User(LumosModel):
     id: UUID
     given_name: str
     family_name: str
@@ -91,7 +91,7 @@ class User(BaseModel):
     def headers():
         return ["Name", "Email", "ID"]
     
-class AccessRequest(BaseModel):
+class AccessRequest(LumosModel):
     id: UUID
     app_id: UUID
     app_name: str
