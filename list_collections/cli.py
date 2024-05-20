@@ -53,10 +53,13 @@ def list_permissions(
 
     display("permissions", permissions, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
 
-@app.command("groups", help="List groups for a given app")
+@app.command("groups", help="List groups for the domain or the specified --app")
 @authenticate
 def list_groups(
-    app: UUID,
+    app: Annotated[
+        Optional[UUID],
+        typer.Option(help="App ID to filter groups by. If not provided, lists all groups.")
+    ]= None,
     like: Annotated[
         Optional[str],
         typer.Option(help="Filters groups")

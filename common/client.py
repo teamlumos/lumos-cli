@@ -342,16 +342,16 @@ class ApiClient(BaseClient):
 
     def get_groups(
         self,
-        app_id: UUID,
+        app_id: Optional[UUID],
         search_term: str | None = None,
         all: bool = False,
         page_size: int = 25,
         page: int = 1,
-    ) -> Tuple[List[Permission], int, int]:
+    ) -> Tuple[List[Group], int, int]:
         endpoint = "groups"
-        params: dict[str, Any] = {
-            "app_id": str(app_id),
-        }
+        params: dict[str, Any] = {}
+        if app_id:
+            params["app_id"] = str(app_id)
         if search_term:
             params["name"] = search_term
         
