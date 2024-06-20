@@ -20,6 +20,7 @@ class LumosModel(BaseModel):
 class AppSettingProvisioning(BaseModel):
     groups_provisioning: ProvisioningMethodOption
     time_based_access: list[str] = []
+    allow_multiple_permission_selection: bool
 
 class AppSetting(BaseModel):
     custom_request_instructions: str
@@ -30,7 +31,6 @@ class App(LumosModel):
     user_friendly_label: str
     app_class_id: str
     instance_id: str
-    allow_multiple_permission_selection: bool
     
     def __str__(self):
         return self.user_friendly_label
