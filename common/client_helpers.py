@@ -1,0 +1,35 @@
+
+
+import os
+from typing import List, Tuple
+from colorama import Fore, Style
+import requests
+import typer
+from lumos import __version__
+
+
+def check_version_header(response: requests.Response) -> bool:
+    if os.environ.get("WARNED"):
+        return True
+    if not (version_header_string := response.headers.get("X-CLI-Version")):
+        return True
+
+    current_version = parse_version(__version__)
+    header_version = parse_version(version_header_string)
+    cont, error_message = check_version(current_version, header_version)
+    
+    if error_message:
+        print((Fore.CYAN if cont else Fore.RED) + error_message)
+        print(Style.RESET_ALL, end='\r')
+    return cont
+
+def check_version(current_version: List[int], header_version: List[int]) -> Tuple[bool, str | None]:
+    if current_version[0] < header_version[0]:
+        return False, "A new version of the CLI is available. Please run `brew upgrade lumos` to proceed."
+    if current_version[0] == header_version[0] and current_version[1] < header_version[1]:
+        os.environ["WARNED"] = "1"
+        return True, "There's an update available to the CLI. Please run `brew upgrade lumos`."
+    return True, None
+
+def parse_version(version: str) -> List[int]:
+    return [int(v) for v in version.split(".")]

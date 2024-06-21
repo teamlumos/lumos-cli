@@ -16,6 +16,7 @@ def logdebug_response(response) -> None:
         json = response.json()
         if json.get('access_token'):
             json['access_token'] = json['access_token'][:5] + '...'
+        logdebug('HEADERS: ' + str(response.headers))
         logdebug('CONTENT: ' + str(json))
     except:
         logdebug('CONTENT: ' + str(response.content))

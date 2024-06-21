@@ -2,8 +2,8 @@
 from abc import abstractmethod
 import time
 from typing import Any, Dict, Tuple
-from colorama import Fore, Style
 import requests
+from common.client_helpers import check_version_header
 from lumos import __version__
 from common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
 from uuid import UUID
@@ -76,34 +76,6 @@ class BaseClient:
         """Function to call an API endpoint and return the response."""
         return self._send_request("POST", endpoint, body=body)
     
-    def _check_version_header(self, response: requests.Response):
-        if os.environ.get("WARNED"):
-            return
-        if not (version_header_string := response.headers.get("X-CLI-Version")):
-            return
-
-        current_version = self._parse_version(__version__)
-        version_header = self._parse_version(version_header_string)
-        error_message = None
-        cont = True
-        if current_version[0] < version_header[0]:
-            error_message = "A new version of the CLI is available. Please run `brew upgrade lumos` to proceed."
-            cont = False
-        elif current_version[1] < version_header[1]:
-            print("Whoops")
-            os.environ["WARNED"] = "1"
-            error_message = "There's an update available to the CLI. Please run `brew upgrade lumos`."
-        
-        if error_message:
-            print((Fore.CYAN if cont else Fore.RED) + error_message)
-            print(Style.RESET_ALL, end='\r')
-        if not cont:
-            raise typer.Exit(1)
-        return
-    
-    def _parse_version(self, version: str) -> List[int]:
-        return [int(v) for v in version.split(".")]
-    
     def _send_request(self,
         method: str,
         endpoint: str,
@@ -121,7 +93,8 @@ class BaseClient:
         
         logdebug_response(response)
 
-        self._check_version_header(response)
+        if not check_version_header(response):
+            raise typer.Exit(1)
 
         if response.ok:
             return response.json()
@@ -184,8 +157,8 @@ class AuthClient(BaseClient):
         logdebug_request(url, headers, None, params, 'POST')
 
         response = requests.post(url, headers=headers, params=params)
-        self._check_version_header(response)
-        
+        if not check_version_header(response):
+            raise typer.Exit(1)
         
         if not response.ok:
             typer.echo(f"Something went wrong.")
