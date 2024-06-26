@@ -3,6 +3,7 @@ from abc import abstractmethod
 import time
 from typing import Any, Dict, Tuple
 import requests
+from common.client_helpers import check_version_header
 from lumos import __version__
 from common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
 from uuid import UUID
@@ -89,7 +90,11 @@ class BaseClient:
         logdebug_request(url, headers, body, params, method)
 
         response = requests.request(method, url, headers=headers, json=body, params=params)
+        
         logdebug_response(response)
+
+        if not check_version_header(response):
+            raise typer.Exit(1)
 
         if response.ok:
             return response.json()
@@ -152,6 +157,9 @@ class AuthClient(BaseClient):
         logdebug_request(url, headers, None, params, 'POST')
 
         response = requests.post(url, headers=headers, params=params)
+        if not check_version_header(response):
+            raise typer.Exit(1)
+        
         if not response.ok:
             typer.echo(f"Something went wrong.")
             logdebug_response(response)
@@ -199,6 +207,8 @@ class AuthClient(BaseClient):
         typer.echo(" ✅ Authenticated!")
         write_key(token, scope)
     
+   
+
 class ApiClient(BaseClient):
     def __init__(self):
         api_url: str | None = None

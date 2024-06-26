@@ -80,7 +80,12 @@ def request(
         duration_options = set(app_settings.provisioning.time_based_access)
         selected_permissions = None
         if app_settings.provisioning.groups_provisioning == ProvisioningMethodOption.GROUPS_AND_VISIBLE:
-            selected_permissions = select_permissions(selected_app, permission, permission_like)
+            selected_permissions = select_permissions(
+                selected_app, 
+                app_settings.provisioning.allow_multiple_permission_selection,
+                permission, 
+                permission_like
+            )
             if selected_permissions:
                 duration_options = set(selected_permissions[0].duration_options)
                 for permission in selected_permissions[1:]:
@@ -318,10 +323,11 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
 
 def select_permissions(
     app: App,
+    allow_multiple_permission_selection: bool,
     permission_ids: list[UUID] | None, 
     permission_like: str | None = None
 ) -> List[Permission] | None:
-    valid_permissions = get_valid_permissions(app, permission_ids)
+    valid_permissions = get_valid_permissions(app, permission_ids, allow_multiple_permission_selection)
     if len(valid_permissions) > 0:
         return valid_permissions
     done_selecting = False
@@ -344,7 +350,7 @@ def select_permissions(
                 break
         if count > 1:
             already_selected = ', '.join([p.label for p in valid_permissions_dict.values()])
-            if app.allow_multiple_permission_selection:
+            if allow_multiple_permission_selection:
                 description = f"Select at least one permissions\n{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
                 selected = pick(permissions, description, multiselect=True, min_selection_count=1)
                 for option, _ in selected:
@@ -359,7 +365,7 @@ def select_permissions(
         typer.echo("PERMISSIONS:                          ")
         for permission in valid_permissions_dict.values():
             typer.echo(f"   {permission.label} [{permission.id}]")
-        if not permission_like or not app.allow_multiple_permission_selection:
+        if not permission_like or not allow_multiple_permission_selection:
             break
         if typer.confirm("Done selecting permissions?", abort=False, default=True):
             done_selecting = True
@@ -368,11 +374,11 @@ def select_permissions(
     return list(valid_permissions_dict.values())
             
 
-def get_valid_permissions(app: App, permission_ids: list[UUID] | None) -> list[Permission]:
+def get_valid_permissions(app: App, permission_ids: list[UUID] | None, allow_multiple_permission_selection: bool) -> list[Permission]:
     valid_permissions: list[Permission] = []
     if not permission_ids:
         return []
-    if len(permission_ids) > 1 and not app.allow_multiple_permission_selection:
+    if len(permission_ids) > 1 and not allow_multiple_permission_selection:
         return []
     for permission_id in permission_ids:
         if not (permission := client.get_app_requestable_permission(permission_id)):
