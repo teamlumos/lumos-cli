@@ -110,10 +110,23 @@ class BaseClient:
             typer.echo("Something went wrong with authorization. Trying to log in again.", err=True)
             AuthClient().authenticate(scope == "admin")
             return self._send_request(method, endpoint, body, params, retry + 1)
-        elif response.status_code == 403:
+        if response.status_code == 403:
             typer.echo("You don't have permission to do that.", err=True)
-        else:
-            typer.echo(f"An error occurred (status code {response.status_code}). Check the IDs provided--they may not exist.", err=True)
+            raise typer.Exit(1)
+        
+        if response.status_code == 404:
+            typer.echo("Not found.", err=True)
+            raise typer.Exit(1)
+        
+        if response.status_code == 409:
+            response_json = response.json()
+            if detail := response_json.get("detail"):
+                typer.echo(f"Conflict: {detail}", err=True)
+            else:
+                typer.echo("Conflict.", err=True)
+            raise typer.Exit(1)
+        
+        typer.echo(f"An error occurred (status code {response.status_code})", err=True)
         raise typer.Exit(1)
 
     @abstractmethod
