@@ -236,12 +236,18 @@ def status(
 @app.command("poll", help="Poll a request by ID for up to 5 minutes")
 @authenticate
 def poll(
-    request_id: UUID,
+    request_id: Annotated[
+        Optional[UUID],
+        typer.Option(help="Request ID")
+    ] = None,
     wait: Annotated[
         Optional[int],
         typer.Option(help="How many minutes to wait. Max 5.")
     ] = 2
 ) -> None:
+    while not request_id:
+        request_id = typer.prompt("Please provide a request ID")
+
     _poll(request_id, (wait or 2) * 60)
 
 def _poll(request_id: UUID, wait_max: int = 120):
@@ -264,6 +270,28 @@ def _poll(request_id: UUID, wait_max: int = 120):
         return
     typer.echo(f" ⏰ Request status: {request.status}" + (' ' * 20) + "\n")
     typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
+
+
+@app.command("cancel", help="Cancel a request by ID")
+@authenticate
+def cancel(
+    request_id: Annotated[
+        Optional[UUID],
+        typer.Option(help="Request ID")
+    ] = None,
+    reason: Annotated[
+        Optional[str],
+        typer.Option(help="Reason for cancellation")
+    ] = None
+) -> None:
+    while not request_id:
+        request_id = typer.prompt("Please provide a request ID")
+    if (request := client.get_request_status(request_id)) is not None and request.status not in SupportRequestStatus.PENDING_STATUSES:
+        typer.echo(f"Request is not pending, cannot cancel. Status is {request.status}.")
+        raise typer.Exit(1)
+    
+    client.cancel_request(request_id, reason)
+    typer.echo("Request cancelled! 🚫")
 
 def select_user(user_like: Optional[str] = None) -> UUID:
     users: List[User] = []

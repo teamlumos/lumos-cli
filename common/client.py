@@ -76,6 +76,9 @@ class BaseClient:
         """Function to call an API endpoint and return the response."""
         return self._send_request("POST", endpoint, body=body)
     
+    def delete(self, endpoint: str, params: dict = {}):
+        return self._send_request("DELETE", endpoint, params=params)
+    
     def _send_request(self,
         method: str,
         endpoint: str,
@@ -97,6 +100,8 @@ class BaseClient:
             raise typer.Exit(1)
 
         if response.ok:
+            if response.status_code == 204:
+                return None
             return response.json()
         if response.status_code == 429:
             typer.echo("We're being rate limited. Waiting a sec.", err=True)
@@ -118,15 +123,12 @@ class BaseClient:
             typer.echo("Not found.", err=True)
             raise typer.Exit(1)
         
-        if response.status_code == 409:
+        typer.echo(f"An error occurred (status code {response.status_code})", err=True)
+        if response.status_code == 409 or response.status_code == 422:
             response_json = response.json()
             if detail := response_json.get("detail"):
-                typer.echo(f"Conflict: {detail}", err=True)
-            else:
-                typer.echo("Conflict.", err=True)
-            raise typer.Exit(1)
+                typer.echo(detail, err=True)
         
-        typer.echo(f"An error occurred (status code {response.status_code})", err=True)
         raise typer.Exit(1)
 
     @abstractmethod
@@ -266,6 +268,12 @@ class ApiClient(BaseClient):
     def get_request_status(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
         return self._create_access_request(raw_request)
+
+    def cancel_request(self, id: UUID, reason: str | None) -> None:
+        params = {}
+        if reason:
+            params["reason"] = reason
+        self.delete(f"appstore/access_requests/{id}", params)
     
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:

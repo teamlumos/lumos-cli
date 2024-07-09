@@ -208,3 +208,24 @@ class SupportRequestStatus:
         COMPLETED,
         PROVISIONED
     ]
+
+    ALL_STATUSES = [
+        PENDING,
+        PENDING_MANAGER_APPROVAL,
+        MANAGER_APPROVED,
+        MANAGER_DENIED,
+        PENDING_APPROVAL,
+        APPROVED,
+        DENIED,
+        EXPIRED,
+        CANCELLED,
+        PENDING_PROVISIONING,
+        PENDING_MANUAL_PROVISIONING,
+        DENIED_PROVISIONING,
+        PROVISIONED,
+        PENDING_MANUAL_DEPROVISIONING,
+        TIME_BASED_EXPIRED,
+        COMPLETED,
+        REVERTING,
+        REVERTED
+    ]
