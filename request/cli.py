@@ -216,7 +216,7 @@ def status(
                 request_id = None
             request_id = typer.prompt("Please provide a request ID")
             
-        request = client.get_request_status(request_uuid)
+        request = client.get_request(request_uuid)
     if not request:
         typer.echo("Request not found")
         return
@@ -247,7 +247,7 @@ def poll(
 def _poll(request_id: UUID, wait_max: int = 120):
     if wait_max < 10 or wait_max > 300:
         wait_max = 120
-    while ((request := client.get_request_status(request_id)) is not None):
+    while ((request := client.get_request(request_id)) is not None):
         if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
             break
         wait_max -= POLLING_INTERVAL
@@ -264,6 +264,20 @@ def _poll(request_id: UUID, wait_max: int = 120):
         return
     typer.echo(f" ⏰ Request status: {request.status}" + (' ' * 20) + "\n")
     typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
+
+@app.command("cancel", help="Cancel a request by ID")
+@authenticate
+def cancel(
+    request_id: UUID
+) -> None:
+    status = client.get_request(request_id)
+    if not status:
+        typer.echo("Request not found")
+        raise typer.Exit(1)
+    typer.echo(f"Request status: {status.status}")
+    client.cancel_request(request_id)
+    typer.echo("Request cancelled")
+
 
 def select_user(user_like: Optional[str] = None) -> UUID:
     users: List[User] = []

@@ -25,6 +25,10 @@ class BaseClient:
         """Function to call an API endpoint and return the response."""
         return self._send_request("GET", endpoint, params=params)
     
+    def delete(self, endpoint: str, params: dict = {}):
+        """Function to call an API endpoint and return the response."""
+        return self._send_request("DELETE", endpoint, params=params)
+    
     def get_paged(
         self,
         endpoint: str,
@@ -250,9 +254,12 @@ class ApiClient(BaseClient):
         raw_setting = self.get(f"appstore/apps/{id}/settings")
         return AppSetting(**raw_setting)
     
-    def get_request_status(self, id: UUID) -> AccessRequest | None:
+    def get_request(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
         return self._create_access_request(raw_request)
+
+    def cancel_request(self, id: UUID) -> AccessRequest | None:
+        self.delete(f"appstore/access_requests/{id}")
     
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:
