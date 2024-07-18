@@ -1,14 +1,14 @@
 import functools
 import os
 from pathlib import Path
-from typing import List, Set
+from typing import List, Set, Tuple
 from common.client import AuthClient
 from common.logging import logdebug
 import typer
 from pick import pick
 from colorama import Fore, Back, Style
 from common.keyhelpers import key_file_path, write_key, read_key
-from common.models import SupportRequestStatus
+from common.models import AccessRequest, App, Permission, SupportRequestStatus
 
 def authenticate(func):
     """Makes sure client is authenticated first"""
@@ -60,3 +60,19 @@ def get_statuses(status: List[SupportRequestStatus], pending: bool, past: bool) 
     if len(status) == 0:
         return None
     return set(status)
+
+def check_current_apps(
+    apps: List[App],
+    selected_app: App,
+    selected_permissions: List[Permission] | None
+) -> Tuple[App, str | None]:
+    for app in apps:
+        if str(app.app_id) == str(selected_app.id):
+            if len(app.requestable_permissions) > 0 and selected_permissions:
+                for permission in [str(r.id) for r in app.requestable_permissions]:
+                    if permission in [str(r.id)for r in selected_permissions]:
+                        return app, "There's already a request for this app and permission"
+            elif len(app.requestable_permissions) == 0 and not selected_permissions:
+                return app, "There's already a request for this app"
+    
+    return None, None

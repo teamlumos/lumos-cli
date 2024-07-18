@@ -269,7 +269,7 @@ class ApiClient(BaseClient):
         raw_request = self.get(f"appstore/access_requests/{id}")
         return self._create_access_request(raw_request)
 
-    def cancel_request(self, id: UUID, reason: str | None) -> None:
+    def cancel_access_request(self, id: UUID, reason: str | None) -> None:
         params = {}
         if reason:
             params["reason"] = reason
@@ -314,7 +314,7 @@ class ApiClient(BaseClient):
         page_size: int = 100,
         page: int = 1,
     ) -> Tuple[List[AccessRequest], int, int, int, int]:
-        params: dict[str, Any]= {}
+        params: dict[str, Any]= { "sort": "desc" }
         if target_user_id:
             params["target_user_id"] = str(target_user_id)
         if (status and len(status) > 0):
@@ -327,7 +327,7 @@ class ApiClient(BaseClient):
             access_request = self._create_access_request(item)
             if (access_request): 
                 access_requests.append(access_request)
-        return sorted(access_requests, key=lambda x: x.requested_at, reverse=True), count, total, page, pages
+        return access_requests, count, total, page, pages
     
     def get_users(self,
         like: Optional[str] = None,
