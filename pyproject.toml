@@ -1,12 +1,12 @@
 [project]
 name = "lumos"
-version = "2.1.0"
+version = "2.1.1"
 
 [tool.poetry]
 authors = ["lumos-dev"]
 description = "Lumos command line interface."
 name = "lumos"
-version = "2.1.0"
+version = "2.1.1"
 
 [tool.poetry.dependencies]
 python = "3.10.6"
