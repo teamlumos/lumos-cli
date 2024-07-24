@@ -93,13 +93,6 @@ def request(
 
         duration, duration_friendly = get_duration(duration_options, length)
 
-        apps = client.get_my_apps(for_user)
-        _, error = check_current_apps(apps, selected_app, selected_permissions)
-        if error:
-            typer.echo(error)
-            if not dry_run or not typer.confirm(f"Do you want to continue?", abort=True, default=False):
-                raise typer.Exit(1)
-
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
         

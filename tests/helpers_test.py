@@ -26,7 +26,7 @@ def test_get_statusees_pending_and_past():
 def test_get_statuses_all_statuses():
     assert get_statuses([], True, True) == set(SupportRequestStatus.ALL_STATUSES)
 
-def test_check_open_requests():
+def test_check_current_apps():
     user = User(id=UUID("123e4567-e89b-12d3-a456-426614174000"), given_name="John", family_name="Doe", email="foo@foo.com")
     app1 = App(id=UUID("123e4567-e89b-12d3-a456-426614174000"), name="app", user_friendly_label="App 1", app_class_id="foo", instance_id="bar")
     app2 = App(id=UUID("123e4567-e89b-12d3-a456-426614174001"), name="app", user_friendly_label="App 2", app_class_id="foo", instance_id="bar")
