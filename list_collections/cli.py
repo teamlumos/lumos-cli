@@ -1,5 +1,5 @@
 from typing import Any, List, Optional, Annotated
-from common.helpers import authenticate
+from common.helpers import authenticate, get_statuses
 import typer
 from uuid import UUID
 from tabulate import tabulate
@@ -91,10 +91,8 @@ def list_requests(
         Optional[List[str]],
         typer.Option(help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc",),
     ] = None,
-    all_statuses: Annotated[
-        bool,
-        typer.Option(help="Show requests of all statuses (not just pending). Takes precedence over a specific set of statuses specified by --status flags")
-    ] = False,
+    pending: Annotated[bool, typer.Option(help="Show only pending requests")] = False,
+    past: Annotated[bool, typer.Option(help="Show only past requests")] = False,
     csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
     json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
     paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
@@ -106,10 +104,7 @@ def list_requests(
     if mine:
         for_user = client.get_current_user_id()
 
-    if all_statuses:
-        status = None
-    elif not status:
-        status = SupportRequestStatus.PENDING_STATUSES
+    status = get_statuses(status, pending, past)
 
     all=csv or json or not paginate
     access_requests, count, total, _, _ = client.get_access_requests(

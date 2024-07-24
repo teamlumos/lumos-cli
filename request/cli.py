@@ -1,6 +1,6 @@
 import time
 from typing import Annotated, List, Optional, Tuple
-from common.helpers import authenticate
+from common.helpers import authenticate, check_current_apps
 import typer
 from uuid import UUID
 from pick import pick
@@ -93,22 +93,6 @@ def request(
 
         duration, duration_friendly = get_duration(duration_options, length)
 
-        open_requests = client.get_my_apps(for_user)
-        for req in open_requests:
-            if str(req.app_id) == str(selected_app.id):
-                error = None
-                if len(req.requestable_permissions) > 0 and selected_permissions:
-                    for permission in [str(r.id) for r in req.requestable_permissions]:
-                        if permission in [str(r.id)for r in selected_permissions]:
-                            error = "There's already a request for this app and permission"
-                            break
-                elif len(req.requestable_permissions) == 0 and not selected_permissions:
-                    error = "There's already a request for this app"
-                if error:
-                    if dry_run and typer.confirm(f"{error}. Do you want to continue?", abort=True, default=False):
-                        break
-                    raise typer.Exit(error)
-
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
         
@@ -193,16 +177,10 @@ def status(
 ) -> None:
     request: AccessRequest | None
     if last:
-        current_user_uuid = client.get_current_user_id()
-        access_requests, count, _, _, pages = client.get_access_requests(target_user_id=current_user_uuid)
+        access_requests, count, _, _, _ = client.get_access_requests(target_user_id=client.get_current_user_id())
         if count == 0:
             typer.echo("No pending requests found")
             return
-        if (pages > 1):
-            access_requests, count, total, _, _ = client.get_access_requests(
-                target_user_id=current_user_uuid,
-                page = pages
-            )
         request = access_requests[0]
     else:
         request_uuid: UUID | None = None
@@ -236,12 +214,18 @@ def status(
 @app.command("poll", help="Poll a request by ID for up to 5 minutes")
 @authenticate
 def poll(
-    request_id: UUID,
+    request_id: Annotated[
+        Optional[UUID],
+        typer.Option(help="Request ID")
+    ] = None,
     wait: Annotated[
         Optional[int],
         typer.Option(help="How many minutes to wait. Max 5.")
     ] = 2
 ) -> None:
+    while not request_id:
+        request_id = typer.prompt("Please provide a request ID")
+
     _poll(request_id, (wait or 2) * 60)
 
 def _poll(request_id: UUID, wait_max: int = 120):
@@ -264,6 +248,35 @@ def _poll(request_id: UUID, wait_max: int = 120):
         return
     typer.echo(f" ⏰ Request status: {request.status}" + (' ' * 20) + "\n")
     typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
+
+
+@app.command("cancel", help="Cancel a request by ID")
+@authenticate
+def cancel(
+    request_id: Annotated[
+        Optional[UUID],
+        typer.Option(help="Request ID")
+    ] = None,
+    reason: Annotated[
+        Optional[str],
+        typer.Option(help="Reason for cancellation")
+    ] = None
+) -> None:
+    while not request_id:
+        request_id = typer.prompt("Please provide a request ID or press enter to look up a request", default="", show_default=False)
+        if not request_id:
+            pending_requests, _, _, _, _ = client.get_access_requests(client.get_current_user_id(), SupportRequestStatus.PENDING_STATUSES, all=True)
+            if len(pending_requests) == 0:
+                typer.echo("No pending requests found")
+                raise typer.Exit(1)
+            request, _ = pick(pending_requests, "Select a request to cancel")
+            request_id = request.id
+    if (request := client.get_request_status(request_id)) is not None and request.status not in SupportRequestStatus.PENDING_STATUSES:
+        typer.echo(f"Request is not pending, cannot cancel. Status is {request.status}.")
+        raise typer.Exit(1)
+    
+    client.cancel_access_request(request_id, reason)
+    typer.echo("Request cancelled! 🚫")
 
 def select_user(user_like: Optional[str] = None) -> UUID:
     users: List[User] = []

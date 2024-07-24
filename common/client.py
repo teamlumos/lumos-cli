@@ -76,6 +76,9 @@ class BaseClient:
         """Function to call an API endpoint and return the response."""
         return self._send_request("POST", endpoint, body=body)
     
+    def delete(self, endpoint: str, params: dict = {}):
+        return self._send_request("DELETE", endpoint, params=params)
+    
     def _send_request(self,
         method: str,
         endpoint: str,
@@ -97,6 +100,8 @@ class BaseClient:
             raise typer.Exit(1)
 
         if response.ok:
+            if response.status_code == 204:
+                return None
             return response.json()
         if response.status_code == 429:
             typer.echo("We're being rate limited. Waiting a sec.", err=True)
@@ -110,10 +115,20 @@ class BaseClient:
             typer.echo("Something went wrong with authorization. Trying to log in again.", err=True)
             AuthClient().authenticate(scope == "admin")
             return self._send_request(method, endpoint, body, params, retry + 1)
-        elif response.status_code == 403:
+        if response.status_code == 403:
             typer.echo("You don't have permission to do that.", err=True)
-        else:
-            typer.echo(f"An error occurred (status code {response.status_code}). Check the IDs provided--they may not exist.", err=True)
+            raise typer.Exit(1)
+        
+        if response.status_code == 404:
+            typer.echo("Not found.", err=True)
+            raise typer.Exit(1)
+        
+        typer.echo(f"An error occurred (status code {response.status_code})", err=True)
+        if response.status_code == 409 or response.status_code == 422:
+            response_json = response.json()
+            if detail := response_json.get("detail"):
+                typer.echo(detail, err=True)
+        
         raise typer.Exit(1)
 
     @abstractmethod
@@ -253,6 +268,12 @@ class ApiClient(BaseClient):
     def get_request_status(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
         return self._create_access_request(raw_request)
+
+    def cancel_access_request(self, id: UUID, reason: str | None) -> None:
+        params = {}
+        if reason:
+            params["reason"] = reason
+        self.delete(f"appstore/access_requests/{id}", params)
     
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:
@@ -293,7 +314,7 @@ class ApiClient(BaseClient):
         page_size: int = 100,
         page: int = 1,
     ) -> Tuple[List[AccessRequest], int, int, int, int]:
-        params: dict[str, Any]= {}
+        params: dict[str, Any]= { "sort": "desc" }
         if target_user_id:
             params["target_user_id"] = str(target_user_id)
         if (status and len(status) > 0):
@@ -306,7 +327,7 @@ class ApiClient(BaseClient):
             access_request = self._create_access_request(item)
             if (access_request): 
                 access_requests.append(access_request)
-        return sorted(access_requests, key=lambda x: x.requested_at, reverse=True), count, total, page, pages
+        return access_requests, count, total, page, pages
     
     def get_users(self,
         like: Optional[str] = None,
