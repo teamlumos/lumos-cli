@@ -22,9 +22,27 @@ class AppSettingProvisioning(BaseModel):
     time_based_access: list[str] = []
     allow_multiple_permission_selection: bool
 
+class CustomIntakeFieldOption(BaseModel):
+    id: UUID
+    value: str
+    value_type: str
+
+    def __str__(self):
+        return self.value
+
+class CustomIntakeField(BaseModel):
+    id: UUID
+    prompt: str
+    description: str
+    options: List[CustomIntakeFieldOption]
+
+    def __str__(self):
+        return self.prompt
+
 class AppSetting(BaseModel):
     custom_request_instructions: str
     provisioning: AppSettingProvisioning
+    custom_intake_fields: List[CustomIntakeField]
 
 class App(LumosModel):
     id: UUID
@@ -91,6 +109,17 @@ class User(LumosModel):
     def headers():
         return ["Name", "Email", "ID"]
     
+
+class CustomIntakeFieldResponse(BaseModel):
+    custom_intake_field_id: str
+    prompt: str
+    description: str
+    response_string: str
+    response_type: str
+    id: str | None = None
+
+    def __str__(self):
+        return self.prompt + ": " + self.response_string
 class AccessRequest(LumosModel):
     id: UUID
     app_id: UUID
@@ -103,6 +132,7 @@ class AccessRequest(LumosModel):
     target_user: User
     requestable_permission_ids: Optional[list[UUID]] = None
     requestable_permissions: Optional[list[Permission]] = None
+    custom_intake_fields: Optional[List[CustomIntakeFieldResponse]]
 
     @staticmethod
     def _convert_to_human_date(inp: str) -> str:

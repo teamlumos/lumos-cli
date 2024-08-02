@@ -8,7 +8,7 @@ from tabulate import tabulate
 import re
 
 from common.client import ApiClient
-from common.models import AccessRequest, App, Permission, ProvisioningMethodOption, SupportRequestStatus, User
+from common.models import AccessRequest, App, CustomIntakeFieldResponse, Permission, ProvisioningMethodOption, SupportRequestStatus, User
 
 app = typer.Typer()
 POLLING_INTERVAL = 6
@@ -95,6 +95,20 @@ def request(
 
         while not reason or len(reason) < 1:
             reason = typer.prompt("\nEnter your business justification for the request")
+
+        responses = None
+        if app_settings.custom_intake_fields and len(app_settings.custom_intake_fields) > 0:
+            responses = []
+            for intake_field in app_settings.custom_intake_fields:
+                typer.echo(intake_field.prompt)
+                typer.echo(intake_field.description)
+                option = None
+                if intake_field.options and len(intake_field.options) > 0:
+                    option, _ = pick(intake_field.options, "Select an option")
+                    response = option.value
+                else:
+                    response = typer.prompt("Response")
+                responses.append(CustomIntakeFieldResponse(custom_intake_field_id=str(intake_field.id), response_string=response, response_type="STRING", prompt=intake_field.prompt, description=intake_field.description))
         
         if wait is None:
             wait = typer.confirm("Do you want to wait for the request to complete?", abort=False, default=True)
@@ -108,6 +122,11 @@ def request(
         typer.echo(f"   {duration_friendly or 'Unlimited'} {f'({duration} seconds)' if duration else ''}")
         typer.echo("\nREASON")
         typer.echo(f"   {reason}")
+
+        if responses:
+            typer.echo("\nCUSTOM FIELDS")
+            for response in responses:
+                typer.echo(f"    {response}")
 
         if for_user:
             typer.echo(f"\nTARGET USER")
@@ -141,7 +160,8 @@ def request(
             requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
             note=reason,
             expiration=duration,
-            target_user_id=for_user)
+            target_user_id=for_user,
+            custom_intake_fields=responses)
         
         if wait and request_id:
             _poll(request_id)
@@ -458,14 +478,16 @@ def create_access_request(
     requestable_permission_ids: List[UUID] | None,
     note: str,
     expiration: Optional[int] = None,
-    target_user_id: Optional[UUID] = None
+    target_user_id: Optional[UUID] = None,
+    custom_intake_fields: Optional[List[CustomIntakeFieldResponse]] = None
 ) -> UUID | None:
     response = client.create_access_request(
         app_id=app_id,
         permission_ids=requestable_permission_ids,
         note=note,
         expiration_in_seconds=expiration,
-        target_user_id=target_user_id
+        target_user_id=target_user_id,
+        custom_intake_fields=custom_intake_fields
     )
     if not response:
         return None

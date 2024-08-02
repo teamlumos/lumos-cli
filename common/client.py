@@ -5,7 +5,7 @@ from typing import Any, Dict, Tuple
 import requests
 from common.client_helpers import check_version_header
 from lumos import __version__
-from common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
+from common.models import App, AccessRequest, AppSetting, CustomIntakeFieldResponse, Permission, SupportRequestStatus, User, Group
 from uuid import UUID
 from typing import Any, Dict, List, Optional
 from common.models import App, AccessRequest, Permission, User
@@ -413,7 +413,8 @@ class ApiClient(BaseClient):
         note: str,
         expiration_in_seconds: int | None,
         permission_ids: List[UUID] | None = None,
-        target_user_id: UUID | None = None) -> AccessRequest | None:
+        target_user_id: UUID | None = None,
+        custom_intake_fields: List[CustomIntakeFieldResponse] | None = None) -> AccessRequest | None:
         body: dict[str, Any] = {
             "app_id": str(app_id),
             "note": note,
@@ -424,6 +425,8 @@ class ApiClient(BaseClient):
             body["expiration_in_seconds"] = expiration_in_seconds
         if target_user_id:
             body["target_user_id"] = str(target_user_id)
+        if custom_intake_fields:
+            body["custom_intake_fields"] = [c.model_dump() for c in custom_intake_fields]
         response = self.post(
             "appstore/access_request",
             body
