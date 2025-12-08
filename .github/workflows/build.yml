@@ -1,0 +1,85 @@
+name: Build Binaries
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu24-4cpu-amd64
+            platform: linux-amd64
+            arch: x64
+          - runner: ubuntu24-4cpu-arm64
+            platform: linux-arm64
+            arch: aarch64
+          - runner: macos-latest
+            platform: macos-arm64
+            arch: arm64
+          - runner: windows-latest
+            platform: windows
+            arch: x64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.6'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+          enable-cache: true
+
+      - name: Install dependencies
+        shell: bash
+        run: uv sync
+
+      - name: Build binary (Linux / macOS)
+        if: matrix.platform == 'linux-amd64' || matrix.platform == 'linux-arm64' || matrix.platform == 'macos-arm64'
+        shell: bash
+        run: |
+          uv run pyinstaller lumos/__main__.py
+          cd ./dist/__main__
+          mv __main__ lumos
+          tar -czf lumos-${{ matrix.platform }}.tar.gz *
+          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > d
+
+      - name: Build binary (Windows)
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          uv run pyinstaller lumos/__main__.py
+          cd ./dist/__main__
+          mv __main__.exe lumos.exe
+          tar -czf lumos-${{ matrix.platform }}.tar.gz *
+          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > lumos-${{ matrix.platform }}.tar.gz.sha256
+
+
+      - name: Display SHA256
+        shell: bash
+        run: |
+          SHA=$(cat ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz.sha256)
+          echo "*******************"
+          echo "File SHA: $SHA"
+          echo "*******************"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumos-${{ matrix.platform }}
+          path: |
+            'dist/__main__/lumos-*.tar.gz'
+            'dist/__main__/lumos-*.tar.gz.sha256'
+          retention-days: 90
