@@ -1,0 +1,126 @@
+name: Build Cross-Platform Binaries
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    name: Build ${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux-amd64
+            arch: x64
+          - os: ubuntu-latest
+            platform: linux-arm64
+            arch: aarch64
+          - os: macos-latest
+            platform: macos-arm64
+            arch: arm64
+          - os: windows-latest
+            platform: windows
+            arch: x64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.6'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ matrix.platform }}-${{ hashFiles('poetry.lock') }}
+          restore-keys: |
+            venv-${{ matrix.platform }}-
+
+      - name: Install dependencies
+        shell: bash
+        run: poetry install --no-interaction --no-root
+
+      - name: Set up QEMU (for ARM64 on Linux)
+        if: matrix.platform == 'linux-arm64'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build binary (Linux ARM64)
+        if: matrix.platform == 'linux-arm64'
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace \
+            --platform linux/arm64 \
+            python:3.10.6-slim \
+            bash -c "cd /workspace && \
+              apt-get update && apt-get install -y curl binutils && \
+              curl -sSL https://install.python-poetry.org | python3 - && \
+              export PATH=\"/root/.local/bin:\$PATH\" && \
+              poetry install --no-interaction --no-root && \
+              poetry run pyinstaller lumos/__main__.py && \
+              cd ./dist/__main__ && \
+              mv __main__ lumos && \
+              tar -czf lumos-linux-arm64.tar.gz * && \
+              sha256sum lumos-linux-arm64.tar.gz | cut -d ' ' -f1 > lumos-linux-arm64.tar.gz.sha256"
+
+      - name: Build binary (Linux AMD64 / macOS ARM64)
+        if: matrix.platform == 'linux-amd64' || matrix.platform == 'macos-arm64'
+        shell: bash
+        run: |
+          poetry run pyinstaller lumos/__main__.py
+          cd ./dist/__main__
+          mv __main__ lumos
+          tar -czf lumos-${{ matrix.platform }}.tar.gz *
+          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > lumos-${{ matrix.platform }}.tar.gz.sha256
+
+      - name: Build binary (Windows)
+        if: matrix.platform == 'windows'
+        shell: bash
+        run: |
+          poetry run pyinstaller lumos/__main__.py
+          cd ./dist/__main__
+          mv __main__.exe lumos.exe
+          tar -czf lumos-${{ matrix.platform }}.tar.gz *
+          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > lumos-${{ matrix.platform }}.tar.gz.sha256
+
+      - name: Copy artifacts from Docker (Linux ARM64)
+        if: matrix.platform == 'linux-arm64'
+        run: |
+          cp ./dist/__main__/lumos-linux-arm64.tar.gz ./
+          cp ./dist/__main__/lumos-linux-arm64.tar.gz.sha256 ./
+
+      - name: Display SHA256
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = "linux-arm64" ]; then
+            SHA=$(cat lumos-${{ matrix.platform }}.tar.gz.sha256)
+          else
+            SHA=$(cat ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz.sha256)
+          fi
+          echo "*******************"
+          echo "File SHA: $SHA"
+          echo "*******************"
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lumos-${{ matrix.platform }}
+          path: |
+            ${{ matrix.platform == 'linux-arm64' && 'lumos-*.tar.gz' || 'dist/__main__/lumos-*.tar.gz' }}
+            ${{ matrix.platform == 'linux-arm64' && 'lumos-*.tar.gz.sha256' || 'dist/__main__/lumos-*.tar.gz.sha256' }}
+          retention-days: 90
