@@ -1,2 +1,4 @@
+import importlib.metadata
+
 __app_name__ = "lumos"
-__version__ = "2.1.2"
+__version__ = importlib.metadata.version("lumos")
