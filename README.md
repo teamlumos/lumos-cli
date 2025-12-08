@@ -74,11 +74,11 @@ Gets the last request you made, or if `--request-id` is passed/`--last` flag not
 # Development Setup
 
 ```shell
-poetry install
+uv sync
 ```
 
 It is recommended that you create this alias:
-`alias lumosdev='poetry run python -m lumos'`
+`alias lumosdev='uv run python -m lumos'`
 
 
 ## Releasing
