@@ -73,6 +73,6 @@ jobs:
         with:
           name: lumos-${{ matrix.platform }}
           path: |
-            'dist/__main__/lumos-*.tar.gz'
-            'dist/__main__/lumos-*.tar.gz.sha256'
+            dist/__main__/lumos-*.tar.gz
+            dist/__main__/lumos-*.tar.gz.sha256
           retention-days: 90
