@@ -1,0 +1,51 @@
+{
+	"image": "134185523792.dkr.ecr.us-west-2.amazonaws.com/devcontainer/base:latest",
+	"runArgs": ["--network=host"],
+	"overrideCommand": false,
+	"mounts": [
+	  // User configs
+	  "source=${localEnv:HOME}/.aws,target=/home/vscode/.aws,type=bind",
+	  "source=${localEnv:HOME}/.config/graphite,target=/home/vscode/.config/graphite,type=bind",
+	  "source=${localEnv:HOME}/.config/ngrok,target=/home/vscode/.config/ngrok,type=bind",
+	  "source=${localEnv:HOME}/.cursor/mcp.json,target=/home/vscode/.cursor/mcp.json,type=bind",
+	  // Volumes for storing packages
+	  "source=lumos-cli-devcontainer-venv,target=${containerWorkspaceFolder}/.venv,type=volume",
+	  "source=lumos-cli-devcontainer-data,target=/home/vscode/devcontainer-data,type=volume",
+	  // Docker socket
+	  "source=/var/run/docker.sock,target=/var/run/docker-host.sock,type=bind"
+	],
+	"initializeCommand": {
+	  // Ensure bind mount sources exist
+	  "aws": "mkdir -p ${HOME}/.aws",
+	  "graphite": "mkdir -p ${HOME}/.config/graphite",
+	  "ngrok": "mkdir -p ${HOME}/.config/ngrok"
+	},
+	"onCreateCommand": {
+	  "git_safe": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+	  "venv": "sudo chown -R vscode:vscode ${containerWorkspaceFolder}/.venv"
+
+	},
+	"remoteEnv": {
+	  // host machines paths, to be used for docker-from-docker volumes
+	  "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}",
+	  "LOCAL_HOME_FOLDER": "${localEnv:HOME}",
+	  // Add lumos bin to path
+	  "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}:${containerWorkspaceFolder}/bin",
+	},
+	"customizations": {
+	  "vscode": {
+		"extensions": [
+		  "ms-python.python",
+		  "anysphere.cursorpyright",
+		  "GitHub.vscode-pull-request-github",
+		  "charliermarsh.ruff",
+		  "eamodio.gitlens",
+		  "tamasfe.even-better-toml"
+  		],
+		"settings": {
+		  // Devcontainer specific settings
+		  "terminal.integrated.defaultProfile.linux": "zsh"
+
+		}
+	}
+}
