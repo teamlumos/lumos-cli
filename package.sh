@@ -1,4 +1,4 @@
-poetry run pyinstaller lumos/__main__.py
+uv run pyinstaller lumos/__main__.py
 cd ./dist/__main__
 mv __main__ lumos
 tar -czf lumos.tar.gz *
