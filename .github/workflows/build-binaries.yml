@@ -52,6 +52,7 @@ jobs:
             venv-${{ matrix.platform }}-
 
       - name: Install dependencies
+        shell: bash
         run: poetry install --no-interaction --no-root
 
       - name: Set up QEMU (for ARM64 on Linux)
@@ -67,7 +68,7 @@ jobs:
             --platform linux/arm64 \
             python:3.10.6-slim \
             bash -c "cd /workspace && \
-              apt-get update && apt-get install -y curl && \
+              apt-get update && apt-get install -y curl binutils && \
               curl -sSL https://install.python-poetry.org | python3 - && \
               export PATH=\"/root/.local/bin:\$PATH\" && \
               poetry install --no-interaction --no-root && \
@@ -89,13 +90,13 @@ jobs:
 
       - name: Build binary (Windows)
         if: matrix.platform == 'windows'
-        shell: pwsh
+        shell: bash
         run: |
           poetry run pyinstaller lumos/__main__.py
           cd ./dist/__main__
-          Move-Item __main__.exe lumos.exe
+          mv __main__.exe lumos.exe
           tar -czf lumos-${{ matrix.platform }}.tar.gz *
-          (Get-FileHash -Algorithm SHA256 lumos-${{ matrix.platform }}.tar.gz).Hash.ToLower() | Out-File -FilePath lumos-${{ matrix.platform }}.tar.gz.sha256 -NoNewline
+          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > lumos-${{ matrix.platform }}.tar.gz.sha256
 
       - name: Copy artifacts from Docker (Linux ARM64)
         if: matrix.platform == 'linux-arm64'
