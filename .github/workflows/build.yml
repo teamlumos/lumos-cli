@@ -46,25 +46,18 @@ jobs:
         shell: bash
         run: uv sync
 
-      - name: Build binary (Linux / macOS)
-        if: matrix.platform == 'linux-amd64' || matrix.platform == 'linux-arm64' || matrix.platform == 'macos-arm64'
+      - name: Build binary
         shell: bash
         run: |
           uv run pyinstaller lumos/__main__.py
-          cd ./dist/__main__
-          mv __main__ lumos
-          tar -czf lumos-${{ matrix.platform }}.tar.gz *
-          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > d
-
-      - name: Build binary (Windows)
-        if: matrix.platform == 'windows'
-        shell: bash
-        run: |
-          uv run pyinstaller lumos/__main__.py
-          cd ./dist/__main__
-          mv __main__.exe lumos.exe
-          tar -czf lumos-${{ matrix.platform }}.tar.gz *
-          sha256sum lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > lumos-${{ matrix.platform }}.tar.gz.sha256
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            mv ./dist/__main__/__main__.exe ./dist/__main__/lumos.exe
+          else
+            mv ./dist/__main__/__main__ ./dist/__main__/lumos
+          fi
+          tar -czf lumos-${{ matrix.platform }}.tar.gz -C ./dist/__main__ .
+          mv lumos-${{ matrix.platform }}.tar.gz ./dist/__main__/
+          sha256sum ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz.sha256
 
 
       - name: Display SHA256
