@@ -18,10 +18,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu24-4cpu-amd64
+          - runner: ubuntu22-4cpu-amd64
             platform: linux-amd64
             arch: x64
-          - runner: ubuntu24-4cpu-arm64
+          - runner: ubuntu22-4cpu-arm64
             platform: linux-arm64
             arch: aarch64
           - runner: macos-latest
