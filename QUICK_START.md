@@ -1,30 +1,27 @@
 # Quick Start: Homebrew Automation Setup
 
-This guide will help you set up the automated Homebrew formula updates for the Lumos CLI.
+This guide will help you verify the automated Homebrew formula updates for the Lumos CLI.
 
 ## Prerequisites
 
 ✅ All code is already in place and ready to use!
+✅ GitHub App authentication is already configured (same as release workflow)
 
-## Setup (One-time)
+## Verification
 
-### 1. Create GitHub Personal Access Token
+### Check Existing Setup
 
-1. Go to https://github.com/settings/tokens
-2. Click "Generate new token" → "Generate new token (classic)"
-3. Give it a name: `homebrew-tap-automation`
-4. Select scopes:
-   - ✅ `repo` (Full control of private repositories)
-5. Click "Generate token"
-6. **Copy the token** (you won't see it again!)
+The workflow uses the lumos-automations GitHub App with these secrets:
+- `GH_BOT_CLIENT_ID` 
+- `GH_BOT_PRIVATE_KEY`
 
-### 2. Add Secret to Repository
+These should already be configured if the release workflow is working.
 
-1. Go to https://github.com/teamlumos/lumos-cli/settings/secrets/actions
-2. Click "New repository secret"
-3. Name: `HOMEBREW_TAP_TOKEN`
-4. Value: Paste the token from step 1
-5. Click "Add secret"
+### Verify App Permissions
+
+Ensure the lumos-automations app has:
+- ✅ Read access to lumos-cli repository
+- ✅ Write access to homebrew-tap repository
 
 ## That's It! 🎉
 
@@ -32,7 +29,7 @@ The automation is now active and will:
 - ✅ Automatically update the Homebrew formula on each release
 - ✅ Support macOS (Intel & Apple Silicon) and Linux (AMD64 & ARM64)
 - ✅ Calculate and update SHA256 checksums
-- ✅ Commit and push changes to homebrew-tap
+- ✅ Commit and push changes to homebrew-tap using the lumos-automations app
 
 ## Testing
 

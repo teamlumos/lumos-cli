@@ -71,13 +71,16 @@ This template uses placeholders that are replaced during the update process:
 
 The following GitHub secrets are required for the automated workflow:
 
-- `HOMEBREW_TAP_TOKEN` - GitHub Personal Access Token with `repo` scope for the homebrew-tap repository
+- `GH_BOT_CLIENT_ID` - GitHub App ID for lumos-automations
+- `GH_BOT_PRIVATE_KEY` - GitHub App private key for lumos-automations
+
+These are the same secrets used by the release workflow.
 
 ## Troubleshooting
 
 ### Workflow fails with "Resource not accessible by integration"
 
-Make sure the `HOMEBREW_TAP_TOKEN` secret is set and has the correct permissions.
+Make sure the lumos-automations GitHub App has access to the homebrew-tap repository with write permissions.
 
 ### Formula fails to install
 

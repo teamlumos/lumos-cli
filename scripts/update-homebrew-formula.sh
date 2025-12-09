@@ -18,9 +18,10 @@ VERSION="${VERSION#v}"
 
 echo "Updating Homebrew formula to version ${VERSION}..."
 
-# Check if HOMEBREW_TAP_TOKEN is set
+# Check if HOMEBREW_TAP_TOKEN is set (for manual auth)
 if [ -z "$HOMEBREW_TAP_TOKEN" ]; then
   echo "Warning: HOMEBREW_TAP_TOKEN not set. You may need to authenticate manually."
+  echo "Note: The automated workflow uses the lumos-automations GitHub App instead."
 fi
 
 # Create temporary directory

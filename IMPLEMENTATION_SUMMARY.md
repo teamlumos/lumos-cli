@@ -80,10 +80,12 @@ Users can install: brew install teamlumos/tap/lumos
 
 ## 🔐 Setup Required
 
-### GitHub Secret:
-- `HOMEBREW_TAP_TOKEN` - Personal Access Token with `repo` scope for teamlumos/homebrew-tap
+### GitHub Secrets:
+The workflow uses the same GitHub App authentication as the release workflow:
+- `GH_BOT_CLIENT_ID` - GitHub App ID for lumos-automations
+- `GH_BOT_PRIVATE_KEY` - GitHub App private key for lumos-automations
 
-This must be added to the lumos-cli repository secrets.
+These secrets should already be configured if the release workflow is working.
 
 ## 🧪 Testing
 

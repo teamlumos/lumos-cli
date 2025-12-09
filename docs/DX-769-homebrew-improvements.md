@@ -98,17 +98,20 @@ end
 
 ### GitHub Secrets
 
-The following secret must be configured in the lumos-cli repository:
+The following secrets must be configured in the lumos-cli repository:
 
 | Secret Name | Description | Scope |
 |------------|-------------|-------|
-| `HOMEBREW_TAP_TOKEN` | GitHub Personal Access Token with `repo` scope for teamlumos/homebrew-tap | Used by the update workflow to push formula updates |
+| `GH_BOT_CLIENT_ID` | GitHub App ID for lumos-automations | Used for authentication |
+| `GH_BOT_PRIVATE_KEY` | GitHub App private key for lumos-automations | Used for authentication |
 
-### Repository Permissions
+These are the same secrets used by the release workflow and provide access to the homebrew-tap repository.
 
-The GitHub token needs:
+### GitHub App Permissions
+
+The lumos-automations GitHub App needs:
 - Read access to lumos-cli releases
-- Write access to homebrew-tap repository
+- Write access to homebrew-tap repository contents
 
 ## Usage
 
@@ -192,12 +195,12 @@ If needed in the future, we can add native Intel binaries by:
 
 ### Workflow Fails: "Resource not accessible by integration"
 
-**Cause:** Missing or invalid `HOMEBREW_TAP_TOKEN` secret
+**Cause:** Missing or invalid GitHub App credentials
 
 **Solutions:**
-1. Verify secret is set in repository settings
-2. Check token has `repo` scope
-3. Regenerate token if expired
+1. Verify `GH_BOT_CLIENT_ID` and `GH_BOT_PRIVATE_KEY` secrets are set
+2. Check that lumos-automations app has access to homebrew-tap repository
+3. Verify app has write permissions to repository contents
 
 ### Formula Installation Fails
 
