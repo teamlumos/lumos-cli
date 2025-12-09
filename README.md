@@ -1,7 +1,18 @@
-# Regular Setup
+# Installation
+
+## macOS and Linux (via Homebrew)
+
 ```shell
 brew install teamlumos/tap/lumos
 ```
+
+Supported platforms:
+- macOS (Apple Silicon and Intel)
+- Linux (x86_64 and ARM64)
+
+## Other Installation Methods
+
+Download the latest release binary for your platform from the [releases page](https://github.com/teamlumos/lumos-cli/releases).
 
 # Documentation
 ### Examples
@@ -83,12 +94,16 @@ It is recommended that you create this alias:
 
 ## Releasing
 
-- Run 
-```
-sh release.sh NEW_VERSION
-```
-like `sh version.sh 0.6.1` will 
-- update the version
-- commit the current set of changes
+The release process is automated via semantic-release:
+
+1. Trigger the Release workflow from GitHub Actions
+2. Semantic-release will:
+   - Analyze commits to determine the version
+   - Create a changelog
+   - Create a git tag and GitHub release
+3. The Build workflow will automatically build and upload binaries for all platforms
+4. The Homebrew formula will be automatically updated
+
+For more details on Homebrew distribution, see [scripts/README.md](scripts/README.md).
 
 

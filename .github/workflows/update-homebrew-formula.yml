@@ -1,0 +1,217 @@
+name: Update Homebrew Formula
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update (e.g., v2.1.2)'
+        required: true
+        type: string
+      dry-run:
+        description: 'Dry run (do not push changes)'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  update-formula:
+    name: Update Homebrew Formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout lumos-cli repository
+        uses: actions/checkout@v4
+        with:
+          path: lumos-cli
+
+      - name: Checkout homebrew-tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: teamlumos/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+
+      - name: Set version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ inputs.version }}"
+          fi
+          # Remove 'v' prefix if present
+          VERSION_NO_V="${VERSION#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "version_no_v=${VERSION_NO_V}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION}"
+          echo "Version (no v): ${VERSION_NO_V}"
+
+      - name: Wait for release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd lumos-cli
+          
+          echo "Waiting for release artifacts to be uploaded..."
+          
+          # Wait up to 15 minutes for artifacts to be available
+          MAX_ATTEMPTS=90
+          SLEEP_TIME=10
+          ATTEMPT=0
+          
+          while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+            echo "Attempt $((ATTEMPT + 1))/$MAX_ATTEMPTS..."
+            
+            # Check if all required artifacts exist
+            ALL_EXIST=true
+            for platform in linux-amd64 linux-arm64 macos-arm64; do
+              if ! gh release view ${{ steps.version.outputs.version }} --json assets --jq ".assets[].name" | grep -q "lumos-${platform}.tar.gz"; then
+                echo "  Missing: lumos-${platform}.tar.gz"
+                ALL_EXIST=false
+              else
+                echo "  Found: lumos-${platform}.tar.gz"
+              fi
+            done
+            
+            if [ "$ALL_EXIST" = true ]; then
+              echo "✅ All artifacts are available"
+              break
+            fi
+            
+            ATTEMPT=$((ATTEMPT + 1))
+            if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
+              echo "Waiting ${SLEEP_TIME}s before retrying..."
+              sleep $SLEEP_TIME
+            fi
+          done
+          
+          if [ "$ALL_EXIST" != true ]; then
+            echo "❌ Timeout waiting for release artifacts"
+            exit 1
+          fi
+
+      - name: Download release artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd lumos-cli
+          
+          # Create directory for artifacts
+          mkdir -p release-artifacts
+          
+          # Download all platform artifacts
+          echo "Downloading release artifacts for ${{ steps.version.outputs.version }}..."
+          
+          # Download each platform artifact
+          for platform in linux-amd64 linux-arm64 macos-arm64; do
+            echo "Downloading lumos-${platform}.tar.gz..."
+            gh release download ${{ steps.version.outputs.version }} \
+              --pattern "lumos-${platform}.tar.gz" \
+              --dir release-artifacts \
+              --repo teamlumos/lumos-cli
+          done
+          
+          ls -la release-artifacts/
+
+      - name: Calculate SHA256 checksums
+        id: checksums
+        run: |
+          cd lumos-cli/release-artifacts
+          
+          # Calculate checksums for each platform
+          LINUX_AMD64_SHA256=$(sha256sum lumos-linux-amd64.tar.gz | awk '{print $1}')
+          LINUX_ARM64_SHA256=$(sha256sum lumos-linux-arm64.tar.gz | awk '{print $1}')
+          MACOS_ARM64_SHA256=$(sha256sum lumos-macos-arm64.tar.gz | awk '{print $1}')
+          
+          echo "linux_amd64_sha256=${LINUX_AMD64_SHA256}" >> $GITHUB_OUTPUT
+          echo "linux_arm64_sha256=${LINUX_ARM64_SHA256}" >> $GITHUB_OUTPUT
+          echo "macos_arm64_sha256=${MACOS_ARM64_SHA256}" >> $GITHUB_OUTPUT
+          
+          echo "Checksums:"
+          echo "  linux-amd64: ${LINUX_AMD64_SHA256}"
+          echo "  linux-arm64: ${LINUX_ARM64_SHA256}"
+          echo "  macos-arm64: ${MACOS_ARM64_SHA256}"
+
+      - name: Update Homebrew formula
+        run: |
+          cd homebrew-tap
+          
+          VERSION="${{ steps.version.outputs.version_no_v }}"
+          
+          # Create or update the formula
+          cat > Formula/lumos.rb << 'EOF'
+          class Lumos < Formula
+            desc "Lumos command line interface"
+            homepage "https://github.com/teamlumos/lumos-cli"
+            version "$VERSION"
+            license "MIT"
+          
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/teamlumos/lumos-cli/releases/download/v$VERSION/lumos-macos-arm64.tar.gz"
+                sha256 "$MACOS_ARM64_SHA256"
+              else
+                # Intel Mac support - use Rosetta to run ARM binary
+                url "https://github.com/teamlumos/lumos-cli/releases/download/v$VERSION/lumos-macos-arm64.tar.gz"
+                sha256 "$MACOS_ARM64_SHA256"
+              end
+            end
+          
+            on_linux do
+              if Hardware::CPU.intel?
+                url "https://github.com/teamlumos/lumos-cli/releases/download/v$VERSION/lumos-linux-amd64.tar.gz"
+                sha256 "$LINUX_AMD64_SHA256"
+              elsif Hardware::CPU.arm?
+                url "https://github.com/teamlumos/lumos-cli/releases/download/v$VERSION/lumos-linux-arm64.tar.gz"
+                sha256 "$LINUX_ARM64_SHA256"
+              end
+            end
+          
+            def install
+              bin.install "lumos"
+            end
+          
+            test do
+              system "#{bin}/lumos", "--help"
+            end
+          end
+          EOF
+          
+          # Replace placeholders
+          sed -i "s/\$VERSION/$VERSION/g" Formula/lumos.rb
+          sed -i "s/\$LINUX_AMD64_SHA256/${{ steps.checksums.outputs.linux_amd64_sha256 }}/g" Formula/lumos.rb
+          sed -i "s/\$LINUX_ARM64_SHA256/${{ steps.checksums.outputs.linux_arm64_sha256 }}/g" Formula/lumos.rb
+          sed -i "s/\$MACOS_ARM64_SHA256/${{ steps.checksums.outputs.macos_arm64_sha256 }}/g" Formula/lumos.rb
+          
+          # Display the updated formula
+          echo "Updated formula:"
+          cat Formula/lumos.rb
+
+      - name: Configure Git
+        if: ${{ !inputs.dry-run }}
+        run: |
+          cd homebrew-tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit and push changes
+        if: ${{ !inputs.dry-run }}
+        run: |
+          cd homebrew-tap
+          
+          git add Formula/lumos.rb
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update lumos to v${{ steps.version.outputs.version_no_v }}"
+            git push
+            echo "✅ Successfully updated homebrew formula to v${{ steps.version.outputs.version_no_v }}"
+          fi
+
+      - name: Dry run summary
+        if: ${{ inputs.dry-run }}
+        run: |
+          echo "🏃 Dry run complete - no changes were pushed"
+          echo "Formula would be updated to version ${{ steps.version.outputs.version_no_v }}"
