@@ -60,25 +60,12 @@ jobs:
             mv ./dist/__main__/__main__ ./dist/__main__/lumos
           fi
           tar -czf lumos-${{ matrix.platform }}.tar.gz -C ./dist/__main__ .
-          mv lumos-${{ matrix.platform }}.tar.gz ./dist/__main__/
-          sha256sum ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz | cut -d ' ' -f1 > ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz.sha256
-
-
-      - name: Display SHA256
-        shell: bash
-        run: |
-          SHA=$(cat ./dist/__main__/lumos-${{ matrix.platform }}.tar.gz.sha256)
-          echo "*******************"
-          echo "File SHA: $SHA"
-          echo "*******************"
 
       - name: Upload artifacts to workflow
         uses: actions/upload-artifact@v4
         with:
           name: lumos-${{ matrix.platform }}
-          path: |
-            dist/__main__/lumos-*.tar.gz
-            dist/__main__/lumos-*.tar.gz.sha256
+          path: lumos-${{ matrix.platform }}.tar.gz
           retention-days: 90
 
       - name: Upload artifacts to release
@@ -86,6 +73,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}      
         run: |
-          gh release upload ${{ github.ref_name }} \
-            dist/__main__/lumos-*.tar.gz \
-            dist/__main__/lumos-*.tar.gz.sha256
+          gh release upload ${{ github.ref_name }} lumos-${{ matrix.platform }}.tar.gz
