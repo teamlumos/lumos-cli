@@ -33,16 +33,10 @@ The automation is now active and will:
 
 ## Testing
 
-### Automatic Test (Recommended)
-Wait for the next release and verify the workflow runs successfully in GitHub Actions.
-
-### Manual Test (Optional)
-1. Go to https://github.com/teamlumos/lumos-cli/actions/workflows/update-homebrew-formula.yml
-2. Click "Run workflow"
-3. Enter a version (e.g., `v2.1.2`)
-4. Enable "Dry run"
-5. Click "Run workflow"
-6. Check the logs to verify it works
+Wait for the next version tag to be pushed and verify:
+1. The build workflow runs successfully
+2. The `update-homebrew` job completes after builds
+3. The formula is updated in homebrew-tap repository
 
 ## Troubleshooting
 
@@ -50,29 +44,20 @@ If something goes wrong, see:
 - [scripts/README.md](scripts/README.md) - Quick reference
 - [docs/DX-769-homebrew-improvements.md](docs/DX-769-homebrew-improvements.md) - Detailed troubleshooting
 
-## Manual Updates (Emergency Only)
-
-If automation fails and you need to update manually:
-
-```bash
-export HOMEBREW_TAP_TOKEN=your_token_here
-./scripts/update-homebrew-formula.sh 2.1.2
-```
-
 ## Architecture
 
 ```
-Release Published (v2.1.2)
+Tag Pushed (v2.1.2)
     ↓
-Build Workflow (builds binaries)
+Build Workflow
     ↓
-Update Homebrew Formula Workflow
+Build Job: Creates binaries for all platforms
     ↓
-1. Waits for artifacts
-2. Downloads all platform binaries
-3. Calculates SHA256 checksums
-4. Updates Formula/lumos.rb
-5. Commits to homebrew-tap
+Update Homebrew Job (after builds complete)
+    ↓
+1. Gets SHA256 digests from GitHub release
+2. Updates Formula/lumos.rb
+3. Commits to homebrew-tap
     ↓
 Done! Users can: brew install teamlumos/tap/lumos
 ```
