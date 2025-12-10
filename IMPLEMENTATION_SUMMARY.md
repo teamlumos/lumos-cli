@@ -8,63 +8,49 @@
 
 ## 📦 Deliverables
 
-### 6 New Files Created (903 lines total):
+### New Files Created:
 
-1. **`.github/workflows/update-homebrew-formula.yml`** (217 lines)
-   - Automated workflow that updates homebrew formula on release
-   - Waits for build artifacts to be available
-   - Calculates SHA256 checksums
-   - Updates and commits formula to homebrew-tap repository
-
-2. **`.github/homebrew-templates/lumos.rb.template`** (35 lines)
+1. **`.github/homebrew-templates/lumos.rb.template`** (35 lines)
    - Multi-platform Homebrew formula template
    - Supports macOS (ARM64 + Intel via Rosetta)
    - Supports Linux (AMD64 + ARM64)
 
-3. **`scripts/update-homebrew-formula.sh`** (131 lines, executable)
-   - Manual update script for emergency fixes
-   - Downloads artifacts and calculates checksums
-   - Interactive confirmation before pushing
-
-4. **`scripts/test-homebrew-formula.sh`** (97 lines, executable)
-   - Tests formula syntax and installation
-   - Verifies artifact availability
-   - Can perform actual installation testing
-
-5. **`scripts/README.md`** (101 lines)
-   - Documentation for scripts and workflows
-   - Usage instructions and troubleshooting
-
-6. **`docs/DX-769-homebrew-improvements.md`** (322 lines)
-   - Comprehensive implementation documentation
-   - Architecture diagrams and flow charts
+2. **`scripts/README.md`**
+   - Documentation for homebrew distribution
    - Troubleshooting guide
-   - Future enhancement ideas
 
-### 2 Files Modified:
+3. **`docs/DX-769-homebrew-improvements.md`**
+   - Comprehensive implementation documentation
+   - Architecture and troubleshooting guide
 
-1. **`README.md`**
+### Files Modified:
+
+1. **`.github/workflows/build.yml`**
+   - Added `update-homebrew` job that runs after builds complete
+   - Only runs when a version tag is pushed
+   - Uses `gh release view` to get SHA256 digests directly
+   - Simple implementation without retry logic
+
+2. **`README.md`**
    - Updated installation instructions
    - Added platform support information
    - Improved release documentation
-
-2. **`.github/workflows/update-homebrew-formula.yml`** (already listed above)
 
 ## 🔧 How It Works
 
 ### Automated Flow:
 ```
-Release Published (v2.1.2)
+Tag Pushed (v2.1.2)
     ↓
-Build Workflow (builds binaries for all platforms)
+Build Workflow Triggered
     ↓
-Update Homebrew Formula Workflow
+Build Job: Creates binaries for all platforms
     ↓
-1. Waits for all artifacts to be available
-2. Downloads artifacts
-3. Calculates SHA256 checksums
-4. Updates Formula/lumos.rb
-5. Commits to homebrew-tap
+Update Homebrew Job (runs after builds complete)
+    ↓
+1. Gets asset info with SHA256 digests from GitHub release
+2. Updates Formula/lumos.rb with new version and checksums
+3. Commits to homebrew-tap using lumos-automations app
     ↓
 Users can install: brew install teamlumos/tap/lumos
 ```
@@ -97,26 +83,22 @@ All files validated:
 
 ## 📝 Next Steps
 
-1. **Add GitHub Secret**:
-   - Go to repository Settings → Secrets and variables → Actions
-   - Add `HOMEBREW_TAP_TOKEN` with a token that has `repo` access to homebrew-tap
+1. **Verify GitHub App Access**:
+   - Ensure lumos-automations app has write access to homebrew-tap repository
+   - Secrets should already be configured (same as release workflow)
 
 2. **Test on Next Release**:
-   - The automation will trigger on the next semantic-release
-   - Monitor GitHub Actions for any issues
+   - The automation will trigger when the next version tag is pushed
+   - Monitor the `update-homebrew` job in the build workflow
    - Verify formula is updated in homebrew-tap
-
-3. **Manual Testing** (Optional):
-   - Use the manual workflow trigger to test with dry-run
-   - Run the test script against the current version
 
 ## 🎉 Benefits
 
-1. **Zero Manual Work** - Formula updates automatically on each release
+1. **Zero Manual Work** - Formula updates automatically on each tag
 2. **Multi-Platform** - Single formula works on macOS and Linux
-3. **Reliable** - Waits for artifacts, validates checksums
-4. **Flexible** - Manual scripts available for edge cases
-5. **Well Documented** - Comprehensive docs for maintenance
+3. **Simple & Reliable** - Gets digests directly from GitHub, no downloads needed
+4. **Integrated** - Runs as part of build workflow, no separate workflow needed
+5. **Consistent** - Uses same authentication as release workflow
 
 ## 📚 Documentation
 
