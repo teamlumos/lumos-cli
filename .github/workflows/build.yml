@@ -74,3 +74,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}      
         run: |
           gh release upload ${{ github.ref_name }} lumos-${{ matrix.platform }}.tar.gz
+<<<<<<< HEAD
+=======
