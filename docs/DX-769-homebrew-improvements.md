@@ -47,34 +47,16 @@ This implementation addresses two key requirements from DX-769:
 - Uses GitHub App authentication (same as release workflow)
 - Runs as part of the build workflow, ensuring builds complete first
 
-#### 2. Homebrew Formula Template (`.github/homebrew-templates/lumos.rb.template`)
+#### 2. Homebrew Formula
 
-Multi-platform formula supporting:
-- **macOS**:
-  - Apple Silicon (ARM64) - native binary
-  - Intel - uses ARM binary via Rosetta 2
-- **Linux**:
-  - x86_64 (AMD64)
-  - ARM64 (aarch64)
+The formula in the homebrew-tap repository supports multiple platforms:
+- **macOS**: Apple Silicon (ARM64) and Intel (via Rosetta 2)
+- **Linux**: x86_64 (AMD64) and ARM64 (aarch64)
 
-The formula uses Homebrew's platform detection:
-```ruby
-on_macos do
-  if Hardware::CPU.arm?
-    # ARM64 binary
-  else
-    # Intel Mac uses ARM binary via Rosetta
-  end
-end
-
-on_linux do
-  if Hardware::CPU.intel?
-    # x86_64 binary
-  elsif Hardware::CPU.arm?
-    # ARM64 binary
-  end
-end
-```
+The workflow updates the formula in-place using `sed` to modify:
+- Version number
+- Download URLs for each platform
+- SHA256 checksums for each platform binary
 
 
 ## Setup Requirements
@@ -208,7 +190,6 @@ Potential improvements for consideration:
 
 - `.github/workflows/build.yml` - Builds binaries and updates homebrew formula
 - `.github/workflows/release.yml` - Release creation workflow
-- `.github/homebrew-templates/lumos.rb.template` - Formula template
 - `scripts/README.md` - Homebrew distribution documentation
 
 ## References

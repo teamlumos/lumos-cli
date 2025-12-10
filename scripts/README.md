@@ -21,10 +21,6 @@ The formula supports the following platforms:
 - **macOS**: ARM64 (Apple Silicon) and Intel (via Rosetta 2)
 - **Linux**: AMD64 (x86_64) and ARM64 (aarch64)
 
-## Formula Template
-
-The formula template is located at [.github/homebrew-templates/lumos.rb.template](../.github/homebrew-templates/lumos.rb.template).
-
 ## Required Secrets
 
 The workflow uses the lumos-automations GitHub App (same as the release workflow):

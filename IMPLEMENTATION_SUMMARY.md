@@ -10,16 +10,11 @@
 
 ### New Files Created:
 
-1. **`.github/homebrew-templates/lumos.rb.template`** (35 lines)
-   - Multi-platform Homebrew formula template
-   - Supports macOS (ARM64 + Intel via Rosetta)
-   - Supports Linux (AMD64 + ARM64)
-
-2. **`scripts/README.md`**
+1. **`scripts/README.md`**
    - Documentation for homebrew distribution
    - Troubleshooting guide
 
-3. **`docs/DX-769-homebrew-improvements.md`**
+2. **`docs/DX-769-homebrew-improvements.md`**
    - Comprehensive implementation documentation
    - Architecture and troubleshooting guide
 
