@@ -13,6 +13,7 @@ plugins:
   - "@semantic-release/changelog"
 
   - - "@semantic-release/exec"
+    - verifyReleaseCmd: echo "new-release-version=${nextRelease.version}" >> $GITHUB_OUTPUT
     - prepareCommand: uv version ${nextRelease.version}
 
   - - "@semantic-release/git"
@@ -21,4 +22,6 @@ plugins:
         - CHANGELOG.md
         - pyproject.toml
 
-  - "@semantic-release/github"
+  - - "@semantic-release/github"
+    - assets:
+        - path: "lumos-*.tar.gz"
