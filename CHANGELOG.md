@@ -7,14 +7,6 @@
 * big ci improvements ([ed3a06b](https://github.com/teamlumos/lumos-cli/commit/ed3a06b3f4a8936700183e0710e6820fc0cfe60a))
 * Integrate Homebrew updates into build workflow ([c0efb04](https://github.com/teamlumos/lumos-cli/commit/c0efb043d62db0b03ac77ad46dfd18988e3f87b7))
 
-# [2.3.0](https://github.com/teamlumos/lumos-cli/compare/v2.2.0...v2.3.0) (2025-12-11)
-
-
-### Features
-
-* Automate Homebrew formula updates and multi-platform support ([6befbf2](https://github.com/teamlumos/lumos-cli/commit/6befbf2db8e1f260bce2cc9a25f75710aba65c33))
-* big ci improvements ([ed3a06b](https://github.com/teamlumos/lumos-cli/commit/ed3a06b3f4a8936700183e0710e6820fc0cfe60a))
-* Integrate Homebrew updates into build workflow ([c0efb04](https://github.com/teamlumos/lumos-cli/commit/c0efb043d62db0b03ac77ad46dfd18988e3f87b7))
 
 # [2.2.0](https://github.com/teamlumos/lumos-cli/compare/v2.1.2...v2.2.0) (2025-12-09)
 
