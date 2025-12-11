@@ -24,4 +24,11 @@ plugins:
 
   - - "@semantic-release/github"
     - assets:
-        - path: "lumos-*.tar.gz"
+        - path: "lumos-linux-*.tar.gz"
+          label: "Linux Binary"
+        - path: "lumos-macos-*.tar.gz"
+          label: "macOS Binary"
+        - path: "lumos-windows-*.tar.gz"
+          label: "Windows Binary"
+        - path: "lumos-*.whl"
+          label: "Python Wheel"

@@ -11,6 +11,27 @@ Supported platforms:
 - Linux (x86_64 and ARM64)
 - Windows
 
+## Python Package (via pip or uv)
+
+You can install the Lumos CLI as a Python package from GitHub Releases:
+
+### Using pip
+
+```shell
+# Download the wheel from the latest release
+# Visit https://github.com/teamlumos/lumos-cli/releases/latest
+pip install lumos-<version>-py3-none-any.whl
+```
+
+### Using uv
+
+```shell
+# Install from GitHub releases
+uv tool install https://github.com/teamlumos/lumos-cli/releases/latest/download/lumos-<version>-py3-none-any.whl
+```
+
+Replace `<version>` with the actual version number from the releases page.
+
 ## Other Installation Methods
 
 Download the latest release binary for your platform from the [releases page](https://github.com/teamlumos/lumos-cli/releases).

@@ -55,6 +55,42 @@ jobs:
       version: v${{ needs.prepare.outputs.new-release-version }}
     secrets: inherit
 
+  publish-wheel:
+    name: Save Python Wheel Artifacts
+    needs: [prepare, build]
+    if: needs.prepare.outputs.new-release-version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download wheel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-wheel
+          path: dist/
+
+      - name: Download sdist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-sdist
+          path: dist/
+
+      - name: List artifacts
+        run: |
+          echo "Python distribution artifacts:"
+          ls -lh dist/
+          
+      - name: Upload Python distributions as release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-distributions-v${{ needs.prepare.outputs.new-release-version }}
+          path: dist/*
+          retention-days: 90
+
   release:
     name: Create Release
     needs: [prepare, build]
