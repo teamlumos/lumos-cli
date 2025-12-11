@@ -1,11 +1,15 @@
 name: Build Binaries
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: false
+        default: ''
   push:
     branches:
       - main
-    tags:
-      - v*    
   pull_request:
     branches:
       - main
@@ -20,16 +24,12 @@ jobs:
         include:
           - runner: ubuntu22-4cpu-amd64
             platform: linux-amd64
-            arch: x64
           - runner: ubuntu22-4cpu-arm64
             platform: linux-arm64
-            arch: aarch64
           - runner: macos-latest
             platform: macos-arm64
-            arch: arm64
           - runner: windows-latest
             platform: windows
-            arch: x64
     
     steps:
       - name: Checkout code
@@ -59,20 +59,12 @@ jobs:
           else
             mv ./dist/__main__/__main__ ./dist/__main__/lumos
           fi
-          tar -czf lumos-${{ matrix.platform }}.tar.gz -C ./dist/__main__ .
+          VERSION="${{ inputs.version || 'dev' }}"
+          tar -czf lumos-${{ matrix.platform }}-${VERSION}.tar.gz -C ./dist/__main__ .
 
       - name: Upload artifacts to workflow
         uses: actions/upload-artifact@v4
         with:
-          name: lumos-${{ matrix.platform }}
-          path: lumos-${{ matrix.platform }}.tar.gz
+          name: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}
+          path: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
           retention-days: 90
-
-      - name: Upload artifacts to release
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GH_TOKEN: ${{ github.token }}      
-        run: |
-          gh release upload ${{ github.ref_name }} lumos-${{ matrix.platform }}.tar.gz
-<<<<<<< HEAD
-=======

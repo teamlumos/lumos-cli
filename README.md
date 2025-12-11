@@ -7,8 +7,9 @@ brew install teamlumos/tap/lumos
 ```
 
 Supported platforms:
-- macOS (Apple Silicon and Intel)
+- macOS (Apple Silicon)
 - Linux (x86_64 and ARM64)
+- Windows
 
 ## Other Installation Methods
 
@@ -96,14 +97,10 @@ It is recommended that you create this alias:
 
 The release process is automated via semantic-release:
 
-1. Trigger the Release workflow from GitHub Actions
+1. Trigger the Release workflow from GitHub Actions page
 2. Semantic-release will:
    - Analyze commits to determine the version
+   - Built the versioned artifacts
    - Create a changelog
-   - Create a git tag and GitHub release
-3. The Build workflow will automatically build and upload binaries for all platforms
+   - Create a git tag and GitHub release with the artifacts
 4. The Homebrew formula will be automatically updated
-
-For more details on Homebrew distribution, see [scripts/README.md](scripts/README.md).
-
-
