@@ -14,7 +14,7 @@ plugins:
 
   - - "@semantic-release/exec"
     - verifyReleaseCmd: echo "new-release-version=${nextRelease.version}" >> $GITHUB_OUTPUT
-    - prepareCommand: uv version ${nextRelease.version}
+      prepareCommand: uv version ${nextRelease.version}
 
   - - "@semantic-release/git"
     - message: 'chore(release): ${nextRelease.version} \n\n${nextRelease.notes}'
