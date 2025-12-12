@@ -14,13 +14,17 @@ plugins:
 
   - - "@semantic-release/exec"
     - verifyReleaseCmd: echo "new-release-version=${nextRelease.version}" >> $GITHUB_OUTPUT
-      prepareCommand: uv version ${nextRelease.version}
+      prepareCommand: |
+        uv version ${nextRelease.version}
+        uv sync --group docs
+        uv run sphinx-build -M markdown docs docs/_build
 
   - - "@semantic-release/git"
     - message: 'chore(release): ${nextRelease.version} \n\n${nextRelease.notes}'
       assets:
         - CHANGELOG.md
         - pyproject.toml
+        - docs/_build/markdown/**/*
 
   - - "@semantic-release/github"
     - assets:
