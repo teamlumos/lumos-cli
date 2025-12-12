@@ -36,9 +36,7 @@ def list_users(
     id_only: bool,
 ) -> None:
     all = csv or output_json or not paginate
-    users, count, total = client.get_users(
-        like=like, all=all, page=page, page_size=page_size
-    )
+    users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
     display(
         "users",
         users,
@@ -118,9 +116,7 @@ def list_groups(
 ) -> None:
     app_uuid = UUID(app) if app else None
     all = csv or output_json or not paginate
-    groups, count, total = client.get_groups(
-        app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size
-    )
+    groups, count, total = client.get_groups(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
 
     display(
         "groups",
@@ -192,9 +188,7 @@ def list_requests(
         page_size=page_size,
     )
 
-    access_requests = sorted(
-        access_requests, key=lambda x: x.requested_at, reverse=True
-    )
+    access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
 
     display(
         "requests",
@@ -244,9 +238,7 @@ def list_apps(
         else:
             print("No apps found.")
         return
-    apps, count, total = client.get_appstore_apps(
-        name_search=like, all=all, page_size=page_size, page=page
-    )
+    apps, count, total = client.get_appstore_apps(name_search=like, all=all, page_size=page_size, page=page)
     display(
         "apps",
         apps,
@@ -292,8 +284,6 @@ def display(
     remaining = total - count - page_size * (page - 1)
     if remaining > 0:
         if search:
-            print(
-                f"There are {remaining} more {description} that match your search. Use --like to search.\n"
-            )
+            print(f"There are {remaining} more {description} that match your search. Use --like to search.\n")
         else:
             print(f"There are {remaining} more {description} not shown.\n")
