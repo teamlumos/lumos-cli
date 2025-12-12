@@ -1,21 +1,26 @@
-# Installation
+# Lumos CLI
 
-## macOS and Linux (via Homebrew)
+A command-line interface for the Lumos platform. Manage access requests, list resources, and automate workflows.
+
+## Installation
+
+### macOS and Linux (via Homebrew)
 
 ```shell
 brew install teamlumos/tap/lumos
 ```
 
-Supported platforms:
+### Supported Platforms
+
 - macOS (Apple Silicon)
 - Linux (x86_64 and ARM64)
 - Windows
 
-## Python Package (via pip or uv)
+### Python Package (via pip or uv)
 
 You can install the Lumos CLI as a Python package from GitHub Releases:
 
-### Using pip
+#### Using pip
 
 ```shell
 # Download the wheel from the latest release
@@ -23,7 +28,7 @@ You can install the Lumos CLI as a Python package from GitHub Releases:
 pip install lumos-<version>-py3-none-any.whl
 ```
 
-### Using uv
+#### Using uv
 
 ```shell
 # Install from GitHub releases
@@ -32,12 +37,37 @@ uv tool install https://github.com/teamlumos/lumos-cli/releases/latest/download/
 
 Replace `<version>` with the actual version number from the releases page.
 
-## Other Installation Methods
+### Binary Downloads
 
 Download the latest release binary for your platform from the [releases page](https://github.com/teamlumos/lumos-cli/releases).
 
-# Documentation
-### Examples
+## Quick Start
+
+```shell
+# Setup authentication (first time)
+lumos setup
+
+# Check who you're logged in as
+lumos whoami
+
+# List available apps
+lumos list apps --like github
+
+# Make an access request
+lumos request
+```
+
+## Documentation
+
+Full documentation is available at [teamlumos.github.io/lumos-cli](https://teamlumos.github.io/lumos-cli/).
+
+For local development, see the [`docs/`](docs/) directory:
+
+- [Installation Guide](docs/installation.md) - Detailed installation instructions
+- [Examples](docs/examples.md) - Usage examples with code samples
+- [CLI Reference](docs/cli-reference.md) - Complete command reference (auto-generated)
+
+## Examples
 
 You can run commands like:
 

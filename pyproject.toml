@@ -49,6 +49,12 @@ dev = [
     "basedpyright>=1.21.0,<2",
     "pre-commit>=4.0.0,<5",
 ]
+docs = [
+    "sphinx>=7.0.0,<8",
+    "myst-parser>=3.0.0,<4",
+    "sphinx-click>=6.0.0,<7",
+    "sphinx-rtd-theme>=2.0.0,<3",
+]
 
 [build-system]
 requires = ["hatchling"]
