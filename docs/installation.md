@@ -41,12 +41,12 @@ uv tool install https://github.com/teamlumos/lumos-cli/releases/latest/download/
 
 Download pre-built binaries directly from the [GitHub Releases page](https://github.com/teamlumos/lumos-cli/releases):
 
-| Platform | Architecture | Download |
-|----------|--------------|----------|
-| Linux | AMD64 (x86_64) | `lumos-linux-amd64-vX.X.X.tar.gz` |
-| Linux | ARM64 | `lumos-linux-arm64-vX.X.X.tar.gz` |
-| macOS | ARM64 (Apple Silicon) | `lumos-macos-arm64-vX.X.X.tar.gz` |
-| Windows | x86_64 | `lumos-windows-vX.X.X.tar.gz` |
+| Platform | Architecture          | Download                          |
+| -------- | --------------------- | --------------------------------- |
+| Linux    | AMD64 (x86_64)        | `lumos-linux-amd64-vX.X.X.tar.gz` |
+| Linux    | ARM64                 | `lumos-linux-arm64-vX.X.X.tar.gz` |
+| macOS    | ARM64 (Apple Silicon) | `lumos-macos-arm64-vX.X.X.tar.gz` |
+| Windows  | x86_64                | `lumos-windows-vX.X.X.tar.gz`     |
 
 ### Linux/macOS Installation
 
@@ -81,7 +81,7 @@ lumos setup
 lumos login
 ```
 
-You'll be directed to authenticate in your browser. Once complete, you can verify your login:
+You’ll be directed to authenticate in your browser. Once complete, you can verify your login:
 
 ```bash
 lumos whoami

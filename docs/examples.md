@@ -24,7 +24,7 @@ lumos login --admin
 
 ### Check Current User
 
-Verify who you're logged in as:
+Verify who you’re logged in as:
 
 ```bash
 lumos whoami
@@ -374,12 +374,12 @@ lumos list apps --csv > apps.csv
 
 All `list` commands support multiple output formats:
 
-| Format | Flag | Use Case |
-|--------|------|----------|
-| Table | (default) | Human-readable terminal output |
-| JSON | `--json` | Scripting and API integration |
-| CSV | `--csv` | Spreadsheet import/export |
-| ID Only | `--id-only` | Piping to other commands |
+| Format  | Flag        | Use Case                       |
+| ------- | ----------- | ------------------------------ |
+| Table   | (default)   | Human-readable terminal output |
+| JSON    | `--json`    | Scripting and API integration  |
+| CSV     | `--csv`     | Spreadsheet import/export      |
+| ID Only | `--id-only` | Piping to other commands       |
 
 ### Pagination
 

@@ -10,6 +10,5 @@ venv/
 *.egg-info
 node_modules/
 
-# Documentation build output (HTML only, markdown is committed)
-docs/_build/html/
-docs/_build/doctrees/
+# Documentation build output
+docs/sphinx/_build/
