@@ -1,1 +1,1 @@
-from .cli import app
+from .cli import list_group
