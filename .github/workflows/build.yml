@@ -62,9 +62,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu22-4cpu-amd64
+          - runner: ubuntu22-2cpu-amd64
             platform: linux-amd64
-          - runner: ubuntu22-4cpu-arm64
+          - runner: ubuntu22-2cpu-arm64
             platform: linux-arm64
           - runner: macos-latest
             platform: macos-arm64
