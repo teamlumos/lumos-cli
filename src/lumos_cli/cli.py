@@ -1,11 +1,11 @@
 from typing import Annotated, Optional
-from common.helpers import authenticate, login as _login, setup as _setup, logout as _logout
-from common.logging import logdebug
+from lumos_cli.common.helpers import authenticate, login as _login, setup as _setup, logout as _logout
+from lumos_cli.common.logging import logdebug
 import typer
-from lumos import __version__, __app_name__
-import list_collections
-import request
-from common.client import ApiClient
+from lumos_cli import __version__, __app_name__
+from lumos_cli import list_collections
+from lumos_cli import request
+from lumos_cli.common.client import ApiClient
 import os
 
 app = typer.Typer()

@@ -1,7 +1,7 @@
 
 from uuid import UUID
-from common.helpers import check_current_apps, get_statuses
-from common.models import AccessRequest, App, Permission, SupportRequestStatus, User
+from lumos_cli.common.helpers import check_current_apps, get_statuses
+from lumos_cli.common.models import AccessRequest, App, Permission, SupportRequestStatus, User
 
 
 def test_get_statuses():

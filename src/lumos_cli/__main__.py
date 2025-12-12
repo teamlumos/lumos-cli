@@ -1,4 +1,4 @@
-from lumos import cli, __app_name__
+from lumos_cli import cli, __app_name__
 
 
 def main():

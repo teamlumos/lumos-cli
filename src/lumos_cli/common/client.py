@@ -3,16 +3,16 @@ from abc import abstractmethod
 import time
 from typing import Any, Dict, Tuple
 import requests
-from common.client_helpers import check_version_header
-from lumos import __version__
-from common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
+from lumos_cli.common.client_helpers import check_version_header
+from lumos_cli import __version__
+from lumos_cli.common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
 from uuid import UUID
 from typing import Any, Dict, List, Optional
-from common.models import App, AccessRequest, Permission, User
-from common.logging import logdebug_request, logdebug_response
+from lumos_cli.common.models import App, AccessRequest, Permission, User
+from lumos_cli.common.logging import logdebug_request, logdebug_response
 import os
 import typer
-from common.keyhelpers import write_key
+from lumos_cli.common.keyhelpers import write_key
 import webbrowser
 
 class BaseClient:

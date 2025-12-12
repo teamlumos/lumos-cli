@@ -5,7 +5,7 @@ from typing import List, Tuple
 from colorama import Fore, Style
 import requests
 import typer
-from lumos import __version__
+from lumos_cli import __version__
 
 
 def check_version_header(response: requests.Response) -> bool:

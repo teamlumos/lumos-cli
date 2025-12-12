@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from common.logging import logdebug
+from lumos_cli.common.logging import logdebug
 
 def key_file_path() -> Path:
     if os.environ.get("DEV_MODE"):
