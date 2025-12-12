@@ -10,5 +10,6 @@ venv/
 *.egg-info
 node_modules/
 
-# Documentation build output
-docs/_build/
+# Documentation build output (HTML only, markdown is committed)
+docs/_build/html/
+docs/_build/doctrees/
