@@ -4,7 +4,6 @@ import os
 from typing import List, Tuple
 from colorama import Fore, Style
 import requests
-import typer
 from lumos_cli import __version__
 
 

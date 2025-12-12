@@ -1,6 +1,6 @@
-from typing import Any, List, Optional, Annotated
+from typing import Any, List, Optional
 from lumos_cli.common.helpers import authenticate, get_statuses
-import typer
+from click_extra import group, command, option
 from uuid import UUID
 from tabulate import tabulate
 from json import dumps
@@ -8,108 +8,128 @@ from json import dumps
 from lumos_cli.common.client import ApiClient
 from lumos_cli.common.models import AccessRequest, LumosModel, SupportRequestStatus
 
-app = typer.Typer()
-
 client = ApiClient()
 
-@app.command("users", help="List users in Lumos")
+@group(name="list")
+def list_group():
+    """List various Lumos resources"""
+    pass
+
+@list_group.command("users", help="List users in Lumos")
+@option("--like", default=None, help="Search by name or email")
+@option("--csv", is_flag=True, help="Output as CSV")
+@option("--json", "output_json", is_flag=True, help="Output as JSON")
+@option("--paginate/--no-paginate", default=True, help="Pagination")
+@option("--page-size", default=100, help="Page size")
+@option("--page", default=1, help="Page")
+@option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_users(
-    like: Annotated[
-        Optional[str],
-        typer.Option(
-            help="Search by name or email",
-        ),
-    ] = None,
-    csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
-    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
-    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
-    page: Annotated[int, typer.Option(help="Page")] = 1,
-    id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
+    like: Optional[str],
+    csv: bool,
+    output_json: bool,
+    paginate: bool,
+    page_size: int,
+    page: int,
+    id_only: bool,
 ) -> None:
-    all=csv or json or not paginate
+    all = csv or output_json or not paginate
     users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
-    display("users", users, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
+    display("users", users, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
 
 
-@app.command("permissions", help="List permissions for a given app")
+@list_group.command("permissions", help="List permissions for a given app")
+@option("--app", required=True, type=str, help="App UUID")
+@option("--like", default=None, help="Filters permissions")
+@option("--csv", is_flag=True, help="Output as CSV")
+@option("--json", "output_json", is_flag=True, help="Output as JSON")
+@option("--paginate/--no-paginate", default=True, help="Pagination")
+@option("--page-size", default=100, help="Page size")
+@option("--page", default=1, help="Page")
+@option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_permissions(
-    app: UUID,
-    like: Annotated[
-        Optional[str],
-        typer.Option(help="Filters permissions")
-    ] = None,
-    csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
-    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
-    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
-    page: Annotated[int, typer.Option(help="Page")] = 1,
-    id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
+    app: str,
+    like: Optional[str],
+    csv: bool,
+    output_json: bool,
+    paginate: bool,
+    page_size: int,
+    page: int,
+    id_only: bool,
 ) -> None:
-    all=csv or json or not paginate
-    permissions, count, total = client.get_app_requestable_permissions(app_id=app, search_term=like, all=all, page=page, page_size=page_size)
+    app_uuid = UUID(app)
+    all = csv or output_json or not paginate
+    permissions, count, total = client.get_app_requestable_permissions(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
 
-    display("permissions", permissions, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
+    display("permissions", permissions, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
 
-@app.command("groups", help="List groups for the domain or the specified --app")
+@list_group.command("groups", help="List groups for the domain or the specified --app")
+@option("--app", default=None, type=str, help="App ID to filter groups by. If not provided, lists all groups.")
+@option("--like", default=None, help="Filters groups")
+@option("--csv", is_flag=True, help="Output as CSV")
+@option("--json", "output_json", is_flag=True, help="Output as JSON")
+@option("--paginate/--no-paginate", default=True, help="Pagination")
+@option("--page-size", default=100, help="Page size")
+@option("--page", default=1, help="Page")
+@option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_groups(
-    app: Annotated[
-        Optional[UUID],
-        typer.Option(help="App ID to filter groups by. If not provided, lists all groups.")
-    ]= None,
-    like: Annotated[
-        Optional[str],
-        typer.Option(help="Filters groups")
-    ] = None,
-    csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
-    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
-    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
-    page: Annotated[int, typer.Option(help="Page")] = 1,
-    id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
+    app: Optional[str],
+    like: Optional[str],
+    csv: bool,
+    output_json: bool,
+    paginate: bool,
+    page_size: int,
+    page: int,
+    id_only: bool,
 ) -> None:
-    all=csv or json or not paginate
-    groups, count, total = client.get_groups(app_id=app, search_term=like, all=all, page=page, page_size=page_size)
+    app_uuid = UUID(app) if app else None
+    all = csv or output_json or not paginate
+    groups, count, total = client.get_groups(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
 
-    display("groups", groups, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
+    display("groups", groups, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
 
-@app.command("requests", help="List access requests")
+@list_group.command("requests", help="List access requests")
+@option("--for-user", default=None, type=str, help="Show only requests for ('targetting') a particular user")
+@option("--mine", is_flag=True, help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
+@option("--status", multiple=True, help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc")
+@option("--pending", is_flag=True, help="Show only pending requests")
+@option("--past", is_flag=True, help="Show only past requests")
+@option("--csv", is_flag=True, help="Output as CSV")
+@option("--json", "output_json", is_flag=True, help="Output as JSON")
+@option("--paginate/--no-paginate", default=True, help="Pagination")
+@option("--page-size", default=100, help="Page size")
+@option("--page", default=1, help="Page")
+@option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_requests(
-    for_user: Annotated[
-        Optional[UUID],
-        typer.Option(help="Show only requests for ('targetting') a particular user")
-    ] = None,
-    mine: Annotated[
-        bool,
-        typer.Option(help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
-    ] = False,
-    status: Annotated[
-        Optional[List[str]],
-        typer.Option(help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc",),
-    ] = None,
-    pending: Annotated[bool, typer.Option(help="Show only pending requests")] = False,
-    past: Annotated[bool, typer.Option(help="Show only past requests")] = False,
-    csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
-    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
-    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
-    page: Annotated[int, typer.Option(help="Page")] = 1,
-    id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
+    for_user: Optional[str],
+    mine: bool,
+    status: tuple,
+    pending: bool,
+    past: bool,
+    csv: bool,
+    output_json: bool,
+    paginate: bool,
+    page_size: int,
+    page: int,
+    id_only: bool,
 ) -> None:
     
+    user_uuid = None
     if mine:
-        for_user = client.get_current_user_id()
+        user_uuid = client.get_current_user_id()
+    elif for_user:
+        user_uuid = UUID(for_user)
 
-    status = get_statuses(status, pending, past)
+    status_list = list(status) if status else None
+    status_set = get_statuses(status_list, pending, past)
 
-    all=csv or json or not paginate
+    all = csv or output_json or not paginate
     access_requests, count, total, _, _ = client.get_access_requests(
-        target_user_id=for_user,
-        status=status,
+        target_user_id=user_uuid,
+        status=status_set,
         all=all,
         page=page, 
         page_size=page_size
@@ -122,31 +142,33 @@ def list_requests(
         count,
         total,
         csv,
-        json,
+        output_json,
         page_size=page_size,
         page=page,
         id_only=id_only,
         search=False)
 
-@app.command("apps", help="List apps in the appstore")
+@list_group.command("apps", help="List apps in the appstore")
+@option("--like", default=None, help="Filters apps by search term")
+@option("--mine", is_flag=True, help="Show only my apps.")
+@option("--csv", is_flag=True, help="Output as CSV")
+@option("--json", "output_json", is_flag=True, help="Output as JSON")
+@option("--paginate/--no-paginate", default=True, help="Pagination")
+@option("--page-size", default=100, help="Page size")
+@option("--page", default=1, help="Page")
+@option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_apps(
-    like: Annotated[
-        Optional[str],
-        typer.Option(help="Filters apps by search term")
-    ] = None,
-    mine: Annotated[
-        bool,
-        typer.Option(help="Show only my apps.")
-    ] = False,
-    csv: Annotated[bool, typer.Option(help="Output as CSV")] = False,
-    json: Annotated[bool, typer.Option(help="Output as JSON")] = False,
-    paginate: Annotated[bool, typer.Option(help="Pagination")] = True,
-    page_size: Annotated[int, typer.Option(help="Page size")] = 100,
-    page: Annotated[int, typer.Option(help="Page")] = 1,
-    id_only: Annotated[bool, typer.Option(help="Output ID only")] = False,
+    like: Optional[str],
+    mine: bool,
+    csv: bool,
+    output_json: bool,
+    paginate: bool,
+    page_size: int,
+    page: int,
+    id_only: bool,
 ) -> None:
-    all=csv or json or not paginate
+    all = csv or output_json or not paginate
     if mine:
         access_requests = client.get_my_apps()
         if len(access_requests) > 0:
@@ -158,7 +180,7 @@ def list_apps(
         all=all,
         page_size=page_size,
         page=page)
-    display("apps", apps, count, total, csv, json, page=page, page_size=page_size, id_only=id_only)
+    display("apps", apps, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
 
 def display(description: str,
     data: List[LumosModel],

@@ -1,7 +1,7 @@
 import time
-from typing import Annotated, List, Optional, Tuple
+from typing import List, Optional, Tuple
 from lumos_cli.common.helpers import authenticate, check_current_apps
-import typer
+from click_extra import group, command, option, pass_context, echo, prompt, confirm, Context
 from uuid import UUID
 from pick import pick
 from tabulate import tabulate
@@ -10,178 +10,147 @@ import re
 from lumos_cli.common.client import ApiClient
 from lumos_cli.common.models import AccessRequest, App, Permission, ProvisioningMethodOption, SupportRequestStatus, User
 
-app = typer.Typer()
 POLLING_INTERVAL = 6
 client = ApiClient()
 
 
-
-@app.callback(invoke_without_command=True, help="Request access to an app.")
+@group(name="request", invoke_without_command=True)
+@pass_context
+@option("--reason", default=None, help="Business justification for request")
+@option("--for-user", default=None, type=str, help="UUID of user for whom to request access. Takes precedence over --user-like")
+@option("--for-me", is_flag=True, help="Makes the request for the current user.")
+@option("--mine", is_flag=True, help="Makes the request for the current user. Duplicate of --for-me for convenience.")
+@option("--app", default=None, type=str, help="App UUID. Takes precedence over --app-like")
+@option("--permission", multiple=True, type=str, help="List of permission UUIDs. Takes precedence over --permission-like")
+@option("--length", default=None, help="Length of access request in seconds, or a string like '12 hours', '2d', 'unlimited', etc. Every app/permission has different configurations.")
+@option("--user-like", default=None, help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
+@option("--app-like", default=None, help="App name like--filters apps shown as options when selecting")
+@option("--permission-like", default=None, help="Permission name like--filters permissions shown as options when selecting")
+@option("--wait/--no-wait", default=None, help="Wait for the request to complete")
+@option("--dry-run", is_flag=True, help="Print the request command without actually making the request")
 @authenticate
 def request(
-    ctx: typer.Context,
-    reason: Annotated[
-        Optional[str],
-        typer.Option(help="Business justification for request")
-    ] = None,
-    for_user: Annotated[
-        Optional[UUID],
-        typer.Option(help="UUID of user for whom to request access. Takes precedence over --user-like"),
-    ] = None,
-    for_me: Annotated[
-        Optional[bool],
-        typer.Option(help="Makes the request for the current user.")
-    ] = None,
-    mine: Annotated[
-        Optional[bool],
-        typer.Option(help="Makes the request for the current user. Duplicate of --for-me for convenience.")
-    ] = None,
-    app: Annotated[
-        Optional[UUID],
-        typer.Option(help="App UUID. Takes precedence over --app-like"),
-    ] = None,
-    permission:Annotated[
-        Optional[list[UUID]],
-        typer.Option(help="List of permission UUIDs. Takes precedence over --permission-like"),
-    ] = None,
-    length: Annotated[
-        Optional[str],
-        typer.Option(help="Length of access request in seconds, or a string like '12 hours', '2d', 'unlimited', etc. Every app/permission has different configurations.")
-    ] = None,
-    user_like: Annotated[
-        Optional[str],
-        typer.Option(help="User name/email like--filters users shown as options when selecting, if the request is not for the current user")
-    ] = None,
-    app_like: Annotated[
-        Optional[str],
-        typer.Option(help="App name like--filters apps shown as options when selecting")
-    ] = None,
-    permission_like: Annotated[
-        Optional[str],
-        typer.Option(help="Permission name like--filters permissions shown as options when selecting")
-    ] = None,
-    wait: Annotated[
-        Optional[bool],
-        typer.Option(help="Wait for the request to complete")
-    ] = None,
-    dry_run: Annotated[
-        bool,
-        typer.Option(help="Print the request command without actually making the request")
-    ] = False
+    ctx: Context,
+    reason: Optional[str],
+    for_user: Optional[str],
+    for_me: bool,
+    mine: bool,
+    app: Optional[str],
+    permission: tuple,
+    length: Optional[str],
+    user_like: Optional[str],
+    app_like: Optional[str],
+    permission_like: Optional[str],
+    wait: Optional[bool],
+    dry_run: bool
 ) -> None:
+    """Request access to an app."""
     if ctx.invoked_subcommand is None:
+        for_user_uuid = None
         if for_me is not True and mine is not True:
-            if user_like is not None or not typer.confirm("This request is for you?", abort=False, default=True):
-                for_user = select_user(user_like)
+            if user_like is not None or not confirm("This request is for you?", default=True):
+                for_user_uuid = select_user(user_like)
+        elif for_user:
+            for_user_uuid = UUID(for_user)
         
         # Validate parameters or interactively input them
-        selected_app: App = get_valid_app(app, app_like)
+        app_uuid = UUID(app) if app else None
+        selected_app: App = get_valid_app(app_uuid, app_like)
         app_settings = client.get_appstore_app_setting(selected_app.id)
         duration_options = set(app_settings.provisioning.time_based_access)
         selected_permissions = None
+        
+        permission_uuids = [UUID(p) for p in permission] if permission else None
+        
         if app_settings.provisioning.groups_provisioning == ProvisioningMethodOption.GROUPS_AND_VISIBLE:
             selected_permissions = select_permissions(
                 selected_app, 
                 app_settings.provisioning.allow_multiple_permission_selection,
-                permission, 
+                permission_uuids, 
                 permission_like
             )
             if selected_permissions:
                 duration_options = set(selected_permissions[0].duration_options)
-                for permission in selected_permissions[1:]:
-                    duration_options = duration_options.intersection(permission.duration_options)
+                for perm in selected_permissions[1:]:
+                    duration_options = duration_options.intersection(perm.duration_options)
 
         duration, duration_friendly = get_duration(duration_options, length)
 
         while not reason or len(reason) < 1:
-            reason = typer.prompt("\nEnter your business justification for the request")
+            reason = prompt("\nEnter your business justification for the request")
         
         if wait is None:
-            wait = typer.confirm("Do you want to wait for the request to complete?", abort=False, default=True)
-        typer.echo("\nAPP")
-        typer.echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
+            wait = confirm("Do you want to wait for the request to complete?", default=True)
+        
+        echo("\nAPP")
+        echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
         if selected_permissions:
-            typer.echo("\nPERMISSIONS")
-            for permission in selected_permissions:
-                typer.echo(f"   {permission.label} [{permission.id}]")
-        typer.echo("\nDURATION")
-        typer.echo(f"   {duration_friendly or 'Unlimited'} {f'({duration} seconds)' if duration else ''}")
-        typer.echo("\nREASON")
-        typer.echo(f"   {reason}")
+            echo("\nPERMISSIONS")
+            for perm in selected_permissions:
+                echo(f"   {perm.label} [{perm.id}]")
+        echo("\nDURATION")
+        echo(f"   {duration_friendly or 'Unlimited'} {f'({duration} seconds)' if duration else ''}")
+        echo("\nREASON")
+        echo(f"   {reason}")
 
-        if for_user:
-            typer.echo(f"\nTARGET USER")
-            typer.echo(f"   {for_user}")
+        if for_user_uuid:
+            echo(f"\nTARGET USER")
+            echo(f"   {for_user_uuid}")
 
         permission_flags = ''
         if selected_permissions:
-            permission_flags = ' '.join([f"--permission {permission.id}" for permission in selected_permissions])
+            permission_flags = ' '.join([f"--permission {perm.id}" for perm in selected_permissions])
 
-        command = f"lumos request --app {selected_app.id} {permission_flags} --reason \"{reason}\""
+        command_str = f"lumos request --app {selected_app.id} {permission_flags} --reason \"{reason}\""
         if duration:
-            command += f" --length {duration}"
+            command_str += f" --length {duration}"
         for_user_flag = '--for-me'
-        if for_user:
+        if for_user_uuid:
             for_user_flag = '--for-user USER_ID'
-        command += f" {for_user_flag}"
+        command_str += f" {for_user_flag}"
         if wait:
-            command += " --wait"
+            command_str += " --wait"
         else:
-            command += " --no-wait"
+            command_str += " --no-wait"
         if dry_run:
-            typer.echo(f"\nCOMMAND")
-            typer.echo(f"   {command}")
+            echo(f"\nCOMMAND")
+            echo(f"   {command_str}")
             return
         
-        typer.echo("\nIf you need to make this same request in the future, use:")
-        typer.echo(f"\n   `{command}`\n")
+        echo("\nIf you need to make this same request in the future, use:")
+        echo(f"\n   `{command_str}`\n")
         
         request_id = create_access_request(
             app_id=selected_app.id, 
             requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
             note=reason,
             expiration=duration,
-            target_user_id=for_user)
+            target_user_id=for_user_uuid)
         
         if wait and request_id:
             _poll(request_id)
 
-@app.command("status", help="Check the status of a request by ID or `--last` for the most recent request")     
+@request.command("status", help="Check the status of a request by ID or `--last` for the most recent request")     
+@option("--request-id", default=None, help="Request ID")
+@option("--last", is_flag=True, help="Get the last request")
+@option("--status-only", is_flag=True, help="Output status only")
+@option("--permission-only", is_flag=True, help="Output permission only")
+@option("--id-only", is_flag=True, help="Output request ID only")
 @authenticate
 def status(
-    request_id: Annotated[
-        Optional[str],
-        typer.Option(
-            help="Request ID",
-        ),
-    ] = None,
-    last: bool = False,
-    status_only: Annotated[
-        Optional[bool],
-        typer.Option(
-            help="Output status only",
-        ),
-    ] = None,
-    permission_only: Annotated[
-        Optional[bool],
-        typer.Option(
-            help="Output permission only",
-        ),
-    ] = None,
-    id_only: Annotated[
-        Optional[bool],
-        typer.Option(
-            help="Output request ID only",
-        ),
-    ] = None,
+    request_id: Optional[str],
+    last: bool,
+    status_only: bool,
+    permission_only: bool,
+    id_only: bool,
 ) -> None:
-    request: AccessRequest | None
+    access_request: AccessRequest | None
     if last:
         access_requests, count, _, _, _ = client.get_access_requests(target_user_id=client.get_current_user_id())
         if count == 0:
-            typer.echo("No pending requests found")
+            click.echo("No pending requests found")
             return
-        request = access_requests[0]
+        access_request = access_requests[0]
     else:
         request_uuid: UUID | None = None
         while not request_uuid:
@@ -190,93 +159,92 @@ def status(
                 break
             except:
                 if request_id:
-                    typer.echo("Invalid request ID")
+                    click.echo("Invalid request ID")
                 request_id = None
-            request_id = typer.prompt("Please provide a request ID")
+            request_id = click.prompt("Please provide a request ID")
             
-        request = client.get_request_status(request_uuid)
-    if not request:
-        typer.echo("Request not found")
+        access_request = client.get_request_status(request_uuid)
+    if not access_request:
+        click.echo("Request not found")
         return
     if status_only:
-        typer.echo(request.status)
+        click.echo(access_request.status)
         return
     if permission_only:
-        if request.requestable_permissions:
-            for permission in request.requestable_permissions:
-                typer.echo(permission.label)
+        if access_request.requestable_permissions:
+            for perm in access_request.requestable_permissions:
+                click.echo(perm.label)
         return
     if last and id_only:
-        typer.echo(request.status)
+        click.echo(access_request.status)
         return
-    print(tabulate([request.tabulate()], headers=AccessRequest.headers()), "\n")
+    print(tabulate([access_request.tabulate()], headers=AccessRequest.headers()), "\n")
 
-@app.command("poll", help="Poll a request by ID for up to 5 minutes")
+@request.command("poll", help="Poll a request by ID for up to 5 minutes")
+@option("--request-id", default=None, type=str, help="Request ID")
+@option("--wait", default=2, help="How many minutes to wait. Max 5.")
 @authenticate
 def poll(
-    request_id: Annotated[
-        Optional[UUID],
-        typer.Option(help="Request ID")
-    ] = None,
-    wait: Annotated[
-        Optional[int],
-        typer.Option(help="How many minutes to wait. Max 5.")
-    ] = 2
+    request_id: Optional[str],
+    wait: int
 ) -> None:
-    while not request_id:
-        request_id = typer.prompt("Please provide a request ID")
+    request_uuid = UUID(request_id) if request_id else None
+    while not request_uuid:
+        request_id_str = prompt("Please provide a request ID")
+        request_uuid = UUID(request_id_str)
 
-    _poll(request_id, (wait or 2) * 60)
+    _poll(request_uuid, (wait or 2) * 60)
 
 def _poll(request_id: UUID, wait_max: int = 120):
     if wait_max < 10 or wait_max > 300:
         wait_max = 120
-    while ((request := client.get_request_status(request_id)) is not None):
-        if request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
+    while ((access_request := client.get_request_status(request_id)) is not None):
+        if access_request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
             break
         wait_max -= POLLING_INTERVAL
         for num_decimals in range(POLLING_INTERVAL):
             time.sleep(1)
             print(" ⏰ Waiting for request to complete" + ("." * num_decimals) + (' ' * (POLLING_INTERVAL-num_decimals)), end='\r')
 
-    if not request:
-        typer.echo("Request not found")
-        raise typer.Exit(1)
+    if not access_request:
+        echo("Request not found")
+        raise SystemExit(1)
 
-    if (request.status == SupportRequestStatus.COMPLETED):
-        typer.echo(" ✅ Request completed!")
+    if (access_request.status == SupportRequestStatus.COMPLETED):
+        echo(" ✅ Request completed!")
         return
-    typer.echo(f" ⏰ Request status: {request.status}" + (' ' * 20) + "\n")
-    typer.echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
+    echo(f" ⏰ Request status: {access_request.status}" + (' ' * 20) + "\n")
+    echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
 
 
-@app.command("cancel", help="Cancel a request by ID")
+@request.command("cancel", help="Cancel a request by ID")
+@option("--request-id", default=None, type=str, help="Request ID")
+@option("--reason", default=None, help="Reason for cancellation")
 @authenticate
 def cancel(
-    request_id: Annotated[
-        Optional[UUID],
-        typer.Option(help="Request ID")
-    ] = None,
-    reason: Annotated[
-        Optional[str],
-        typer.Option(help="Reason for cancellation")
-    ] = None
+    request_id: Optional[str],
+    reason: Optional[str]
 ) -> None:
-    while not request_id:
-        request_id = typer.prompt("Please provide a request ID or press enter to look up a request", default="", show_default=False)
+    request_uuid = None
+    while not request_uuid:
+        if not request_id:
+            request_id = prompt("Please provide a request ID or press enter to look up a request", default="", show_default=False)
         if not request_id:
             pending_requests, _, _, _, _ = client.get_access_requests(client.get_current_user_id(), SupportRequestStatus.PENDING_STATUSES, all=True)
             if len(pending_requests) == 0:
-                typer.echo("No pending requests found")
-                raise typer.Exit(1)
-            request, _ = pick(pending_requests, "Select a request to cancel")
-            request_id = request.id
-    if (request := client.get_request_status(request_id)) is not None and request.status not in SupportRequestStatus.PENDING_STATUSES:
-        typer.echo(f"Request is not pending, cannot cancel. Status is {request.status}.")
-        raise typer.Exit(1)
+                echo("No pending requests found")
+                raise SystemExit(1)
+            access_request, _ = pick(pending_requests, "Select a request to cancel")
+            request_uuid = access_request.id
+        else:
+            request_uuid = UUID(request_id)
+            
+    if (access_request := client.get_request_status(request_uuid)) is not None and access_request.status not in SupportRequestStatus.PENDING_STATUSES:
+        echo(f"Request is not pending, cannot cancel. Status is {access_request.status}.")
+        raise SystemExit(1)
     
-    client.cancel_access_request(request_id, reason)
-    typer.echo("Request cancelled! 🚫")
+    client.cancel_access_request(request_uuid, reason)
+    echo("Request cancelled! 🚫")
 
 def select_user(user_like: Optional[str] = None) -> UUID:
     users: List[User] = []
@@ -286,23 +254,23 @@ def select_user(user_like: Optional[str] = None) -> UUID:
             users, count, total = client.get_users(like=user_like)
             if (total == 0):
                 if user_like:
-                    typer.echo(f"No users found for '{user_like}'")
-                    user_like = typer.prompt("🔍 Give me something to search on")
+                    echo(f"No users found for '{user_like}'")
+                    user_like = prompt("🔍 Give me something to search on")
                 else:
-                    typer.echo("No users found")
-                    raise typer.Exit(1)
+                    echo("No users found")
+                    raise SystemExit(1)
             elif count == 1:
                 for_user = users[0]
                 break
             elif (count < total):
-                typer.echo("Too many users to show.")
-                user_like = typer.prompt(f"🔍 Give me something to search on")
+                echo("Too many users to show.")
+                user_like = prompt(f"🔍 Give me something to search on")
             else:
                 break
         if not for_user:
             description = "Select user (use ENTER to confirm)"
             for_user, _ = pick(users, description)
-    typer.echo(f"USER: {for_user.email} [{for_user.id}]\n")
+    echo(f"USER: {for_user.email} [{for_user.id}]\n")
     return for_user.id
 
 
@@ -316,13 +284,13 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
             print("                          ", end='\r')
             if (total == 0):
                 if app_like:
-                    app_like = typer.prompt(f"No apps found for '{app_like}'\n🔍 Give me something to search on")
+                    app_like = prompt(f"No apps found for '{app_like}'\n🔍 Give me something to search on")
                 else:
-                    typer.echo("No apps found")
-                    raise typer.Exit(1)
+                    echo("No apps found")
+                    raise SystemExit(1)
             elif (count < total):
-                typer.echo("")
-                app_like = typer.prompt(f"Too many apps to show.\n🔍 Give me something to search on")
+                echo("")
+                app_like = prompt(f"Too many apps to show.\n🔍 Give me something to search on")
             else:
                 break
         if count == 1:
@@ -331,7 +299,7 @@ def get_valid_app(app_id: Optional[UUID] = None, app_like: Optional[str] = None)
             app, _ = pick(apps, f"Select an app (press ENTER to confirm)")
         if app:
             app_id = app.id
-    typer.echo(f"APP: {app.user_friendly_label} [{app.id}]\n")
+    echo(f"APP: {app.user_friendly_label} [{app.id}]\n")
     return app
 
 def select_permissions(
@@ -353,12 +321,12 @@ def select_permissions(
             print("                                    ", end='\r')
             if (total == 0):
                 if permission_like:
-                    permission_like = typer.prompt(f"No permissions found for '{permission_like}'\n🔍 Give me something to search on")
+                    permission_like = prompt(f"No permissions found for '{permission_like}'\n🔍 Give me something to search on")
                 else:
-                    typer.echo("No permissions found (you're just requesting the app)")
+                    echo("No permissions found (you're just requesting the app)")
                     return None
             elif (count < total):
-                permission_like = typer.prompt("Too many permissions to show.\n🔍 Give me something to search on")
+                permission_like = prompt("Too many permissions to show.\n🔍 Give me something to search on")
             else:
                 break
         if count > 1:
@@ -375,15 +343,15 @@ def select_permissions(
             permission = permissions[0]
             valid_permissions_dict[str(permission.id)] = permission
             permission_like = None
-        typer.echo("PERMISSIONS:                          ")
+        echo("PERMISSIONS:                          ")
         for permission in valid_permissions_dict.values():
-            typer.echo(f"   {permission.label} [{permission.id}]")
+            echo(f"   {permission.label} [{permission.id}]")
         if not permission_like or not allow_multiple_permission_selection:
             break
-        if typer.confirm("Done selecting permissions?", abort=False, default=True):
+        if confirm("Done selecting permissions?", default=True):
             done_selecting = True
         else:
-            permission_like = typer.prompt("🔍 Give me something to search on")
+            permission_like = prompt("🔍 Give me something to search on")
     return list(valid_permissions_dict.values())
             
 
@@ -415,7 +383,7 @@ def select_duration(durations: set[str], duration_friendly: str | None) -> Tuple
         time_in_seconds = int(match.group(1)) * 60 * 60
         if (re.match(r".*days", selected)):
             time_in_seconds = 24 * time_in_seconds
-    typer.echo(f"DURATION: {selected}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
+    echo(f"DURATION: {selected}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
     return time_in_seconds, selected
 
 def parse_duration(duration: str) -> Tuple[int | None, str]:
@@ -470,9 +438,9 @@ def create_access_request(
     if not response:
         return None
     
-    typer.echo(f"\nYour request (ID {response.id}) is in progress! 🏃🌴\n")
+    echo(f"\nYour request (ID {response.id}) is in progress! 🏃🌴\n")
 
     return response.id
 
 if __name__ == "__main__":
-    app()
+    request()

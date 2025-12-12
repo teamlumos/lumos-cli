@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Set, Tuple
 from lumos_cli.common.client import AuthClient
 from lumos_cli.common.logging import logdebug
-import typer
+from click_extra import confirm, prompt, echo
 from pick import pick
 from colorama import Fore, Back, Style
 from lumos_cli.common.keyhelpers import key_file_path, write_key, read_key
@@ -23,14 +23,15 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
     # if the key file exists, ask if they want to overwrite
     if key_file.exists():
         read_key()
-        if not show_overwrite_prompt or not typer.confirm("You already have a key setup. Do you want to overwrite?", abort=False, default=True):
+        if not show_overwrite_prompt or not confirm("You already have a key setup. Do you want to overwrite?", default=True):
             return
     if show_prompt:
-        typer.confirm(" 🛠️ You need to authenticate to use this application. Do you want to do that now?", abort=True, default=True)
+        if not confirm(" 🛠️ You need to authenticate to use this application. Do you want to do that now?", default=True):
+            raise SystemExit(1)
     selected, _ = pick(["OAuth 2.0", "API key"], "How do you want to authenticate?")
     if selected == "API key":
-        typer.echo(" ⚙️ Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
-        api_key = typer.prompt("API key", hide_input=True, confirmation_prompt=True)
+        echo(" ⚙️ Go to your Lumos account > Settings > API Tokens > Add an API Token, and copy the token.")
+        api_key = prompt("API key", hide_input=True, confirmation_prompt=True)
         write_key(api_key)
     else:
         login()

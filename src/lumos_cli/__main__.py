@@ -1,8 +1,8 @@
-from lumos_cli import cli, __app_name__
+from lumos_cli.cli import cli
 
 
 def main():
-    cli.app(prog_name=__app_name__)
+    cli()
 
 if __name__ == "__main__":
     main()

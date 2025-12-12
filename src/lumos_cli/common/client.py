@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from lumos_cli.common.models import App, AccessRequest, Permission, User
 from lumos_cli.common.logging import logdebug_request, logdebug_response
 import os
-import typer
+from click_extra import echo, confirm
 from lumos_cli.common.keyhelpers import write_key
 import webbrowser
 
@@ -54,7 +54,8 @@ class BaseClient:
             if page == pages:
                 break
             if page == 1 and total > 5000:
-                typer.confirm(f"Warning: {total} results found. This may take a while. Do you want to continue?", abort=True, default=True)
+                if not confirm(f"Warning: {total} results found. This may take a while. Do you want to continue?", default=True):
+                    raise SystemExit(1)
             page += 1
             time.sleep(0.15)
         count = len(all_results)
@@ -87,8 +88,8 @@ class BaseClient:
         retry: int = 0,
     ):
         if retry > 3:
-            typer.echo("Too many retries. Exiting.", err=True)
-            raise typer.Exit(1)
+            echo("Too many retries. Exiting.", err=True)
+            raise SystemExit(1)
         url, headers = self._get_url_and_headers(endpoint)
         logdebug_request(url, headers, body, params, method)
 
@@ -97,39 +98,39 @@ class BaseClient:
         logdebug_response(response)
 
         if not check_version_header(response):
-            raise typer.Exit(1)
+            raise SystemExit(1)
 
         if response.ok:
             if response.status_code == 204:
                 return None
             return response.json()
         if response.status_code == 429:
-            typer.echo("We're being rate limited. Waiting a sec.", err=True)
+            echo("We're being rate limited. Waiting a sec.", err=True)
             retry += 1
             time.sleep(retry)
             return self._send_request(method, endpoint, body, params, retry)
         if response.status_code == 401:
             if retry > 1 or not (scope := os.environ.get("SCOPE")):
-                typer.echo("Something went wrong with authorization. Try logging in again.", err=True)
-                raise typer.Exit(1)
-            typer.echo("Something went wrong with authorization. Trying to log in again.", err=True)
+                echo("Something went wrong with authorization. Try logging in again.", err=True)
+                raise SystemExit(1)
+            echo("Something went wrong with authorization. Trying to log in again.", err=True)
             AuthClient().authenticate(scope == "admin")
             return self._send_request(method, endpoint, body, params, retry + 1)
         if response.status_code == 403:
-            typer.echo("You don't have permission to do that.", err=True)
-            raise typer.Exit(1)
+            echo("You don't have permission to do that.", err=True)
+            raise SystemExit(1)
         
         if response.status_code == 404:
-            typer.echo("Not found.", err=True)
-            raise typer.Exit(1)
+            echo("Not found.", err=True)
+            raise SystemExit(1)
         
-        typer.echo(f"An error occurred (status code {response.status_code})", err=True)
+        echo(f"An error occurred (status code {response.status_code})", err=True)
         if response.status_code == 409 or response.status_code == 422:
             response_json = response.json()
             if detail := response_json.get("detail"):
-                typer.echo(detail, err=True)
+                echo(detail, err=True)
         
-        raise typer.Exit(1)
+        raise SystemExit(1)
 
     @abstractmethod
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
@@ -173,12 +174,12 @@ class AuthClient(BaseClient):
 
         response = requests.post(url, headers=headers, params=params)
         if not check_version_header(response):
-            raise typer.Exit(1)
+            raise SystemExit(1)
         
         if not response.ok:
-            typer.echo(f"Something went wrong.")
+            echo(f"Something went wrong.")
             logdebug_response(response)
-            raise typer.Exit(1)
+            raise SystemExit(1)
         
         device_auth_data = response.json()
 
@@ -197,7 +198,7 @@ class AuthClient(BaseClient):
             "grant_type": self.GRANT_TYPE,
         }
         token_url, _ = self._get_url_and_headers("token")
-        typer.echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser.")
+        echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser.")
 
         logdebug_request(token_url, headers, token_data, None, 'POST')
 
@@ -206,8 +207,8 @@ class AuthClient(BaseClient):
             print(" ⏰ Waiting" + ("." * (wait % 10)) + (' ' * (10-(wait % 10))), end='\r')
             token_response = requests.post(token_url, headers=headers, data=token_data)
             if token_response.status_code == 400:
-                typer.echo(f"Bad request: {token_response.json()}")
-                raise typer.Exit(1)
+                echo(f"Bad request: {token_response.json()}")
+                raise SystemExit(1)
             logdebug_response(token_response)
             if token_response.status_code != 200:
                 time.sleep(1)
@@ -217,9 +218,9 @@ class AuthClient(BaseClient):
                 token = token_data["access_token"]
                 break
             if wait > 60:
-                typer.echo("Timed out waiting for authentication.")
-                raise typer.Exit(1)
-        typer.echo(" ✅ Authenticated!")
+                echo("Timed out waiting for authentication.")
+                raise SystemExit(1)
+        echo(" ✅ Authenticated!")
         write_key(token, scope)
     
    
@@ -252,8 +253,8 @@ class ApiClient(BaseClient):
         if user:
             os.environ["USER_ID"] = user["id"]
             return User(**user)
-        typer.echo("You are not logged in", err=True)
-        raise typer.Exit(1)
+        echo("You are not logged in", err=True)
+        raise SystemExit(1)
 
     def get_appstore_app(self, id: UUID) -> App | None:
         raw_app = self.get(f"appstore/apps/{id}")
