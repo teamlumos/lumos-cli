@@ -49,9 +49,37 @@ jobs:
         shell: bash
         run: uv run basedpyright
 
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.6'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+          enable-cache: true
+
+      - name: Install dependencies
+        shell: bash
+        run: uv sync --group dev
+          
+
+      - name: Run tests
+        run: uv run pytest tests/ -v
+
   python-package:
     name: Python Package
-    needs: lint
+    needs: 
+      - lint
+      - test
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -92,7 +120,9 @@ jobs:
 
   build-binaries:
     name: ${{ matrix.platform }} Binary
-    needs: lint
+    needs: 
+      - lint
+      - test
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
