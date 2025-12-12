@@ -2,13 +2,13 @@ import functools
 import os
 from pathlib import Path
 from typing import List, Set, Tuple
-from common.client import AuthClient
-from common.logging import logdebug
+from lumos_cli.common.client import AuthClient
+from lumos_cli.common.logging import logdebug
 import typer
 from pick import pick
 from colorama import Fore, Back, Style
-from common.keyhelpers import key_file_path, write_key, read_key
-from common.models import AccessRequest, App, Permission, SupportRequestStatus
+from lumos_cli.common.keyhelpers import key_file_path, write_key, read_key
+from lumos_cli.common.models import AccessRequest, App, Permission, SupportRequestStatus
 
 def authenticate(func):
     """Makes sure client is authenticated first"""

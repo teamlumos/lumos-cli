@@ -1,7 +1,7 @@
 
 import os
-from common.client_helpers import check_version_header, parse_version
-from lumos import __version__
+from lumos_cli.common.client_helpers import check_version_header, parse_version
+from lumos_cli import __version__
 from requests import Response
 def test_parse_version():
     assert parse_version("1.2.3") == [1,2,3]

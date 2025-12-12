@@ -93,7 +93,7 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          uv run pyinstaller lumos/__main__.py
+          uv run pyinstaller src/lumos_cli/__main__.py
           if [[ "${{ matrix.platform }}" == "windows" ]]; then
             mv ./dist/__main__/__main__.exe ./dist/__main__/lumos.exe
           else

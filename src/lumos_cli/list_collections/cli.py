@@ -1,12 +1,12 @@
 from typing import Any, List, Optional, Annotated
-from common.helpers import authenticate, get_statuses
+from lumos_cli.common.helpers import authenticate, get_statuses
 import typer
 from uuid import UUID
 from tabulate import tabulate
 from json import dumps
 
-from common.client import ApiClient
-from common.models import AccessRequest, LumosModel, SupportRequestStatus
+from lumos_cli.common.client import ApiClient
+from lumos_cli.common.models import AccessRequest, LumosModel, SupportRequestStatus
 
 app = typer.Typer()
 

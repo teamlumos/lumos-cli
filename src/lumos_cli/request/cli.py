@@ -1,14 +1,14 @@
 import time
 from typing import Annotated, List, Optional, Tuple
-from common.helpers import authenticate, check_current_apps
+from lumos_cli.common.helpers import authenticate, check_current_apps
 import typer
 from uuid import UUID
 from pick import pick
 from tabulate import tabulate
 import re
 
-from common.client import ApiClient
-from common.models import AccessRequest, App, Permission, ProvisioningMethodOption, SupportRequestStatus, User
+from lumos_cli.common.client import ApiClient
+from lumos_cli.common.models import AccessRequest, App, Permission, ProvisioningMethodOption, SupportRequestStatus, User
 
 app = typer.Typer()
 POLLING_INTERVAL = 6
