@@ -1,50 +1,63 @@
-
-from abc import abstractmethod
-import time
-from typing import Any, Dict, Tuple
-import requests
-from lumos_cli.common.client_helpers import check_version_header
-from lumos_cli import __version__
-from lumos_cli.common.models import App, AccessRequest, AppSetting, Permission, SupportRequestStatus, User, Group
-from uuid import UUID
-from typing import Any, Dict, List, Optional
-from lumos_cli.common.models import App, AccessRequest, Permission, User
-from lumos_cli.common.logging import logdebug_request, logdebug_response
 import os
-from click_extra import echo, confirm
-from lumos_cli.common.keyhelpers import write_key
+import time
 import webbrowser
+from abc import abstractmethod
+from typing import Any, ClassVar
+from uuid import UUID
+
+import requests
+from click_extra import confirm, echo
+
+from lumos_cli import __version__
+from lumos_cli.common.client_helpers import check_version_header
+from lumos_cli.common.keyhelpers import write_key
+from lumos_cli.common.logging import logdebug_request, logdebug_response
+from lumos_cli.common.models import AccessRequest, App, AppSetting, Group, Permission, SupportRequestStatus, User
+
 
 class BaseClient:
     url: str
 
     def __init__(self, url: str):
         self.url = url
-    
-    def get(self, endpoint: str, params: dict = {}):
+
+    def get(self, endpoint: str, params: dict | None = None):
         """Function to call an API endpoint and return the response."""
+        if params is None:
+            params = {}
         return self._send_request("GET", endpoint, params=params)
-    
+
     def get_paged(
         self,
         endpoint: str,
-        params: dict = {},
+        params: dict | None = None,
         page_size: int = 100,
         page: int = 1,
-    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
+    ) -> tuple[list[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return the paged response."""
-        params={**params, "size": page_size, "page": page}
+        if params is None:
+            params = {}
+        params = {**params, "size": page_size, "page": page}
         response = self.get(endpoint, params=params)
         if response:
-            return response["items"], len(response["items"]), int(response["total"]), int(response["page"]), int(response["pages"])
+            return (
+                response["items"],
+                len(response["items"]),
+                int(response["total"]),
+                int(response["page"]),
+                int(response["pages"]),
+            )
         return [], 0, 0, 0, 0
-    
-    def get_all(self,
+
+    def get_all(
+        self,
         endpoint: str,
-        params: dict = {},
-    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
+        params: dict | None = None,
+    ) -> tuple[list[dict[str, Any]], int, int, int, int]:
         """Function to call an API endpoint and return all the results."""
-        all_results: List[Any] = []
+        if params is None:
+            params = {}
+        all_results: list[Any] = []
         page = 1
         while True:
             results, _, total, _, pages = self.get_paged(endpoint, params=params, page=page, page_size=100)
@@ -53,40 +66,53 @@ class BaseClient:
             all_results.extend(results)
             if page == pages:
                 break
-            if page == 1 and total > 5000:
-                if not confirm(f"Warning: {total} results found. This may take a while. Do you want to continue?", default=True):
-                    raise SystemExit(1)
+            if (
+                page == 1
+                and total > 5000
+                and not confirm(
+                    f"Warning: {total} results found. This may take a while. Do you want to continue?", default=True
+                )
+            ):
+                raise SystemExit(1)
             page += 1
             time.sleep(0.15)
         count = len(all_results)
         return all_results, count, count, 1, 1
-    
-    def get_all_or_paged(self,
+
+    def get_all_or_paged(
+        self,
         endpoint: str,
-        params: dict = {},
+        params: dict | None = None,
         all: bool = False,
         page_size: int = 100,
         page: int = 1,
-    ) -> Tuple[List[dict[str, Any]], int, int, int, int]:
+    ) -> tuple[list[dict[str, Any]], int, int, int, int]:
+        if params is None:
+            params = {}
         """Function to call an API endpoint and return all the results."""
         if all:
             return self.get_all(endpoint, params=params)
         return self.get_paged(endpoint, params=params, page_size=page_size, page=page)
 
-    def post(self, endpoint: str, body: Dict[str, Any]):
+    def post(self, endpoint: str, body: dict[str, Any]):
         """Function to call an API endpoint and return the response."""
         return self._send_request("POST", endpoint, body=body)
-    
-    def delete(self, endpoint: str, params: dict = {}):
+
+    def delete(self, endpoint: str, params: dict | None = None):
+        if params is None:
+            params = {}
         return self._send_request("DELETE", endpoint, params=params)
-    
-    def _send_request(self,
+
+    def _send_request(
+        self,
         method: str,
         endpoint: str,
         body: dict | None = None,
-        params: dict = {},
+        params: dict | None = None,
         retry: int = 0,
     ):
+        if params is None:
+            params = {}
         if retry > 3:
             echo("Too many retries. Exiting.", err=True)
             raise SystemExit(1)
@@ -94,7 +120,7 @@ class BaseClient:
         logdebug_request(url, headers, body, params, method)
 
         response = requests.request(method, url, headers=headers, json=body, params=params)
-        
+
         logdebug_response(response)
 
         if not check_version_header(response):
@@ -119,41 +145,42 @@ class BaseClient:
         if response.status_code == 403:
             echo("You don't have permission to do that.", err=True)
             raise SystemExit(1)
-        
+
         if response.status_code == 404:
             echo("Not found.", err=True)
             raise SystemExit(1)
-        
+
         echo(f"An error occurred (status code {response.status_code})", err=True)
         if response.status_code == 409 or response.status_code == 422:
             response_json = response.json()
             if detail := response_json.get("detail"):
                 echo(detail, err=True)
-        
+
         raise SystemExit(1)
 
     @abstractmethod
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
         pass
-    
+
+
 class AuthClient(BaseClient):
     GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code"
-    HEADERS = {
+    HEADERS: ClassVar[dict[str, str]] = {
         "content-type": "application/x-www-form-urlencoded",
         "User-Agent": f"lumos-cli/{__version__}",
     }
 
     def __init__(self):
         auth_url: str | None = None
-        if (os.environ.get("DEV_MODE")):
+        if os.environ.get("DEV_MODE"):
             auth_url = os.environ.get("AUTH_URL")
         super().__init__(auth_url or "https://b.app.lumosidentity.com")
-    
+
     def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
         return f"{self.url}/b/oauth/{endpoint}", self.HEADERS
-    
+
     def _get_client_id(self) -> str:
-        if (auth_url := os.environ.get("AUTH_URL")):
+        if auth_url := os.environ.get("AUTH_URL"):
             if "localhost" in auth_url:
                 return "IHcwQtVXJH8RVrPag3Tqi17KDdI6X9Ja"
             if "qa" in auth_url:
@@ -161,7 +188,7 @@ class AuthClient(BaseClient):
             if "staging" in auth_url:
                 return "tLPbUcyJZZyEvuxTo5deyFQXkO9iXZyx"
         return "XfsajAwB6pl2XyNYwzrVkTI15ISbQ2dR"
-    
+
     def authenticate(self, admin: bool = False):
         url, headers = self._get_url_and_headers("device/code")
         client_id = self._get_client_id()
@@ -170,26 +197,26 @@ class AuthClient(BaseClient):
             "client_id": client_id,
             "scope": scope,
         }
-        logdebug_request(url, headers, None, params, 'POST')
+        logdebug_request(url, headers, None, params, "POST")
 
         response = requests.post(url, headers=headers, params=params)
         if not check_version_header(response):
             raise SystemExit(1)
-        
+
         if not response.ok:
-            echo(f"Something went wrong.")
+            echo("Something went wrong.")
             logdebug_response(response)
             raise SystemExit(1)
-        
+
         device_auth_data = response.json()
 
         verification_uri_complete = device_auth_data["verification_uri_complete"]
-        if (os.environ.get("DEV_MODE")):
-            if (url.startswith("http://")):
+        if os.environ.get("DEV_MODE"):
+            if url.startswith("http://"):
                 verification_uri_complete = verification_uri_complete.replace("https://", "http://")
-            if ("localhost:3000" in verification_uri_complete):
+            if "localhost:3000" in verification_uri_complete:
                 verification_uri_complete = verification_uri_complete.replace("localhost:3000", "localhost:8080")
-        
+
         webbrowser.open(verification_uri_complete)
 
         token_data = {
@@ -198,13 +225,15 @@ class AuthClient(BaseClient):
             "grant_type": self.GRANT_TYPE,
         }
         token_url, _ = self._get_url_and_headers("token")
-        echo(f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser.")
+        echo(
+            f" 🔑 Please go to {verification_uri_complete} to authenticate. You must already be logged in to Lumos on your browser."
+        )
 
-        logdebug_request(token_url, headers, token_data, None, 'POST')
+        logdebug_request(token_url, headers, token_data, None, "POST")
 
         wait = 0
         while True:
-            print(" ⏰ Waiting" + ("." * (wait % 10)) + (' ' * (10-(wait % 10))), end='\r')
+            print(" ⏰ Waiting" + ("." * (wait % 10)) + (" " * (10 - (wait % 10))), end="\r")
             token_response = requests.post(token_url, headers=headers, data=token_data)
             if token_response.status_code == 400:
                 echo(f"Bad request: {token_response.json()}")
@@ -222,17 +251,16 @@ class AuthClient(BaseClient):
                 raise SystemExit(1)
         echo(" ✅ Authenticated!")
         write_key(token, scope)
-    
-   
+
 
 class ApiClient(BaseClient):
     def __init__(self):
         api_url: str | None = None
-        if (os.environ.get("DEV_MODE")):
+        if os.environ.get("DEV_MODE"):
             api_url = os.environ.get("API_URL")
         super().__init__(api_url or "https://api.lumos.com")
 
-    def _get_url_and_headers(self, endpoint: str) -> Tuple[str, Dict[str, str]]:
+    def _get_url_and_headers(self, endpoint: str) -> tuple[str, dict[str, str]]:
         api_key = os.environ.get("API_KEY")
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -240,14 +268,14 @@ class ApiClient(BaseClient):
             "User-Agent": f"lumos-cli/{__version__}",
         }
         return f"{self.url}/{endpoint}", headers
-    
+
     def get_current_user_id(self) -> UUID:
         if not os.environ.get("USER_ID"):
             user = self.get_current_user()
             os.environ["USER_ID"] = str(user.id)
             return user.id
         return UUID(os.environ["USER_ID"])
-    
+
     def get_current_user(self) -> User:
         user = self.get("users/current")
         if user:
@@ -265,7 +293,7 @@ class ApiClient(BaseClient):
     def get_appstore_app_setting(self, id: UUID) -> AppSetting:
         raw_setting = self.get(f"appstore/apps/{id}/settings")
         return AppSetting(**raw_setting)
-    
+
     def get_request_status(self, id: UUID) -> AccessRequest | None:
         raw_request = self.get(f"appstore/access_requests/{id}")
         return self._create_access_request(raw_request)
@@ -275,74 +303,82 @@ class ApiClient(BaseClient):
         if reason:
             params["reason"] = reason
         self.delete(f"appstore/access_requests/{id}", params)
-    
+
     def _create_access_request(self, raw_request: dict | None) -> AccessRequest | None:
         if not raw_request:
             return None
         return AccessRequest(**raw_request)
-    
-    def get_appstore_apps(self, 
+
+    def get_appstore_apps(
+        self,
         name_search: str | None = None,
         all: bool = False,
         page_size: int = 100,
         page: int = 1,
-    ) -> Tuple[List[App], int, int]:
+    ) -> tuple[list[App], int, int]:
         endpoint = "appstore/apps"
         params: dict[str, Any] = {}
         if name_search:
             params["name_search"] = name_search
-        raw_apps, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all, page_size=page_size, page=page)
-        apps: List[App] = []
+        raw_apps, count, total, _, _ = self.get_all_or_paged(
+            endpoint, params=params, all=all, page_size=page_size, page=page
+        )
+        apps: list[App] = []
         for item in raw_apps:
             apps.append(App(**item))
         return apps, count, total
-    
-    def get_my_apps(self, for_user: UUID | None = None) -> List[App]:
+
+    def get_my_apps(self, for_user: UUID | None = None) -> list[App]:
         user = for_user or self.get_current_user_id()
         statuses = SupportRequestStatus.PENDING_STATUSES + SupportRequestStatus.SUCCESS_STATUSES
-        access_requests, count, total, _, _ = self.get_access_requests(
+        access_requests, _, _, _, _ = self.get_access_requests(
             target_user_id=user,
             status=statuses,
             all=True,
         )
         return access_requests
-    
+
     def get_access_requests(
         self,
         target_user_id: UUID | None = None,
-        status: List[str] | None = None,
+        status: list[str] | None = None,
         all: bool = False,
         page_size: int = 100,
         page: int = 1,
-    ) -> Tuple[List[AccessRequest], int, int, int, int]:
-        params: dict[str, Any]= { "sort": "desc" }
+    ) -> tuple[list[AccessRequest], int, int, int, int]:
+        params: dict[str, Any] = {"sort": "desc"}
         if target_user_id:
             params["target_user_id"] = str(target_user_id)
-        if (status and len(status) > 0):
+        if status and len(status) > 0:
             params["statuses"] = [str(s) for s in status]
 
         endpoint = "appstore/access_requests"
-        raw_access_requests, count, total, page, pages = self.get_all_or_paged(endpoint, params=params, all=all, page=page, page_size=page_size)
-        access_requests: List[AccessRequest] = []
+        raw_access_requests, count, total, page, pages = self.get_all_or_paged(
+            endpoint, params=params, all=all, page=page, page_size=page_size
+        )
+        access_requests: list[AccessRequest] = []
         for item in raw_access_requests:
             access_request = self._create_access_request(item)
-            if (access_request): 
+            if access_request:
                 access_requests.append(access_request)
         return access_requests, count, total, page, pages
-    
-    def get_users(self,
-        like: Optional[str] = None,
+
+    def get_users(
+        self,
+        like: str | None = None,
         all: bool = False,
         page_size: int = 100,
         page: int = 1,
-    ) -> Tuple[List[User], int, int]:
+    ) -> tuple[list[User], int, int]:
         endpoint = "users"
         params: dict[str, Any] = {}
         if like:
             params["search_term"] = like
-        raw_users, count, total, _, _ = self.get_all_or_paged(endpoint, params=params, all=all, page_size=page_size, page=page)
+        raw_users, count, total, _, _ = self.get_all_or_paged(
+            endpoint, params=params, all=all, page_size=page_size, page=page
+        )
 
-        users: List[User] = []
+        users: list[User] = []
         for item in raw_users:
             users.append(User(**item))
         return users, count, total
@@ -354,7 +390,7 @@ class ApiClient(BaseClient):
         all: bool = False,
         page_size: int = 100,
         page: int = 1,
-    ) -> Tuple[List[Permission], int, int]:
+    ) -> tuple[list[Permission], int, int]:
         endpoint = "appstore/requestable_permissions"
         params: dict[str, Any] = {
             "app_id": str(app_id),
@@ -362,46 +398,40 @@ class ApiClient(BaseClient):
         }
         if search_term:
             params["search_term"] = search_term
-        
+
         raw_permissions, count, total, _, _ = self.get_all_or_paged(
-            endpoint,
-            params=params,
-            all=all,
-            page_size=page_size,
-            page=page)
-        
+            endpoint, params=params, all=all, page_size=page_size, page=page
+        )
+
         return [self._create_permission(item) for item in raw_permissions], count, total
 
     def get_groups(
         self,
-        app_id: Optional[UUID],
+        app_id: UUID | None,
         search_term: str | None = None,
         all: bool = False,
         page_size: int = 25,
         page: int = 1,
-    ) -> Tuple[List[Group], int, int]:
+    ) -> tuple[list[Group], int, int]:
         endpoint = "groups"
         params: dict[str, Any] = {}
         if app_id:
             params["app_id"] = str(app_id)
         if search_term:
             params["name"] = search_term
-        
+
         raw_permissions, count, total, _, _ = self.get_all_or_paged(
-            endpoint,
-            params=params,
-            all=all,
-            page_size=page_size,
-            page=page)
-        
+            endpoint, params=params, all=all, page_size=page_size, page=page
+        )
+
         return [Group(**item) for item in raw_permissions], count, total
-    
+
     def get_app_requestable_permission(self, permission_id: UUID) -> Permission | None:
         item = self.get(f"appstore/requestable_permissions/{permission_id}")
         if not item:
             return None
         return self._create_permission(item)
-    
+
     def _create_permission(self, raw_permission: dict) -> Permission:
         permission = Permission(**raw_permission)
         durations = raw_permission["request_config"]["request_fulfillment_config"]["time_based_access"]
@@ -409,12 +439,13 @@ class ApiClient(BaseClient):
         return permission
 
     def create_access_request(
-        self, 
+        self,
         app_id: UUID,
         note: str,
         expiration_in_seconds: int | None,
-        permission_ids: List[UUID] | None = None,
-        target_user_id: UUID | None = None) -> AccessRequest | None:
+        permission_ids: list[UUID] | None = None,
+        target_user_id: UUID | None = None,
+    ) -> AccessRequest | None:
         body: dict[str, Any] = {
             "app_id": str(app_id),
             "note": note,
@@ -425,9 +456,6 @@ class ApiClient(BaseClient):
             body["expiration_in_seconds"] = expiration_in_seconds
         if target_user_id:
             body["target_user_id"] = str(target_user_id)
-        response = self.post(
-            "appstore/access_request",
-            body
-        )
+        response = self.post("appstore/access_request", body)
 
         return AccessRequest(**response[0]) if response else None

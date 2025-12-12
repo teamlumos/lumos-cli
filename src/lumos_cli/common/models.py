@@ -1,10 +1,10 @@
 from abc import abstractmethod
 from enum import Enum
+from typing import ClassVar
 from uuid import UUID
-from pydantic import BaseModel
-from typing import List, Optional
+
 import pytz
-from uuid import UUID
+from pydantic import BaseModel
 
 
 class ProvisioningMethodOption(Enum):
@@ -12,35 +12,40 @@ class ProvisioningMethodOption(Enum):
     GROUPS_AND_HIDDEN = "GROUPS_AND_HIDDEN"
     GROUPS_AND_VISIBLE = "GROUPS_AND_VISIBLE"
 
+
 class LumosModel(BaseModel):
     @abstractmethod
-    def tabulate(self)-> List[str]:
+    def tabulate(self) -> list[str]:
         pass
+
 
 class AppSettingProvisioning(BaseModel):
     groups_provisioning: ProvisioningMethodOption
     time_based_access: list[str] = []
     allow_multiple_permission_selection: bool
 
+
 class AppSetting(BaseModel):
     custom_request_instructions: str
     provisioning: AppSettingProvisioning
+
 
 class App(LumosModel):
     id: UUID
     user_friendly_label: str
     app_class_id: str
     instance_id: str
-    
+
     def __str__(self):
         return self.user_friendly_label
-    
+
     def tabulate(self):
         return [str(self.id), self.user_friendly_label]
-    
+
     @staticmethod
     def headers():
         return ["ID", "App"]
+
 
 class Group(LumosModel):
     id: UUID
@@ -57,6 +62,7 @@ class Group(LumosModel):
     def tabulate(self):
         return [str(self.id), self.name, self.description]
 
+
 class Permission(LumosModel):
     id: UUID
     label: str
@@ -68,8 +74,8 @@ class Permission(LumosModel):
         return self.label
 
     def tabulate(self):
-        return [str(self.id), self.label, ', '.join(self.duration_options)]
-    
+        return [str(self.id), self.label, ", ".join(self.duration_options)]
+
     @staticmethod
     def headers():
         return ["ID", "Permission", "Access length options"]
@@ -83,26 +89,27 @@ class User(LumosModel):
 
     def __str__(self):
         return f"{self.given_name} {self.family_name} ({self.email})"
-    
+
     def tabulate(self):
         return [f"{self.given_name} {self.family_name}", self.email, str(self.id)]
-    
+
     @staticmethod
     def headers():
         return ["Name", "Email", "ID"]
-    
+
+
 class AccessRequest(LumosModel):
     id: UUID
     app_id: UUID
     app_name: str
     status: str
     requested_at: str
-    expires_at: Optional[str]
+    expires_at: str | None
     requester_user: User
-    supporter_user: Optional[User]
+    supporter_user: User | None
     target_user: User
-    requestable_permission_ids: Optional[list[UUID]] = None
-    requestable_permissions: Optional[list[Permission]] = None
+    requestable_permission_ids: list[UUID] | None = None
+    requestable_permissions: list[Permission] | None = None
 
     @staticmethod
     def _convert_to_human_date(inp: str) -> str:
@@ -112,38 +119,40 @@ class AccessRequest(LumosModel):
 
         # Parse the input UTC time string to a datetime object
         utc_time = datetime.datetime.strptime(inp, "%Y-%m-%dT%H:%M:%S")
-        
+
         # Set the timezone to UTC for the parsed datetime
         utc_time = utc_time.replace(tzinfo=pytz.utc)
-        
+
         # Convert UTC time to EST
-        est_time = utc_time.astimezone(pytz.timezone('America/New_York'))
-        
+        est_time = utc_time.astimezone(pytz.timezone("America/New_York"))
+
         # Format the EST time into a more human-readable string
         human_date = est_time.strftime("%a %b %d, %Y %I:%M %p EST")
-        
+
         return human_date
 
     def __str__(self):
         return f"{self.app_name} ({self.status})"
-    
+
     def tabulate(self):
-        return [str(self.id)] + self._tabulate()
+        return [str(self.id), *self._tabulate()]
 
     def tabulate_as_app(self):
-        return [self.app_id] + self._tabulate()
-    
+        return [self.app_id, *self._tabulate()]
+
     def _tabulate(self):
         return [
             self.app_name,
-            '\n'.join([p.label for p in self.requestable_permissions]) if self.requestable_permissions else '-----',
+            "\n".join([p.label for p in self.requestable_permissions]) if self.requestable_permissions else "-----",
             self.requester_user.given_name + " " + self.requester_user.family_name,
-            self.target_user.given_name + " " + self.target_user.family_name if self.requester_user.id != self.target_user.id else "(self)",
+            self.target_user.given_name + " " + self.target_user.family_name
+            if self.requester_user.id != self.target_user.id
+            else "(self)",
             self.status,
             self._convert_to_human_date(self.requested_at),
-            self._convert_to_human_date(self.expires_at)
+            self._convert_to_human_date(self.expires_at),
         ]
-    
+
     @staticmethod
     def headers():
         return ["ID", "App", "Permissions", "Requester", "For", "Status", "Requested at", "Expires at"]
@@ -195,21 +204,17 @@ class SupportRequestStatus:
     # when the request has been fully reverted
     REVERTED = "REVERTED"
 
-    PENDING_STATUSES = [
+    PENDING_STATUSES: ClassVar[list[str]] = [
         PENDING,
         PENDING_MANAGER_APPROVAL,
         PENDING_MANUAL_PROVISIONING,
         PENDING_APPROVAL,
-        PENDING_PROVISIONING
+        PENDING_PROVISIONING,
     ]
 
-    SUCCESS_STATUSES = [
-        APPROVED,
-        COMPLETED,
-        PROVISIONED
-    ]
+    SUCCESS_STATUSES: ClassVar[list[str]] = [APPROVED, COMPLETED, PROVISIONED]
 
-    ALL_STATUSES = [
+    ALL_STATUSES: ClassVar[list[str]] = [
         PENDING,
         PENDING_MANAGER_APPROVAL,
         MANAGER_APPROVED,
@@ -227,5 +232,5 @@ class SupportRequestStatus:
         TIME_BASED_EXPIRED,
         COMPLETED,
         REVERTING,
-        REVERTED
+        REVERTED,
     ]

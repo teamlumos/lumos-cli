@@ -15,6 +15,40 @@ on:
       - main
 
 jobs:
+  lint:
+    name: Lint and Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.6'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+          enable-cache: true
+
+      - name: Install dependencies
+        shell: bash
+        run: uv sync --group dev
+
+      - name: Run ruff linter
+        shell: bash
+        run: uv run ruff check .
+
+      - name: Run ruff formatter check
+        shell: bash
+        run: uv run ruff format --check .
+
+      - name: Run basedpyright type checker
+        shell: bash
+        run: uv run basedpyright
+
   python-package:
     name: Python Package
     runs-on: ubuntu-latest
@@ -70,7 +104,7 @@ jobs:
             platform: macos-arm64
           - runner: windows-latest
             platform: windows
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
