@@ -52,8 +52,8 @@ dev = [
 docs = [
     "sphinx>=7.0.0,<8",
     "myst-parser>=3.0.0,<4",
-    "sphinx-click>=6.0.0,<7",
     "sphinx-rtd-theme>=2.0.0,<3",
+    "pygments-ansi-color>=0.3.0,<1",
 ]
 
 [build-system]

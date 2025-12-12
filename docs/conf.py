@@ -34,7 +34,7 @@ except Exception:
 
 extensions = [
     "myst_parser",
-    "sphinx_click",
+    "click_extra.sphinx",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
@@ -69,7 +69,3 @@ html_theme_options = {
     "display_version": True,
     "prev_next_buttons_location": "bottom",
 }
-
-# -- Options for sphinx-click ------------------------------------------------
-# Document all command options
-sphinx_click_log_level = "DEBUG"
