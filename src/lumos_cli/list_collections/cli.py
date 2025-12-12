@@ -36,8 +36,20 @@ def list_users(
     id_only: bool,
 ) -> None:
     all = csv or output_json or not paginate
-    users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
-    display("users", users, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
+    users, count, total = client.get_users(
+        like=like, all=all, page=page, page_size=page_size
+    )
+    display(
+        "users",
+        users,
+        count,
+        total,
+        csv,
+        output_json,
+        page=page,
+        page_size=page_size,
+        id_only=id_only,
+    )
 
 
 @list_group.command("permissions", help="List permissions for a given app")
@@ -66,11 +78,26 @@ def list_permissions(
         app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size
     )
 
-    display("permissions", permissions, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
+    display(
+        "permissions",
+        permissions,
+        count,
+        total,
+        csv,
+        output_json,
+        page=page,
+        page_size=page_size,
+        id_only=id_only,
+    )
 
 
 @list_group.command("groups", help="List groups for the domain or the specified --app")
-@option("--app", default=None, type=str, help="App ID to filter groups by. If not provided, lists all groups.")
+@option(
+    "--app",
+    default=None,
+    type=str,
+    help="App ID to filter groups by. If not provided, lists all groups.",
+)
 @option("--like", default=None, help="Filters groups")
 @option("--csv", is_flag=True, help="Output as CSV")
 @option("--json", "output_json", is_flag=True, help="Output as JSON")
@@ -91,15 +118,40 @@ def list_groups(
 ) -> None:
     app_uuid = UUID(app) if app else None
     all = csv or output_json or not paginate
-    groups, count, total = client.get_groups(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
+    groups, count, total = client.get_groups(
+        app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size
+    )
 
-    display("groups", groups, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
+    display(
+        "groups",
+        groups,
+        count,
+        total,
+        csv,
+        output_json,
+        page=page,
+        page_size=page_size,
+        id_only=id_only,
+    )
 
 
 @list_group.command("requests", help="List access requests")
-@option("--for-user", default=None, type=str, help="Show only requests for ('targetting') a particular user")
-@option("--mine", is_flag=True, help="Show only requests for ('targetting') me. Takes precedence over --for-user.")
-@option("--status", multiple=True, help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc")
+@option(
+    "--for-user",
+    default=None,
+    type=str,
+    help="Show only requests for ('targetting') a particular user",
+)
+@option(
+    "--mine",
+    is_flag=True,
+    help="Show only requests for ('targetting') me. Takes precedence over --for-user.",
+)
+@option(
+    "--status",
+    multiple=True,
+    help="One of `PENDING`, `COMPLETED`, `DENIED_PROVISIONING`, etc",
+)
 @option("--pending", is_flag=True, help="Show only pending requests")
 @option("--past", is_flag=True, help="Show only past requests")
 @option("--csv", is_flag=True, help="Output as CSV")
@@ -133,10 +185,16 @@ def list_requests(
 
     all = csv or output_json or not paginate
     access_requests, count, total, _, _ = client.get_access_requests(
-        target_user_id=user_uuid, status=status_set, all=all, page=page, page_size=page_size
+        target_user_id=user_uuid,
+        status=status_set,
+        all=all,
+        page=page,
+        page_size=page_size,
     )
 
-    access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
+    access_requests = sorted(
+        access_requests, key=lambda x: x.requested_at, reverse=True
+    )
 
     display(
         "requests",
@@ -176,12 +234,30 @@ def list_apps(
     if mine:
         access_requests = client.get_my_apps()
         if len(access_requests) > 0:
-            print(tabulate([req.tabulate_as_app() for req in access_requests], headers=AccessRequest.headers()), "\n")
+            print(
+                tabulate(
+                    [req.tabulate_as_app() for req in access_requests],
+                    headers=AccessRequest.headers(),
+                ),
+                "\n",
+            )
         else:
             print("No apps found.")
         return
-    apps, count, total = client.get_appstore_apps(name_search=like, all=all, page_size=page_size, page=page)
-    display("apps", apps, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
+    apps, count, total = client.get_appstore_apps(
+        name_search=like, all=all, page_size=page_size, page=page
+    )
+    display(
+        "apps",
+        apps,
+        count,
+        total,
+        csv,
+        output_json,
+        page=page,
+        page_size=page_size,
+        id_only=id_only,
+    )
 
 
 def display(
@@ -216,6 +292,8 @@ def display(
     remaining = total - count - page_size * (page - 1)
     if remaining > 0:
         if search:
-            print(f"There are {remaining} more {description} that match your search. Use --like to search.\n")
+            print(
+                f"There are {remaining} more {description} that match your search. Use --like to search.\n"
+            )
         else:
             print(f"There are {remaining} more {description} not shown.\n")

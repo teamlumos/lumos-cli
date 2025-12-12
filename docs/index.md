@@ -31,17 +31,38 @@ lumos request
 
 ## Table of Contents
 
-```{toctree}
-:maxdepth: 2
-:caption: User Guide
+## User Guide
 
-installation
-examples
-```
+* [Installation](installation.md)
+  * [macOS and Linux (via Homebrew)](installation.md#macos-and-linux-via-homebrew)
+  * [Python Package (via pip or uv)](installation.md#python-package-via-pip-or-uv)
+  * [Binary Downloads](installation.md#binary-downloads)
+  * [Initial Setup](installation.md#initial-setup)
+  * [Troubleshooting](installation.md#troubleshooting)
+* [Examples](examples.md)
+  * [Authentication](examples.md#authentication)
+  * [Listing Resources](examples.md#listing-resources)
+  * [Making Access Requests](examples.md#making-access-requests)
+  * [Monitoring Requests](examples.md#monitoring-requests)
+  * [Scripting Examples](examples.md#scripting-examples)
+  * [Output Formats](examples.md#output-formats)
 
-```{toctree}
-:maxdepth: 3
-:caption: Reference
+## Reference
 
-cli-reference
-```
+* [CLI Reference](cli-reference.md)
+  * [Getting Help](cli-reference.md#getting-help)
+  * [Authentication Commands](cli-reference.md#authentication-commands)
+    * [`lumos whoami`](cli-reference.md#lumos-whoami)
+    * [`lumos setup`](cli-reference.md#lumos-setup)
+    * [`lumos login`](cli-reference.md#lumos-login)
+    * [`lumos logout`](cli-reference.md#lumos-logout)
+  * [List Commands](cli-reference.md#list-commands)
+    * [`lumos list apps`](cli-reference.md#lumos-list-apps)
+    * [`lumos list users`](cli-reference.md#lumos-list-users)
+    * [`lumos list permissions`](cli-reference.md#lumos-list-permissions)
+    * [`lumos list groups`](cli-reference.md#lumos-list-groups)
+    * [`lumos list requests`](cli-reference.md#lumos-list-requests)
+  * [Request Commands](cli-reference.md#request-commands)
+    * [`lumos request status`](cli-reference.md#lumos-request-status)
+    * [`lumos request poll`](cli-reference.md#lumos-request-poll)
+    * [`lumos request cancel`](cli-reference.md#lumos-request-cancel)

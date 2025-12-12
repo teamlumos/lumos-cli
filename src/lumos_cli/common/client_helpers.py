@@ -1,7 +1,7 @@
 import os
 
 import requests
-from colorama import Fore, Style
+from click_extra import secho
 
 from lumos_cli import __version__
 
@@ -17,17 +17,27 @@ def check_version_header(response: requests.Response) -> bool:
     cont, error_message = check_version(current_version, header_version)
 
     if error_message:
-        print((Fore.CYAN if cont else Fore.RED) + error_message)
-        print(Style.RESET_ALL, end="\r")
+        secho(error_message, fg="cyan" if cont else "red")
     return cont
 
 
-def check_version(current_version: list[int], header_version: list[int]) -> tuple[bool, str | None]:
+def check_version(
+    current_version: list[int], header_version: list[int]
+) -> tuple[bool, str | None]:
     if current_version[0] < header_version[0]:
-        return False, "A new version of the CLI is available. Please run `brew upgrade lumos` to proceed."
-    if current_version[0] == header_version[0] and current_version[1] < header_version[1]:
+        return (
+            False,
+            "A new version of the CLI is available. Please run `brew upgrade lumos` to proceed.",
+        )
+    if (
+        current_version[0] == header_version[0]
+        and current_version[1] < header_version[1]
+    ):
         os.environ["WARNED"] = "1"
-        return True, "There's an update available to the CLI. Please run `brew upgrade lumos`."
+        return (
+            True,
+            "There's an update available to the CLI. Please run `brew upgrade lumos`.",
+        )
     return True, None
 
 

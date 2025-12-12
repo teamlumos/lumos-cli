@@ -1,26 +1,36 @@
 # Makefile for Sphinx documentation
 
 SPHINXOPTS    ?=
-SPHINXBUILD   ?= sphinx-build
-SOURCEDIR     = .
-BUILDDIR      = _build
+SPHINXBUILD   ?= uv run sphinx-build
+SPHINXDIR     = sphinx
+BUILDDIR      = $(SPHINXDIR)/_build
+
+.PHONY: help clean html markdown docs
 
 # Put it first so that "make" without argument is like "make help".
 help:
-	@$(SPHINXBUILD) -M help "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-
-.PHONY: help Makefile clean html
+	@echo "Available targets:"
+	@echo "  html      - Build HTML documentation"
+	@echo "  markdown  - Build Markdown documentation"
+	@echo "  docs      - Build both"
+	@echo "  clean     - Remove build artifacts"
 
 # Clean build directory
 clean:
 	rm -rf $(BUILDDIR)
+	rm -f cli-reference.md examples.md index.md installation.md
 
 # Build HTML documentation
 html:
-	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -M html "$(SPHINXDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
+# Build Markdown documentation
+markdown:
+	@$(SPHINXBUILD) -M markdown "$(SPHINXDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
+	@echo "Build finished. The Markdown files are in $(BUILDDIR)/markdown."
+	@cp $(BUILDDIR)/markdown/*.md .
+	@echo "Markdown files copied to docs/"
+
+# Build both 
+docs: markdown html

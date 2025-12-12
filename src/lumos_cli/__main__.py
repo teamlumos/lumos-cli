@@ -1,8 +1,8 @@
-from lumos_cli.cli import cli
+from lumos_cli.cli import lumos
 
 
 def main():
-    cli()
+    lumos()
 
 
 if __name__ == "__main__":

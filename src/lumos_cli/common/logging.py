@@ -1,6 +1,6 @@
 import os
 
-from colorama import Fore, Style
+from click_extra import secho
 
 
 def logdebug_request(url, headers, body, params, method) -> None:
@@ -27,5 +27,4 @@ def logdebug_response(response) -> None:
 
 def logdebug(msg: str) -> None:
     if os.environ.get("DEBUG"):
-        print(Fore.RED + msg)
-        print(Style.RESET_ALL, end="\r")
+        secho(msg, fg="red")

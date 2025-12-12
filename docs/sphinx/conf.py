@@ -7,7 +7,7 @@ import os
 import sys
 
 # Add the source directory to the path for autodoc
-sys.path.insert(0, os.path.abspath("../src"))
+sys.path.insert(0, os.path.abspath("../../src"))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -21,7 +21,7 @@ author = "Lumos"
 try:
     import tomllib
 
-    with open("../pyproject.toml", "rb") as f:
+    with open("../../pyproject.toml", "rb") as f:
         pyproject = tomllib.load(f)
         version = pyproject["project"]["version"]
         release = version

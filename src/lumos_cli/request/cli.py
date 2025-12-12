@@ -8,7 +8,14 @@ from tabulate import tabulate
 
 from lumos_cli.common.client import ApiClient
 from lumos_cli.common.helpers import authenticate
-from lumos_cli.common.models import AccessRequest, App, Permission, ProvisioningMethodOption, SupportRequestStatus, User
+from lumos_cli.common.models import (
+    AccessRequest,
+    App,
+    Permission,
+    ProvisioningMethodOption,
+    SupportRequestStatus,
+    User,
+)
 
 POLLING_INTERVAL = 6
 client = ApiClient()
@@ -24,10 +31,19 @@ client = ApiClient()
     help="UUID of user for whom to request access. Takes precedence over --user-like",
 )
 @option("--for-me", is_flag=True, help="Makes the request for the current user.")
-@option("--mine", is_flag=True, help="Makes the request for the current user. Duplicate of --for-me for convenience.")
-@option("--app", default=None, type=str, help="App UUID. Takes precedence over --app-like")
 @option(
-    "--permission", multiple=True, type=str, help="List of permission UUIDs. Takes precedence over --permission-like"
+    "--mine",
+    is_flag=True,
+    help="Makes the request for the current user. Duplicate of --for-me for convenience.",
+)
+@option(
+    "--app", default=None, type=str, help="App UUID. Takes precedence over --app-like"
+)
+@option(
+    "--permission",
+    multiple=True,
+    type=str,
+    help="List of permission UUIDs. Takes precedence over --permission-like",
 )
 @option(
     "--length",
@@ -39,12 +55,22 @@ client = ApiClient()
     default=None,
     help="User name/email like--filters users shown as options when selecting, if the request is not for the current user",
 )
-@option("--app-like", default=None, help="App name like--filters apps shown as options when selecting")
 @option(
-    "--permission-like", default=None, help="Permission name like--filters permissions shown as options when selecting"
+    "--app-like",
+    default=None,
+    help="App name like--filters apps shown as options when selecting",
+)
+@option(
+    "--permission-like",
+    default=None,
+    help="Permission name like--filters permissions shown as options when selecting",
 )
 @option("--wait/--no-wait", default=None, help="Wait for the request to complete")
-@option("--dry-run", is_flag=True, help="Print the request command without actually making the request")
+@option(
+    "--dry-run",
+    is_flag=True,
+    help="Print the request command without actually making the request",
+)
 @authenticate
 def request(
     ctx: Context,
@@ -65,7 +91,9 @@ def request(
     if ctx.invoked_subcommand is None:
         for_user_uuid = None
         if for_me is not True and mine is not True:
-            if user_like is not None or not confirm("This request is for you?", default=True):
+            if user_like is not None or not confirm(
+                "This request is for you?", default=True
+            ):
                 for_user_uuid = select_user(user_like)
         elif for_user:
             for_user_uuid = UUID(for_user)
@@ -79,7 +107,10 @@ def request(
 
         permission_uuids = [UUID(p) for p in permission] if permission else None
 
-        if app_settings.provisioning.groups_provisioning == ProvisioningMethodOption.GROUPS_AND_VISIBLE:
+        if (
+            app_settings.provisioning.groups_provisioning
+            == ProvisioningMethodOption.GROUPS_AND_VISIBLE
+        ):
             selected_permissions = select_permissions(
                 selected_app,
                 app_settings.provisioning.allow_multiple_permission_selection,
@@ -89,7 +120,9 @@ def request(
             if selected_permissions:
                 duration_options = set(selected_permissions[0].duration_options)
                 for perm in selected_permissions[1:]:
-                    duration_options = duration_options.intersection(perm.duration_options)
+                    duration_options = duration_options.intersection(
+                        perm.duration_options
+                    )
 
         duration, duration_friendly = get_duration(duration_options, length)
 
@@ -97,7 +130,9 @@ def request(
             reason = prompt("\nEnter your business justification for the request")
 
         if wait is None:
-            wait = confirm("Do you want to wait for the request to complete?", default=True)
+            wait = confirm(
+                "Do you want to wait for the request to complete?", default=True
+            )
 
         echo("\nAPP")
         echo(f"   {selected_app.user_friendly_label} [{selected_app.id}]")
@@ -106,7 +141,9 @@ def request(
             for perm in selected_permissions:
                 echo(f"   {perm.label} [{perm.id}]")
         echo("\nDURATION")
-        echo(f"   {duration_friendly or 'Unlimited'} {f'({duration} seconds)' if duration else ''}")
+        echo(
+            f"   {duration_friendly or 'Unlimited'} {f'({duration} seconds)' if duration else ''}"
+        )
         echo("\nREASON")
         echo(f"   {reason}")
 
@@ -116,7 +153,9 @@ def request(
 
         permission_flags = ""
         if selected_permissions:
-            permission_flags = " ".join([f"--permission {perm.id}" for perm in selected_permissions])
+            permission_flags = " ".join(
+                [f"--permission {perm.id}" for perm in selected_permissions]
+            )
 
         command_str = f'lumos request --app {selected_app.id} {permission_flags} --reason "{reason}"'
         if duration:
@@ -139,7 +178,9 @@ def request(
 
         request_id = create_access_request(
             app_id=selected_app.id,
-            requestable_permission_ids=[p.id for p in selected_permissions] if selected_permissions else None,
+            requestable_permission_ids=(
+                [p.id for p in selected_permissions] if selected_permissions else None
+            ),
             note=reason,
             expiration=duration,
             target_user_id=for_user_uuid,
@@ -149,7 +190,10 @@ def request(
             _poll(request_id)
 
 
-@request.command("status", help="Check the status of a request by ID or `--last` for the most recent request")
+@request.command(
+    "status",
+    help="Check the status of a request by ID or `--last` for the most recent request",
+)
 @option("--request-id", default=None, help="Request ID")
 @option("--last", is_flag=True, help="Get the last request")
 @option("--status-only", is_flag=True, help="Output status only")
@@ -165,7 +209,9 @@ def status(
 ) -> None:
     access_request: AccessRequest | None
     if last:
-        access_requests, count, _, _, _ = client.get_access_requests(target_user_id=client.get_current_user_id())
+        access_requests, count, _, _, _ = client.get_access_requests(
+            target_user_id=client.get_current_user_id()
+        )
         if count == 0:
             echo("No pending requests found")
             return
@@ -217,7 +263,10 @@ def _poll(request_id: UUID, wait_max: int = 120):
     if wait_max < 10 or wait_max > 300:
         wait_max = 120
     while (access_request := client.get_request_status(request_id)) is not None:
-        if access_request.status not in SupportRequestStatus.PENDING_STATUSES or wait_max <= 0:
+        if (
+            access_request.status not in SupportRequestStatus.PENDING_STATUSES
+            or wait_max <= 0
+        ):
             break
         wait_max -= POLLING_INTERVAL
         for num_decimals in range(POLLING_INTERVAL):
@@ -237,7 +286,9 @@ def _poll(request_id: UUID, wait_max: int = 120):
         echo(" ✅ Request completed!")
         return
     echo(f" ⏰ Request status: {access_request.status}" + (" " * 20) + "\n")
-    echo(f"Use `lumos request status --request-id {request_id}` to check the status later.")
+    echo(
+        f"Use `lumos request status --request-id {request_id}` to check the status later."
+    )
 
 
 @request.command("cancel", help="Cancel a request by ID")
@@ -249,11 +300,15 @@ def cancel(request_id: str | None, reason: str | None) -> None:
     while not request_uuid:
         if not request_id:
             request_id = prompt(
-                "Please provide a request ID or press enter to look up a request", default="", show_default=False
+                "Please provide a request ID or press enter to look up a request",
+                default="",
+                show_default=False,
             )
         if not request_id:
             pending_requests, _, _, _, _ = client.get_access_requests(
-                client.get_current_user_id(), SupportRequestStatus.PENDING_STATUSES, all=True
+                client.get_current_user_id(),
+                SupportRequestStatus.PENDING_STATUSES,
+                all=True,
             )
             if len(pending_requests) == 0:
                 echo("No pending requests found")
@@ -264,9 +319,12 @@ def cancel(request_id: str | None, reason: str | None) -> None:
             request_uuid = UUID(request_id)
 
     if (
-        access_request := client.get_request_status(request_uuid)
-    ) is not None and access_request.status not in SupportRequestStatus.PENDING_STATUSES:
-        echo(f"Request is not pending, cannot cancel. Status is {access_request.status}.")
+        (access_request := client.get_request_status(request_uuid)) is not None
+        and access_request.status not in SupportRequestStatus.PENDING_STATUSES
+    ):
+        echo(
+            f"Request is not pending, cannot cancel. Status is {access_request.status}."
+        )
         raise SystemExit(1)
 
     client.cancel_access_request(request_uuid, reason)
@@ -307,17 +365,23 @@ def get_valid_app(app_id: UUID | None = None, app_like: str | None = None) -> Ap
         apps: list[App] = []
         while True:
             print("\n⏳ Loading your apps ...", end="\r")
-            apps, count, total = client.get_appstore_apps(name_search=app_like, page_size=25)
+            apps, count, total = client.get_appstore_apps(
+                name_search=app_like, page_size=25
+            )
             print("                          ", end="\r")
             if total == 0:
                 if app_like:
-                    app_like = prompt(f"No apps found for '{app_like}'\n🔍 Give me something to search on")
+                    app_like = prompt(
+                        f"No apps found for '{app_like}'\n🔍 Give me something to search on"
+                    )
                 else:
                     echo("No apps found")
                     raise SystemExit(1)
             elif count < total:
                 echo("")
-                app_like = prompt("Too many apps to show.\n🔍 Give me something to search on")
+                app_like = prompt(
+                    "Too many apps to show.\n🔍 Give me something to search on"
+                )
             else:
                 break
         if count == 1:
@@ -336,7 +400,9 @@ def select_permissions(
     permission_ids: list[UUID] | None,
     permission_like: str | None = None,
 ) -> list[Permission] | None:
-    valid_permissions = get_valid_permissions(app, permission_ids, allow_multiple_permission_selection)
+    valid_permissions = get_valid_permissions(
+        app, permission_ids, allow_multiple_permission_selection
+    )
     if len(valid_permissions) > 0:
         return valid_permissions
     done_selecting = False
@@ -358,18 +424,24 @@ def select_permissions(
                     echo("No permissions found (you're just requesting the app)")
                     return None
             elif count < total:
-                permission_like = prompt("Too many permissions to show.\n🔍 Give me something to search on")
+                permission_like = prompt(
+                    "Too many permissions to show.\n🔍 Give me something to search on"
+                )
             else:
                 break
         if count > 1:
-            already_selected = ", ".join([p.label for p in valid_permissions_dict.values()])
+            already_selected = ", ".join(
+                [p.label for p in valid_permissions_dict.values()]
+            )
             if allow_multiple_permission_selection:
                 description = f"Select at least one permissions\n{f'(already selected: {already_selected})' if already_selected else ''}\nUse SPACE or right arrow to select, ENTER to confirm"
                 selected = pick(permissions, description, multiselect=True, min_selection_count=1)  # type: ignore[misc]
                 for option, _ in selected:
                     valid_permissions_dict[str(option.id)] = option
             else:
-                option, _ = pick(permissions, "Select permission (use ENTER to confirm)")
+                option, _ = pick(
+                    permissions, "Select permission (use ENTER to confirm)"
+                )
                 valid_permissions_dict[str(option.id)] = option
         elif count == 1:
             permission = permissions[0]
@@ -388,7 +460,9 @@ def select_permissions(
 
 
 def get_valid_permissions(
-    app: App, permission_ids: list[UUID] | None, allow_multiple_permission_selection: bool
+    app: App,
+    permission_ids: list[UUID] | None,
+    allow_multiple_permission_selection: bool,
 ) -> list[Permission]:
     valid_permissions: list[Permission] = []
     if not permission_ids:
@@ -404,7 +478,9 @@ def get_valid_permissions(
     return valid_permissions
 
 
-def select_duration(durations: set[str], duration_friendly: str | None) -> tuple[int | None, str]:
+def select_duration(
+    durations: set[str], duration_friendly: str | None
+) -> tuple[int | None, str]:
     selected: str = ""
     if len(durations) == 1:
         selected = next(iter(durations))
@@ -412,7 +488,10 @@ def select_duration(durations: set[str], duration_friendly: str | None) -> tuple
         selected = duration_friendly
     elif len(durations) > 1:
         selected, _ = pick(
-            list(durations), "Select duration (use ENTER to confirm)", multiselect=False, min_selection_count=1
+            list(durations),
+            "Select duration (use ENTER to confirm)",
+            multiselect=False,
+            min_selection_count=1,
         )
 
     time_in_seconds = None
@@ -420,7 +499,9 @@ def select_duration(durations: set[str], duration_friendly: str | None) -> tuple
         time_in_seconds = int(match.group(1)) * 60 * 60
         if re.match(r".*days", selected):
             time_in_seconds = 24 * time_in_seconds
-    echo(f"DURATION: {selected}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}")
+    echo(
+        f"DURATION: {selected}{f' ({time_in_seconds} seconds)' if time_in_seconds else ''}"
+    )
     return time_in_seconds, selected
 
 
@@ -433,7 +514,9 @@ def parse_duration(duration: str) -> tuple[int | None, str]:
     return time_in_seconds, duration.replace(" ", "").lower()
 
 
-def get_duration(possible_durations: set[str], input_length: str | None) -> tuple[int | None, str]:
+def get_duration(
+    possible_durations: set[str], input_length: str | None
+) -> tuple[int | None, str]:
     duration_friendly: str | None = None
     durations = {}
     for possible_duration in possible_durations:

@@ -183,27 +183,28 @@ Documentation is built using [Sphinx](https://www.sphinx-doc.org/) with [MyST Ma
 # Install docs dependencies
 uv sync --group docs
 
-# Build HTML documentation
-uv run sphinx-build -M html docs docs/_build
+# Build both HTML and Markdown, copy markdown to docs/
+make -C docs docs
 
-# Build Markdown documentation (committed during releases)
-uv run sphinx-build -M markdown docs docs/_build
+# Or build individually:
+make -C docs html      # HTML only
+make -C docs markdown  # Markdown only
 
 # View the HTML docs
-open docs/_build/html/index.html
+open docs/sphinx/_build/html/index.html
 ```
 
 ### Documentation Structure
 
-Source files (in `docs/`):
-- `docs/index.md` - Main landing page
-- `docs/installation.md` - Installation instructions
-- `docs/examples.md` - Usage examples with code samples
-- `docs/cli-reference.md` - CLI reference with live examples (via click-extra sphinx)
+Source files (in `docs/sphinx/`):
+- `docs/sphinx/index.md` - Main landing page
+- `docs/sphinx/installation.md` - Installation instructions
+- `docs/sphinx/examples.md` - Usage examples with code samples
+- `docs/sphinx/cli-reference.md` - CLI reference with live examples (via click-extra sphinx)
 
 Generated output:
-- `docs/_build/html/` - HTML documentation (deployed to GitHub Pages)
-- `docs/_build/markdown/` - Markdown documentation (committed during releases)
+- `docs/sphinx/_build/html/` - HTML documentation (deployed to GitHub Pages via semantic-release)
+- `docs/*.md` - Markdown documentation (copied from build, committed during releases)
 
 ### Using click-extra Sphinx Directives
 

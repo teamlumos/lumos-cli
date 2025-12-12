@@ -17,14 +17,14 @@ plugins:
       prepareCommand: |
         uv version ${nextRelease.version}
         uv sync --group docs
-        uv run sphinx-build -M markdown docs docs/_build
+        make -C docs docs
 
   - - "@semantic-release/git"
     - message: 'chore(release): ${nextRelease.version} \n\n${nextRelease.notes}'
       assets:
         - CHANGELOG.md
         - pyproject.toml
-        - docs/_build/markdown/**/*
+        - docs/*.md
 
   - - "@semantic-release/github"
     - assets:
@@ -36,3 +36,7 @@ plugins:
           label: "Windows Binary"
         - path: "lumos-*.whl"
           label: "Python Wheel"
+
+  - - "@qiwi/semantic-release-gh-pages-plugin"
+    - src: docs/sphinx/_build/html
+      msg: "docs: update documentation for ${nextRelease.version}"
