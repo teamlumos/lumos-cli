@@ -1,0 +1,158 @@
+---
+description: Angular-style commit message guidelines. Apply when writing git commit messages.
+globs:
+alwaysApply: false
+---
+
+# Commit Message Format
+
+Follow the Angular commit message convention for all commits. This format creates an easier-to-read commit history and enables automated changelog generation.
+
+## Structure
+
+```
+<type>(<scope>): <short summary>
+
+<body>
+
+<footer>
+```
+
+## Header Format (Required)
+
+```
+<type>(<scope>): <short summary>
+```
+
+- **type**: Required. See types below.
+- **scope**: Optional. The area of the codebase affected.
+- **summary**: Required. Present tense, no capitalization, no period at the end.
+
+### Commit Types
+
+| Type         | Description                                                                                         |
+| ------------ | --------------------------------------------------------------------------------------------------- |
+| **feat**     | A new feature                                                                                       |
+| **fix**      | A bug fix                                                                                           |
+| **docs**     | Documentation only changes                                                                          |
+| **style**    | Changes that do not affect the meaning of the code (formatting, whitespace)                         |
+| **refactor** | A code change that neither fixes a bug nor adds a feature                                           |
+| **perf**     | A code change that improves performance                                                             |
+| **test**     | Adding missing tests or correcting existing tests                                                   |
+| **build**    | Changes that affect the build system or external dependencies                                       |
+| **ci**       | Changes to CI configuration files and scripts                                                       |
+| **chore**    | Other changes that don't modify src or test files                                                   |
+| **revert**   | Reverts a previous commit                                                                           |
+
+### Summary Rules
+
+- Use imperative, present tense: "change" not "changed" nor "changes"
+- Don't capitalize the first letter
+- No period (.) at the end
+- Keep under 72 characters
+
+## Body (Optional but Recommended)
+
+- Use imperative, present tense
+- Explain the **motivation** for the change
+- Explain **why** you are making the change, not just what
+- Compare previous behavior with new behavior if helpful
+- Must be at least 20 characters if included
+- Wrap at 72 characters
+
+## Footer (Optional)
+
+Used for:
+- Breaking changes
+- Deprecations  
+- Issue references
+
+### Breaking Changes
+
+```
+BREAKING CHANGE: <summary>
+
+<description + migration instructions>
+
+Fixes #<issue number>
+```
+
+### Deprecations
+
+```
+DEPRECATED: <what is deprecated>
+
+<description + recommended update path>
+
+Closes #<pr number>
+```
+
+### Issue References
+
+```
+Fixes #123
+Closes #456
+Refs #789
+```
+
+## Examples
+
+### Feature with scope
+```
+feat(cli): add verbose logging option
+
+Add --verbose flag to enable detailed output during command execution.
+This helps users debug issues with API calls.
+
+Closes #42
+```
+
+### Bug fix
+```
+fix(auth): handle expired token refresh correctly
+
+Previously, expired tokens would cause a crash instead of
+triggering a refresh flow. Now the client properly catches
+the expiration and requests a new token.
+
+Fixes #128
+```
+
+### Documentation
+```
+docs: update README with installation steps
+```
+
+### Breaking change
+```
+feat(api): change response format to JSON
+
+BREAKING CHANGE: API responses are now JSON instead of XML.
+
+Migrate by updating response parsers to handle JSON format.
+See migration guide in docs/migration-v2.md.
+
+Closes #200
+```
+
+### Revert
+```
+revert: feat(cli): add verbose logging option
+
+This reverts commit abc1234.
+
+The verbose mode was causing performance issues in production.
+```
+
+## Quick Reference
+
+✅ Good:
+- `feat(auth): add OAuth2 support`
+- `fix: resolve memory leak in worker pool`
+- `docs: add API reference for new endpoints`
+
+❌ Bad:
+- `Fixed bug` (no type, past tense, vague)
+- `feat: Added new feature.` (past tense, has period)
+- `FEAT: Add Feature` (wrong case)
+- `feat(auth)add oauth` (missing colon after scope)
