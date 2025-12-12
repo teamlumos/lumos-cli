@@ -51,6 +51,7 @@ jobs:
 
   python-package:
     name: Python Package
+    needs: lint
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -91,6 +92,7 @@ jobs:
 
   build-binaries:
     name: ${{ matrix.platform }} Binary
+    needs: lint
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
