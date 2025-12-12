@@ -9,3 +9,6 @@ venv/
 /dist/
 *.egg-info
 node_modules/
+
+# Documentation build output
+docs/_build/
