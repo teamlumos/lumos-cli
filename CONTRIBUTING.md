@@ -175,7 +175,7 @@ uv run pytest --cov=lumos_cli --cov-report=html
 
 ## Documentation
 
-Documentation is built using [Sphinx](https://www.sphinx-doc.org/) with [MyST Markdown](https://myst-parser.readthedocs.io/) and [sphinx-click](https://sphinx-click.readthedocs.io/) for CLI reference.
+Documentation is built using [Sphinx](https://www.sphinx-doc.org/) with [MyST Markdown](https://myst-parser.readthedocs.io/) and [click-extra's Sphinx extension](https://kdeldycke.github.io/click-extra/sphinx.html) for interactive CLI documentation with ANSI color support.
 
 ### Building Documentation Locally
 
@@ -196,11 +196,28 @@ open _build/html/index.html
 - `docs/index.md` - Main landing page
 - `docs/installation.md` - Installation instructions
 - `docs/examples.md` - Usage examples with code samples
-- `docs/cli-reference.md` - Auto-generated CLI reference (via sphinx-click)
+- `docs/cli-reference.md` - CLI reference with live examples (via click-extra sphinx)
+
+### Using click-extra Sphinx Directives
+
+The documentation uses click-extra's Sphinx directives to show live CLI examples:
+
+```markdown
+# Define CLI source (hidden by default)
+\`\`\`{click:source}
+:hide-results:
+from lumos_cli.cli import cli
+\`\`\`
+
+# Run CLI command and show output with ANSI colors
+\`\`\`{click:run}
+invoke(cli, args=["--help"])
+\`\`\`
+```
 
 ### Updating Documentation
 
-1. **For CLI changes**: Update docstrings in the source code. The CLI reference is auto-generated from click decorators and docstrings.
+1. **For CLI changes**: Update docstrings in the source code. The CLI reference uses `click:run` directives to execute commands and display their help.
 
 2. **For usage examples**: Edit `docs/examples.md` with new code samples.
 
