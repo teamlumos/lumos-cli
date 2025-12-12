@@ -48,7 +48,7 @@ secret() {
     permission=$2
 
     echo "Working on permission [$permission]"
-    
+
     arn=""
     # check if arn is empty
     while [ "" = "$arn" ]; do
@@ -63,9 +63,9 @@ secret() {
         roleName=$(echo $query | grep -o '"RoleName": *"[^"]*"' | cut -d'"' -f4)
         roleName=$(echo ${roleName//AWSReservedSSO_/} | sed 's/_.*//')
     done
-    
+
     echo -e "Got role: $roleName"
-    
+
     original_dir=$(pwd)
 
     echo Updating AWS config

@@ -1,19 +1,21 @@
-from typing import Any, List, Optional
-from lumos_cli.common.helpers import authenticate, get_statuses
-from click_extra import group, command, option
-from uuid import UUID
-from tabulate import tabulate
 from json import dumps
+from uuid import UUID
+
+from click_extra import group, option
+from tabulate import tabulate
 
 from lumos_cli.common.client import ApiClient
-from lumos_cli.common.models import AccessRequest, LumosModel, SupportRequestStatus
+from lumos_cli.common.helpers import authenticate, get_statuses
+from lumos_cli.common.models import AccessRequest, LumosModel
 
 client = ApiClient()
+
 
 @group(name="list")
 def list_group():
     """List various Lumos resources"""
     pass
+
 
 @list_group.command("users", help="List users in Lumos")
 @option("--like", default=None, help="Search by name or email")
@@ -25,7 +27,7 @@ def list_group():
 @option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_users(
-    like: Optional[str],
+    like: str | None,
     csv: bool,
     output_json: bool,
     paginate: bool,
@@ -50,7 +52,7 @@ def list_users(
 @authenticate
 def list_permissions(
     app: str,
-    like: Optional[str],
+    like: str | None,
     csv: bool,
     output_json: bool,
     paginate: bool,
@@ -60,9 +62,12 @@ def list_permissions(
 ) -> None:
     app_uuid = UUID(app)
     all = csv or output_json or not paginate
-    permissions, count, total = client.get_app_requestable_permissions(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
+    permissions, count, total = client.get_app_requestable_permissions(
+        app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size
+    )
 
     display("permissions", permissions, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
+
 
 @list_group.command("groups", help="List groups for the domain or the specified --app")
 @option("--app", default=None, type=str, help="App ID to filter groups by. If not provided, lists all groups.")
@@ -75,8 +80,8 @@ def list_permissions(
 @option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_groups(
-    app: Optional[str],
-    like: Optional[str],
+    app: str | None,
+    like: str | None,
     csv: bool,
     output_json: bool,
     paginate: bool,
@@ -89,6 +94,7 @@ def list_groups(
     groups, count, total = client.get_groups(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
 
     display("groups", groups, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
+
 
 @list_group.command("requests", help="List access requests")
 @option("--for-user", default=None, type=str, help="Show only requests for ('targetting') a particular user")
@@ -104,7 +110,7 @@ def list_groups(
 @option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_requests(
-    for_user: Optional[str],
+    for_user: str | None,
     mine: bool,
     status: tuple,
     pending: bool,
@@ -116,7 +122,6 @@ def list_requests(
     page: int,
     id_only: bool,
 ) -> None:
-    
     user_uuid = None
     if mine:
         user_uuid = client.get_current_user_id()
@@ -128,16 +133,13 @@ def list_requests(
 
     all = csv or output_json or not paginate
     access_requests, count, total, _, _ = client.get_access_requests(
-        target_user_id=user_uuid,
-        status=status_set,
-        all=all,
-        page=page, 
-        page_size=page_size
+        target_user_id=user_uuid, status=status_set, all=all, page=page, page_size=page_size
     )
 
     access_requests = sorted(access_requests, key=lambda x: x.requested_at, reverse=True)
 
-    display("requests",
+    display(
+        "requests",
         access_requests,
         count,
         total,
@@ -146,7 +148,9 @@ def list_requests(
         page_size=page_size,
         page=page,
         id_only=id_only,
-        search=False)
+        search=False,
+    )
+
 
 @list_group.command("apps", help="List apps in the appstore")
 @option("--like", default=None, help="Filters apps by search term")
@@ -159,7 +163,7 @@ def list_requests(
 @option("--id-only", is_flag=True, help="Output ID only")
 @authenticate
 def list_apps(
-    like: Optional[str],
+    like: str | None,
     mine: bool,
     csv: bool,
     output_json: bool,
@@ -176,14 +180,13 @@ def list_apps(
         else:
             print("No apps found.")
         return
-    apps, count, total = client.get_appstore_apps(name_search=like,
-        all=all,
-        page_size=page_size,
-        page=page)
+    apps, count, total = client.get_appstore_apps(name_search=like, all=all, page_size=page_size, page=page)
     display("apps", apps, count, total, csv, output_json, page=page, page_size=page_size, id_only=id_only)
 
-def display(description: str,
-    data: List[LumosModel],
+
+def display(
+    description: str,
+    data: list[LumosModel],
     count: int,
     total: int,
     csv: bool,
@@ -211,7 +214,7 @@ def display(description: str,
     headers = data[0].headers()
     print(tabulate([d.tabulate() for d in data], headers=headers), "\n")
     remaining = total - count - page_size * (page - 1)
-    if (remaining > 0):
+    if remaining > 0:
         if search:
             print(f"There are {remaining} more {description} that match your search. Use --like to search.\n")
         else:

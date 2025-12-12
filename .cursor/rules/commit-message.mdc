@@ -64,7 +64,7 @@ Follow the Angular commit message convention for all commits. This format create
 
 Used for:
 - Breaking changes
-- Deprecations  
+- Deprecations
 - Issue references
 
 ### Breaking Changes

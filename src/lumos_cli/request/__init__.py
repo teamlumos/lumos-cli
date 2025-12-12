@@ -1,1 +1,1 @@
-from .cli import request
+from .cli import request as request

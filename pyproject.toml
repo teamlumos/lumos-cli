@@ -43,7 +43,12 @@ Repository = "https://github.com/teamlumos/lumos-cli"
 Issues = "https://github.com/teamlumos/lumos-cli/issues"
 
 [dependency-groups]
-dev = ["debugpy>=1.8.0,<2"]
+dev = [
+    "debugpy>=1.8.0,<2",
+    "ruff>=0.8.0,<1",
+    "basedpyright>=1.21.0,<2",
+    "pre-commit>=4.0.0,<5",
+]
 
 [build-system]
 requires = ["hatchling"]
@@ -51,3 +56,104 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 lumos = "lumos_cli.cli:cli"
+
+[tool.ruff]
+# Set the target Python version
+target-version = "py310"
+
+# Set line length
+line-length = 120
+
+# Exclude common directories
+exclude = [
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "*.egg-info",
+]
+
+[tool.ruff.lint]
+# Enable recommended rule sets
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "RUF",    # Ruff-specific rules
+]
+
+# Ignore specific rules if needed
+ignore = [
+    "E501",   # Line too long (handled by formatter)
+]
+
+# Allow autofix for all enabled rules
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.per-file-ignores]
+# Ignore certain rules in test files
+"tests/**/*.py" = [
+    "S101",   # Use of assert
+]
+
+[tool.ruff.format]
+# Use double quotes for strings
+quote-style = "double"
+
+# Use spaces for indentation
+indent-style = "space"
+
+# Respect magic trailing comma
+skip-magic-trailing-comma = false
+
+# Auto-detect line ending
+line-ending = "auto"
+
+[tool.basedpyright]
+# Type checking mode
+typeCheckingMode = "standard"
+
+# Python version
+pythonVersion = "3.10"
+
+# Include/exclude patterns
+include = ["src", "tests"]
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+]
+
+# Reporting options
+reportMissingImports = true
+reportMissingTypeStubs = false
+reportUnusedImport = "warning"
+reportUnusedVariable = "warning"
+reportDuplicateImport = "error"
+
+# Relax type checking for existing codebase
+reportUnknownParameterType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownLambdaType = "none"
+reportCallIssue = "none"
+reportArgumentType = "none"
+reportAttributeAccessIssue = "none"
+reportReturnType = "none"
+reportAssignmentType = "none"
+reportFunctionMemberAccess = "none"
+reportGeneralTypeIssues = "none"
+reportPrivateUsage = "warning"
