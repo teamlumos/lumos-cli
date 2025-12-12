@@ -21,18 +21,13 @@ def check_version_header(response: requests.Response) -> bool:
     return cont
 
 
-def check_version(
-    current_version: list[int], header_version: list[int]
-) -> tuple[bool, str | None]:
+def check_version(current_version: list[int], header_version: list[int]) -> tuple[bool, str | None]:
     if current_version[0] < header_version[0]:
         return (
             False,
             "A new version of the CLI is available. Please run `brew upgrade lumos` to proceed.",
         )
-    if (
-        current_version[0] == header_version[0]
-        and current_version[1] < header_version[1]
-    ):
+    if current_version[0] == header_version[0] and current_version[1] < header_version[1]:
         os.environ["WARNED"] = "1"
         return (
             True,
