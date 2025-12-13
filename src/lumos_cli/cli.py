@@ -80,10 +80,19 @@ def logout():
 # Import and register subcommands
 def register_subcommands():
     """Register all subcommands after the main CLI group is defined"""
-    from lumos_cli.list_collections.cli import list_group
-    from lumos_cli.request.cli import request
+    # Import new noun-based command groups
+    from lumos_cli.commands import app, group, permission, request, user
 
+    # Register new RESTful command structure (lumos <noun> <verb>)
+    lumos.add_command(app)
+    lumos.add_command(user)
+    lumos.add_command(group)
+    lumos.add_command(permission)
     lumos.add_command(request)
+
+    # Register deprecated 'list' command group for backward compatibility
+    from lumos_cli.list_collections.cli import list_group
+
     lumos.add_command(list_group, name="list")
 
 

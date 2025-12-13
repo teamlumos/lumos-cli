@@ -24,11 +24,39 @@ lumos setup
 lumos whoami
 
 # List available apps
-lumos list apps --like github
+lumos app list --like github
 
-# Request access
-lumos request
+# Request access (interactive)
+lumos request create
+
+# Request access (scripted)
+lumos request create --app APP_UUID --reason "Need access" --for-me --wait
 ```
+
+## Command Structure
+
+The CLI follows RESTful conventions with `lumos <noun> <verb>` syntax:
+
+| Command | Description |
+|---------|-------------|
+| `lumos app list` | List apps in the appstore |
+| `lumos user list` | List users |
+| `lumos group list` | List groups |
+| `lumos permission list --app UUID` | List permissions for an app |
+| `lumos request create` | Create an access request |
+| `lumos request list` | List access requests |
+| `lumos request status` | Check request status |
+| `lumos request poll` | Poll request for completion |
+| `lumos request cancel` | Cancel a request |
+
+Authentication commands remain at the root level:
+
+| Command | Description |
+|---------|-------------|
+| `lumos whoami` | Show current user |
+| `lumos setup` | Setup authentication |
+| `lumos login` | Login via OAuth |
+| `lumos logout` | Logout |
 
 ## Documentation
 

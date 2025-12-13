@@ -50,52 +50,68 @@ Logout of your Lumos account and clear stored credentials.
 invoke(lumos, args=["--no-color", "logout", "--help"])
 ```
 
-## List Commands
+## App Commands
 
-The `list` command group provides access to various Lumos resources.
+The `app` command group provides access to apps in the Lumos appstore.
 
 ```{click:run}
-invoke(lumos, args=["--no-color", "list", "--help"])
+invoke(lumos, args=["--no-color", "app", "--help"])
 ```
 
-### `lumos list apps`
+### `lumos app list`
 
 List apps available in the appstore.
 
 ```{click:run}
-invoke(lumos, args=["list", "--no-color", "apps", "--help"])
+invoke(lumos, args=["app", "--no-color", "list", "--help"])
 ```
 
-### `lumos list users`
+## User Commands
+
+The `user` command group provides access to users in Lumos.
+
+```{click:run}
+invoke(lumos, args=["--no-color", "user", "--help"])
+```
+
+### `lumos user list`
 
 List users in Lumos.
 
 ```{click:run}
-invoke(lumos, args=["list", "--no-color", "users", "--help"])
+invoke(lumos, args=["user", "--no-color", "list", "--help"])
 ```
 
-### `lumos list permissions`
+## Group Commands
 
-List permissions for a given app.
+The `group` command group provides access to groups in Lumos.
 
 ```{click:run}
-invoke(lumos, args=["list", "--no-color", "permissions", "--help"])
+invoke(lumos, args=["--no-color", "group", "--help"])
 ```
 
-### `lumos list groups`
+### `lumos group list`
 
 List groups for the domain or a specific app.
 
 ```{click:run}
-invoke(lumos, args=["list", "--no-color", "groups", "--help"])
+invoke(lumos, args=["group", "--no-color", "list", "--help"])
 ```
 
-### `lumos list requests`
+## Permission Commands
 
-List access requests.
+The `permission` command group provides access to permissions in Lumos.
 
 ```{click:run}
-invoke(lumos, args=["list", "--no-color", "requests", "--help"])
+invoke(lumos, args=["--no-color", "permission", "--help"])
+```
+
+### `lumos permission list`
+
+List permissions for a given app.
+
+```{click:run}
+invoke(lumos, args=["permission", "--no-color", "list", "--help"])
 ```
 
 ## Request Commands
@@ -104,6 +120,22 @@ The `request` command group handles access requests.
 
 ```{click:run}
 invoke(lumos, args=["--no-color", "request", "--help"])
+```
+
+### `lumos request create`
+
+Create an access request for an app.
+
+```{click:run}
+invoke(lumos, args=["request", "--no-color", "create", "--help"])
+```
+
+### `lumos request list`
+
+List access requests.
+
+```{click:run}
+invoke(lumos, args=["request", "--no-color", "list", "--help"])
 ```
 
 ### `lumos request status`
@@ -141,3 +173,21 @@ Cancel a pending request.
 |------|-------------|
 | `--request-id` | Request ID to cancel |
 | `--reason` | Reason for cancellation |
+
+## Deprecated List Commands
+
+The `list` command group is deprecated but still supported for backward compatibility.
+
+```{click:run}
+invoke(lumos, args=["--no-color", "list", "--help"])
+```
+
+Use the new noun-based commands instead:
+
+| Deprecated Command | New Command |
+|-------------------|-------------|
+| `lumos list apps` | `lumos app list` |
+| `lumos list users` | `lumos user list` |
+| `lumos list groups` | `lumos group list` |
+| `lumos list permissions` | `lumos permission list` |
+| `lumos list requests` | `lumos request list` |

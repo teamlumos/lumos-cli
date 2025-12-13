@@ -24,7 +24,7 @@ lumos login --admin
 
 ### Check Current User
 
-Verify who you’re logged in as:
+Verify who you're logged in as:
 
 ```bash
 lumos whoami
@@ -44,24 +44,26 @@ lumos whoami --id
 
 ## Listing Resources
 
+The CLI follows RESTful conventions with `lumos <noun> <verb>` syntax.
+
 ### List Apps
 
 Browse all available apps in the appstore:
 
 ```bash
-lumos list apps
+lumos app list
 ```
 
 Filter apps by name:
 
 ```bash
-lumos list apps --like github
+lumos app list --like github
 ```
 
 List only apps you have access to:
 
 ```bash
-lumos list apps --mine
+lumos app list --mine
 ```
 
 ### List Users
@@ -69,19 +71,19 @@ lumos list apps --mine
 Search for users:
 
 ```bash
-lumos list users --like "john.doe"
+lumos user list --like "john.doe"
 ```
 
 Output as JSON for scripting:
 
 ```bash
-lumos list users --json
+lumos user list --json
 ```
 
 Output as CSV:
 
 ```bash
-lumos list users --csv > users.csv
+lumos user list --csv > users.csv
 ```
 
 ### List Permissions
@@ -89,13 +91,13 @@ lumos list users --csv > users.csv
 List permissions for a specific app:
 
 ```bash
-lumos list permissions --app APP_UUID
+lumos permission list --app APP_UUID
 ```
 
 Filter permissions by name:
 
 ```bash
-lumos list permissions --app APP_UUID --like "admin"
+lumos permission list --app APP_UUID --like "admin"
 ```
 
 ### List Groups
@@ -103,13 +105,13 @@ lumos list permissions --app APP_UUID --like "admin"
 List all groups:
 
 ```bash
-lumos list groups
+lumos group list
 ```
 
 List groups for a specific app:
 
 ```bash
-lumos list groups --app APP_UUID
+lumos group list --app APP_UUID
 ```
 
 ### List Access Requests
@@ -117,21 +119,21 @@ lumos list groups --app APP_UUID
 List your pending requests:
 
 ```bash
-lumos list requests --mine --pending
+lumos request list --mine --pending
 ```
 
 List all past requests:
 
 ```bash
-lumos list requests --past
+lumos request list --past
 ```
 
 Filter by status:
 
 ```bash
-lumos list requests --status COMPLETED
-lumos list requests --status PENDING
-lumos list requests --status DENIED_PROVISIONING
+lumos request list --status COMPLETED
+lumos request list --status PENDING
+lumos request list --status DENIED_PROVISIONING
 ```
 
 ## Making Access Requests
@@ -141,7 +143,7 @@ lumos list requests --status DENIED_PROVISIONING
 The simplest way to make a request is interactively:
 
 ```bash
-lumos request
+lumos request create
 ```
 
 This will guide you through selecting an app, permissions, and duration.
@@ -151,7 +153,7 @@ This will guide you through selecting an app, permissions, and duration.
 Filter the app list to make selection faster:
 
 ```bash
-lumos request --app-like github
+lumos request create --app-like github
 ```
 
 ### Fully Scripted Request
@@ -159,7 +161,7 @@ lumos request --app-like github
 For automation, specify all parameters:
 
 ```bash
-lumos request \
+lumos request create \
   --app APP_UUID \
   --permission PERMISSION_UUID \
   --reason "Need access for deployment" \
@@ -173,7 +175,7 @@ lumos request \
 Request multiple permissions at once:
 
 ```bash
-lumos request \
+lumos request create \
   --app APP_UUID \
   --permission PERMISSION_UUID_1 \
   --permission PERMISSION_UUID_2 \
@@ -186,7 +188,7 @@ lumos request \
 Request access on behalf of another user:
 
 ```bash
-lumos request \
+lumos request create \
   --app APP_UUID \
   --for-user USER_UUID \
   --reason "Team onboarding"
@@ -198,10 +200,10 @@ Specify access duration (in seconds):
 
 ```bash
 # 12 hours
-lumos request --app APP_UUID --length 43200 --reason "Temporary access"
+lumos request create --app APP_UUID --length 43200 --reason "Temporary access"
 
 # Or use friendly duration strings
-lumos request --app APP_UUID --length "12 hours" --reason "Temporary access"
+lumos request create --app APP_UUID --length "12 hours" --reason "Temporary access"
 ```
 
 ### Dry Run
@@ -209,7 +211,7 @@ lumos request --app APP_UUID --length "12 hours" --reason "Temporary access"
 Preview the request command without submitting:
 
 ```bash
-lumos request --dry-run
+lumos request create --dry-run
 ```
 
 This outputs the exact command you would run, useful for building automation scripts.
@@ -257,7 +259,7 @@ impersonate() {
     local permission="$1"
     local reason="${2:-Impersonation for debugging}"
 
-    lumos request \
+    lumos request create \
         --app c463381c-1ed1-47ef-9bba-cba1ab4d195c \
         --permission-like "$permission" \
         --length 43200 \
@@ -282,7 +284,7 @@ import json
 def request_access(app_id: str, permission_ids: list[str], reason: str):
     """Request access to an app with specified permissions."""
     cmd = [
-        "lumos", "request",
+        "lumos", "request", "create",
         "--app", app_id,
         "--reason", reason,
         "--for-me",
@@ -298,7 +300,7 @@ def request_access(app_id: str, permission_ids: list[str], reason: str):
 
 def list_apps(search: str = None) -> list[dict]:
     """List apps, optionally filtered by search term."""
-    cmd = ["lumos", "list", "apps", "--json"]
+    cmd = ["lumos", "app", "list", "--json"]
     if search:
         cmd.extend(["--like", search])
 
@@ -333,7 +335,7 @@ REASON="Automated access request"
 MAX_RETRIES=3
 
 request_access() {
-    lumos request \
+    lumos request create \
         --app "$APP_ID" \
         --permission "$PERMISSION_ID" \
         --reason "$REASON" \
@@ -361,13 +363,13 @@ Get request data in JSON format for processing:
 
 ```bash
 # List pending requests as JSON
-lumos list requests --mine --pending --json | jq '.[] | {id, status, app: .app_name}'
+lumos request list --mine --pending --json | jq '.[] | {id, status, app: .app_name}'
 
 # Get user IDs only
-lumos list users --like "engineering" --id-only
+lumos user list --like "engineering" --id-only
 
 # Export apps to CSV for analysis
-lumos list apps --csv > apps.csv
+lumos app list --csv > apps.csv
 ```
 
 ## Output Formats
@@ -387,8 +389,23 @@ Control pagination for large result sets:
 
 ```bash
 # Disable pagination (fetch all)
-lumos list apps --no-paginate
+lumos app list --no-paginate
 
 # Custom page size
-lumos list users --page-size 50 --page 2
+lumos user list --page-size 50 --page 2
 ```
+
+## Migration from Old Syntax
+
+If you're migrating from the old `lumos <verb> <noun>` syntax, here's a quick reference:
+
+| Old Command | New Command |
+|-------------|-------------|
+| `lumos list apps` | `lumos app list` |
+| `lumos list users` | `lumos user list` |
+| `lumos list groups` | `lumos group list` |
+| `lumos list permissions --app UUID` | `lumos permission list --app UUID` |
+| `lumos list requests` | `lumos request list` |
+| `lumos request` (create) | `lumos request create` |
+
+The old `lumos list *` commands still work but are deprecated and will show a warning message.

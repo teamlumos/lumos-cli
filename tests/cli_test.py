@@ -110,9 +110,14 @@ class TestMainCLI:
         assert "setup" in result.output
         assert "login" in result.output
         assert "logout" in result.output
-        # Subcommand groups
-        assert "list" in result.output
+        # New noun-based command groups
+        assert "app" in result.output
+        assert "user" in result.output
+        assert "group" in result.output
+        assert "permission" in result.output
         assert "request" in result.output
+        # Deprecated but still visible
+        assert "list" in result.output
 
     def test_cli_version(self, runner):
         """Test that --version displays version information."""
@@ -190,38 +195,70 @@ class TestLogoutCommand:
         mock_logout.assert_called_once()
 
 
-class TestListSubcommand:
-    """Test the list command group and its subcommands."""
+# =============================================================================
+# NEW NOUN-BASED COMMAND TESTS (RESTful CLI structure)
+# =============================================================================
 
-    def test_list_help(self, runner):
-        """Test list command help."""
-        result = runner.invoke(lumos, ["list", "--help"])
+
+class TestAppCommand:
+    """Test the new 'lumos app' command group."""
+
+    def test_app_help(self, runner):
+        """Test app command help."""
+        result = runner.invoke(lumos, ["app", "--help"])
         assert result.exit_code == 0
-        assert "List various Lumos resources" in result.output
+        assert "Manage apps" in result.output
 
-    def test_list_shows_subcommands(self, runner):
-        """Test that list shows all subcommands."""
-        result = runner.invoke(lumos, ["list", "--help"])
+    def test_app_shows_subcommands(self, runner):
+        """Test that app shows list subcommand."""
+        result = runner.invoke(lumos, ["app", "--help"])
         assert result.exit_code == 0
-        assert "users" in result.output
-        assert "permissions" in result.output
-        assert "groups" in result.output
-        assert "requests" in result.output
-        assert "apps" in result.output
+        assert "list" in result.output
+
+    def test_app_list_help(self, runner):
+        """Test app list help."""
+        result = runner.invoke(lumos, ["app", "list", "--help"])
+        assert result.exit_code == 0
+        assert "List apps in the appstore" in result.output
+
+    def test_app_list_options(self, runner):
+        """Test app list has expected options."""
+        result = runner.invoke(lumos, ["app", "list", "--help"])
+        assert result.exit_code == 0
+        assert "--like" in result.output
+        assert "--mine" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--paginate" in result.output
+        assert "--page-size" in result.output
+        assert "--page" in result.output
+        assert "--id-only" in result.output
 
 
-class TestListUsersCommand:
-    """Test the list users command."""
+class TestUserCommand:
+    """Test the new 'lumos user' command group."""
 
-    def test_list_users_help(self, runner):
-        """Test list users help."""
-        result = runner.invoke(lumos, ["list", "users", "--help"])
+    def test_user_help(self, runner):
+        """Test user command help."""
+        result = runner.invoke(lumos, ["user", "--help"])
+        assert result.exit_code == 0
+        assert "Manage users" in result.output
+
+    def test_user_shows_subcommands(self, runner):
+        """Test that user shows list subcommand."""
+        result = runner.invoke(lumos, ["user", "--help"])
+        assert result.exit_code == 0
+        assert "list" in result.output
+
+    def test_user_list_help(self, runner):
+        """Test user list help."""
+        result = runner.invoke(lumos, ["user", "list", "--help"])
         assert result.exit_code == 0
         assert "List users in Lumos" in result.output
 
-    def test_list_users_options(self, runner):
-        """Test list users has expected options."""
-        result = runner.invoke(lumos, ["list", "users", "--help"])
+    def test_user_list_options(self, runner):
+        """Test user list has expected options."""
+        result = runner.invoke(lumos, ["user", "list", "--help"])
         assert result.exit_code == 0
         assert "--like" in result.output
         assert "--csv" in result.output
@@ -232,117 +269,110 @@ class TestListUsersCommand:
         assert "--id-only" in result.output
 
 
-class TestListPermissionsCommand:
-    """Test the list permissions command."""
+class TestGroupCommand:
+    """Test the new 'lumos group' command group."""
 
-    def test_list_permissions_help(self, runner):
-        """Test list permissions help."""
-        result = runner.invoke(lumos, ["list", "permissions", "--help"])
+    def test_group_help(self, runner):
+        """Test group command help."""
+        result = runner.invoke(lumos, ["group", "--help"])
         assert result.exit_code == 0
-        assert "List permissions for a given app" in result.output
+        assert "Manage groups" in result.output
 
-    def test_list_permissions_requires_app(self, runner):
-        """Test list permissions requires --app option."""
-        result = runner.invoke(lumos, ["list", "permissions", "--help"])
+    def test_group_shows_subcommands(self, runner):
+        """Test that group shows list subcommand."""
+        result = runner.invoke(lumos, ["group", "--help"])
         assert result.exit_code == 0
-        assert "--app" in result.output
-        # App is required
-        assert "required" in result.output.lower() or "App UUID" in result.output
+        assert "list" in result.output
 
-    def test_list_permissions_options(self, runner):
-        """Test list permissions has expected options."""
-        result = runner.invoke(lumos, ["list", "permissions", "--help"])
-        assert result.exit_code == 0
-        assert "--like" in result.output
-        assert "--csv" in result.output
-        assert "--json" in result.output
-        assert "--id-only" in result.output
-
-
-class TestListGroupsCommand:
-    """Test the list groups command."""
-
-    def test_list_groups_help(self, runner):
-        """Test list groups help."""
-        result = runner.invoke(lumos, ["list", "groups", "--help"])
+    def test_group_list_help(self, runner):
+        """Test group list help."""
+        result = runner.invoke(lumos, ["group", "list", "--help"])
         assert result.exit_code == 0
         assert "List groups" in result.output
 
-    def test_list_groups_options(self, runner):
-        """Test list groups has expected options."""
-        result = runner.invoke(lumos, ["list", "groups", "--help"])
+    def test_group_list_options(self, runner):
+        """Test group list has expected options."""
+        result = runner.invoke(lumos, ["group", "list", "--help"])
         assert result.exit_code == 0
         assert "--app" in result.output
         assert "--like" in result.output
         assert "--csv" in result.output
         assert "--json" in result.output
+        assert "--paginate" in result.output
+        assert "--page-size" in result.output
+        assert "--page" in result.output
         assert "--id-only" in result.output
 
 
-class TestListRequestsCommand:
-    """Test the list requests command."""
+class TestPermissionCommand:
+    """Test the new 'lumos permission' command group."""
 
-    def test_list_requests_help(self, runner):
-        """Test list requests help."""
-        result = runner.invoke(lumos, ["list", "requests", "--help"])
+    def test_permission_help(self, runner):
+        """Test permission command help."""
+        result = runner.invoke(lumos, ["permission", "--help"])
         assert result.exit_code == 0
-        assert "List access requests" in result.output
+        assert "Manage permissions" in result.output
 
-    def test_list_requests_options(self, runner):
-        """Test list requests has expected options."""
-        result = runner.invoke(lumos, ["list", "requests", "--help"])
+    def test_permission_shows_subcommands(self, runner):
+        """Test that permission shows list subcommand."""
+        result = runner.invoke(lumos, ["permission", "--help"])
         assert result.exit_code == 0
-        assert "--for-user" in result.output
-        assert "--mine" in result.output
-        assert "--status" in result.output
-        assert "--pending" in result.output
-        assert "--past" in result.output
-        assert "--csv" in result.output
-        assert "--json" in result.output
-        assert "--id-only" in result.output
+        assert "list" in result.output
 
-
-class TestListAppsCommand:
-    """Test the list apps command."""
-
-    def test_list_apps_help(self, runner):
-        """Test list apps help."""
-        result = runner.invoke(lumos, ["list", "apps", "--help"])
+    def test_permission_list_help(self, runner):
+        """Test permission list help."""
+        result = runner.invoke(lumos, ["permission", "list", "--help"])
         assert result.exit_code == 0
-        assert "List apps" in result.output
-        assert "appstore" in result.output
+        assert "List permissions for a given app" in result.output
 
-    def test_list_apps_options(self, runner):
-        """Test list apps has expected options."""
-        result = runner.invoke(lumos, ["list", "apps", "--help"])
+    def test_permission_list_requires_app(self, runner):
+        """Test permission list requires --app option."""
+        result = runner.invoke(lumos, ["permission", "list", "--help"])
+        assert result.exit_code == 0
+        assert "--app" in result.output
+        assert "required" in result.output.lower() or "App UUID" in result.output
+
+    def test_permission_list_options(self, runner):
+        """Test permission list has expected options."""
+        result = runner.invoke(lumos, ["permission", "list", "--help"])
         assert result.exit_code == 0
         assert "--like" in result.output
-        assert "--mine" in result.output
         assert "--csv" in result.output
         assert "--json" in result.output
+        assert "--paginate" in result.output
+        assert "--page-size" in result.output
+        assert "--page" in result.output
         assert "--id-only" in result.output
 
 
-class TestRequestSubcommand:
-    """Test the request command group and its subcommands."""
+class TestRequestCommand:
+    """Test the new 'lumos request' command group with RESTful structure."""
 
     def test_request_help(self, runner):
         """Test request command help."""
         result = runner.invoke(lumos, ["request", "--help"])
         assert result.exit_code == 0
-        assert "Request access" in result.output
+        assert "Manage access requests" in result.output
 
     def test_request_shows_subcommands(self, runner):
         """Test that request shows all subcommands."""
         result = runner.invoke(lumos, ["request", "--help"])
         assert result.exit_code == 0
+        assert "create" in result.output
+        assert "list" in result.output
         assert "status" in result.output
         assert "poll" in result.output
         assert "cancel" in result.output
 
-    def test_request_options(self, runner):
-        """Test request has expected options."""
-        result = runner.invoke(lumos, ["request", "--help"])
+    def test_request_create_help(self, runner):
+        """Test request create help."""
+        result = runner.invoke(lumos, ["request", "create", "--help"])
+        assert result.exit_code == 0
+        assert "Request access to an app" in result.output
+
+    def test_request_create_options(self, runner):
+        """Test request create has expected options."""
+        result = runner.invoke(lumos, ["request", "create", "--help"])
         assert result.exit_code == 0
         assert "--reason" in result.output
         assert "--for-user" in result.output
@@ -356,6 +386,28 @@ class TestRequestSubcommand:
         assert "--permission-like" in result.output
         assert "--wait" in result.output
         assert "--dry-run" in result.output
+
+    def test_request_list_help(self, runner):
+        """Test request list help."""
+        result = runner.invoke(lumos, ["request", "list", "--help"])
+        assert result.exit_code == 0
+        assert "List access requests" in result.output
+
+    def test_request_list_options(self, runner):
+        """Test request list has expected options."""
+        result = runner.invoke(lumos, ["request", "list", "--help"])
+        assert result.exit_code == 0
+        assert "--for-user" in result.output
+        assert "--mine" in result.output
+        assert "--status" in result.output
+        assert "--pending" in result.output
+        assert "--past" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--paginate" in result.output
+        assert "--page-size" in result.output
+        assert "--page" in result.output
+        assert "--id-only" in result.output
 
 
 class TestRequestStatusCommand:
@@ -419,6 +471,150 @@ class TestRequestCancelCommand:
         assert "--reason" in result.output
 
 
+# =============================================================================
+# DEPRECATED 'list' COMMAND TESTS (backward compatibility)
+# =============================================================================
+
+
+class TestDeprecatedListSubcommand:
+    """Test the deprecated list command group (backward compatibility)."""
+
+    def test_list_help(self, runner):
+        """Test list command help shows deprecation."""
+        result = runner.invoke(lumos, ["list", "--help"])
+        assert result.exit_code == 0
+        # Should still work but may show deprecation info
+        assert "List" in result.output or "DEPRECATED" in result.output
+
+    def test_list_shows_subcommands(self, runner):
+        """Test that list shows all subcommands."""
+        result = runner.invoke(lumos, ["list", "--help"])
+        assert result.exit_code == 0
+        assert "users" in result.output
+        assert "permissions" in result.output
+        assert "groups" in result.output
+        assert "requests" in result.output
+        assert "apps" in result.output
+
+
+class TestDeprecatedListUsersCommand:
+    """Test the deprecated list users command."""
+
+    def test_list_users_help(self, runner):
+        """Test list users help."""
+        result = runner.invoke(lumos, ["list", "users", "--help"])
+        assert result.exit_code == 0
+        # Shows deprecation notice
+        assert "DEPRECATED" in result.output or "user list" in result.output
+
+    def test_list_users_options(self, runner):
+        """Test list users has expected options."""
+        result = runner.invoke(lumos, ["list", "users", "--help"])
+        assert result.exit_code == 0
+        assert "--like" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--paginate" in result.output
+        assert "--page-size" in result.output
+        assert "--page" in result.output
+        assert "--id-only" in result.output
+
+
+class TestDeprecatedListPermissionsCommand:
+    """Test the deprecated list permissions command."""
+
+    def test_list_permissions_help(self, runner):
+        """Test list permissions help."""
+        result = runner.invoke(lumos, ["list", "permissions", "--help"])
+        assert result.exit_code == 0
+        assert "DEPRECATED" in result.output or "permission list" in result.output
+
+    def test_list_permissions_requires_app(self, runner):
+        """Test list permissions requires --app option."""
+        result = runner.invoke(lumos, ["list", "permissions", "--help"])
+        assert result.exit_code == 0
+        assert "--app" in result.output
+        # App is required
+        assert "required" in result.output.lower() or "App UUID" in result.output
+
+    def test_list_permissions_options(self, runner):
+        """Test list permissions has expected options."""
+        result = runner.invoke(lumos, ["list", "permissions", "--help"])
+        assert result.exit_code == 0
+        assert "--like" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--id-only" in result.output
+
+
+class TestDeprecatedListGroupsCommand:
+    """Test the deprecated list groups command."""
+
+    def test_list_groups_help(self, runner):
+        """Test list groups help."""
+        result = runner.invoke(lumos, ["list", "groups", "--help"])
+        assert result.exit_code == 0
+        assert "DEPRECATED" in result.output or "group list" in result.output
+
+    def test_list_groups_options(self, runner):
+        """Test list groups has expected options."""
+        result = runner.invoke(lumos, ["list", "groups", "--help"])
+        assert result.exit_code == 0
+        assert "--app" in result.output
+        assert "--like" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--id-only" in result.output
+
+
+class TestDeprecatedListRequestsCommand:
+    """Test the deprecated list requests command."""
+
+    def test_list_requests_help(self, runner):
+        """Test list requests help."""
+        result = runner.invoke(lumos, ["list", "requests", "--help"])
+        assert result.exit_code == 0
+        assert "DEPRECATED" in result.output or "request list" in result.output
+
+    def test_list_requests_options(self, runner):
+        """Test list requests has expected options."""
+        result = runner.invoke(lumos, ["list", "requests", "--help"])
+        assert result.exit_code == 0
+        assert "--for-user" in result.output
+        assert "--mine" in result.output
+        assert "--status" in result.output
+        assert "--pending" in result.output
+        assert "--past" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--id-only" in result.output
+
+
+class TestDeprecatedListAppsCommand:
+    """Test the deprecated list apps command."""
+
+    def test_list_apps_help(self, runner):
+        """Test list apps help."""
+        result = runner.invoke(lumos, ["list", "apps", "--help"])
+        assert result.exit_code == 0
+        assert "DEPRECATED" in result.output or "app list" in result.output
+
+    def test_list_apps_options(self, runner):
+        """Test list apps has expected options."""
+        result = runner.invoke(lumos, ["list", "apps", "--help"])
+        assert result.exit_code == 0
+        assert "--like" in result.output
+        assert "--mine" in result.output
+        assert "--csv" in result.output
+        assert "--json" in result.output
+        assert "--id-only" in result.output
+
+
+# =============================================================================
+# CLI BEHAVIOR AND STRUCTURE TESTS
+# =============================================================================
+
+
 class TestCLIBehavior:
     """Test overall CLI behavior and edge cases."""
 
@@ -430,13 +626,13 @@ class TestCLIBehavior:
 
     def test_invalid_subcommand(self, runner):
         """Test that invalid subcommands are handled gracefully."""
-        result = runner.invoke(lumos, ["list", "invalid-subcommand"])
+        result = runner.invoke(lumos, ["app", "invalid-subcommand"])
         assert result.exit_code != 0
 
     def test_missing_required_option(self, runner):
         """Test that missing required options are reported."""
-        # list permissions requires --app
-        runner.invoke(lumos, ["list", "permissions"])
+        # permission list requires --app
+        runner.invoke(lumos, ["permission", "list"])
         # Should fail because --app is required (but may also fail on auth)
         # The key is that it doesn't succeed without the required option
 
@@ -448,33 +644,57 @@ class TestCLIBehavior:
 
 
 class TestCLIStructure:
-    """Test that CLI structure matches expected design."""
+    """Test that CLI structure matches expected RESTful design."""
 
-    def test_command_groups_exist(self, runner):
-        """Test that expected command groups exist."""
+    def test_noun_command_groups_exist(self, runner):
+        """Test that expected noun-based command groups exist."""
         result = runner.invoke(lumos, ["--help"])
         assert result.exit_code == 0
 
-        # These are the main commands
-        commands = ["whoami", "setup", "login", "logout", "list", "request"]
-        for cmd in commands:
-            assert cmd in result.output, f"Command '{cmd}' not found in CLI"
+        # New RESTful noun-based commands
+        noun_commands = ["app", "user", "group", "permission", "request"]
+        for cmd in noun_commands:
+            assert cmd in result.output, f"Noun command '{cmd}' not found in CLI"
 
-    def test_list_subcommands_exist(self, runner):
-        """Test that expected list subcommands exist."""
-        result = runner.invoke(lumos, ["list", "--help"])
+    def test_auth_commands_at_root(self, runner):
+        """Test that auth commands are at root level."""
+        result = runner.invoke(lumos, ["--help"])
         assert result.exit_code == 0
 
-        subcommands = ["users", "permissions", "groups", "requests", "apps"]
-        for cmd in subcommands:
-            assert cmd in result.output, f"List subcommand '{cmd}' not found"
+        auth_commands = ["whoami", "setup", "login", "logout"]
+        for cmd in auth_commands:
+            assert cmd in result.output, f"Auth command '{cmd}' not found at root level"
+
+    def test_app_subcommands_exist(self, runner):
+        """Test that expected app subcommands exist."""
+        result = runner.invoke(lumos, ["app", "--help"])
+        assert result.exit_code == 0
+        assert "list" in result.output
+
+    def test_user_subcommands_exist(self, runner):
+        """Test that expected user subcommands exist."""
+        result = runner.invoke(lumos, ["user", "--help"])
+        assert result.exit_code == 0
+        assert "list" in result.output
+
+    def test_group_subcommands_exist(self, runner):
+        """Test that expected group subcommands exist."""
+        result = runner.invoke(lumos, ["group", "--help"])
+        assert result.exit_code == 0
+        assert "list" in result.output
+
+    def test_permission_subcommands_exist(self, runner):
+        """Test that expected permission subcommands exist."""
+        result = runner.invoke(lumos, ["permission", "--help"])
+        assert result.exit_code == 0
+        assert "list" in result.output
 
     def test_request_subcommands_exist(self, runner):
         """Test that expected request subcommands exist."""
         result = runner.invoke(lumos, ["request", "--help"])
         assert result.exit_code == 0
 
-        subcommands = ["status", "poll", "cancel"]
+        subcommands = ["create", "list", "status", "poll", "cancel"]
         for cmd in subcommands:
             assert cmd in result.output, f"Request subcommand '{cmd}' not found"
 
@@ -482,23 +702,23 @@ class TestCLIStructure:
 class TestCLIOutputFormats:
     """Test that output format options are available."""
 
-    def test_list_users_output_formats(self, runner):
-        """Test that list users supports multiple output formats."""
-        result = runner.invoke(lumos, ["list", "users", "--help"])
+    def test_app_list_output_formats(self, runner):
+        """Test that app list supports multiple output formats."""
+        result = runner.invoke(lumos, ["app", "list", "--help"])
         assert "--csv" in result.output
         assert "--json" in result.output
         assert "--id-only" in result.output
 
-    def test_list_apps_output_formats(self, runner):
-        """Test that list apps supports multiple output formats."""
-        result = runner.invoke(lumos, ["list", "apps", "--help"])
+    def test_user_list_output_formats(self, runner):
+        """Test that user list supports multiple output formats."""
+        result = runner.invoke(lumos, ["user", "list", "--help"])
         assert "--csv" in result.output
         assert "--json" in result.output
         assert "--id-only" in result.output
 
-    def test_list_requests_output_formats(self, runner):
-        """Test that list requests supports multiple output formats."""
-        result = runner.invoke(lumos, ["list", "requests", "--help"])
+    def test_request_list_output_formats(self, runner):
+        """Test that request list supports multiple output formats."""
+        result = runner.invoke(lumos, ["request", "list", "--help"])
         assert "--csv" in result.output
         assert "--json" in result.output
         assert "--id-only" in result.output
@@ -507,33 +727,33 @@ class TestCLIOutputFormats:
 class TestCLIPagination:
     """Test pagination options in list commands."""
 
-    def test_list_users_pagination(self, runner):
-        """Test that list users supports pagination."""
-        result = runner.invoke(lumos, ["list", "users", "--help"])
+    def test_app_list_pagination(self, runner):
+        """Test that app list supports pagination."""
+        result = runner.invoke(lumos, ["app", "list", "--help"])
         assert "--page" in result.output
         assert "--page-size" in result.output
         assert "--paginate" in result.output or "paginate" in result.output.lower()
 
-    def test_list_apps_pagination(self, runner):
-        """Test that list apps supports pagination."""
-        result = runner.invoke(lumos, ["list", "apps", "--help"])
+    def test_user_list_pagination(self, runner):
+        """Test that user list supports pagination."""
+        result = runner.invoke(lumos, ["user", "list", "--help"])
         assert "--page" in result.output
         assert "--page-size" in result.output
 
-    def test_list_permissions_pagination(self, runner):
-        """Test that list permissions supports pagination."""
-        result = runner.invoke(lumos, ["list", "permissions", "--help"])
+    def test_permission_list_pagination(self, runner):
+        """Test that permission list supports pagination."""
+        result = runner.invoke(lumos, ["permission", "list", "--help"])
         assert "--page" in result.output
         assert "--page-size" in result.output
 
-    def test_list_groups_pagination(self, runner):
-        """Test that list groups supports pagination."""
-        result = runner.invoke(lumos, ["list", "groups", "--help"])
+    def test_group_list_pagination(self, runner):
+        """Test that group list supports pagination."""
+        result = runner.invoke(lumos, ["group", "list", "--help"])
         assert "--page" in result.output
         assert "--page-size" in result.output
 
-    def test_list_requests_pagination(self, runner):
-        """Test that list requests supports pagination."""
-        result = runner.invoke(lumos, ["list", "requests", "--help"])
+    def test_request_list_pagination(self, runner):
+        """Test that request list supports pagination."""
+        result = runner.invoke(lumos, ["request", "list", "--help"])
         assert "--page" in result.output
         assert "--page-size" in result.output

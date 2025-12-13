@@ -1,7 +1,18 @@
+"""
+[DEPRECATED] Legacy list command group for backward compatibility.
+
+This module is deprecated. Use the new noun-based commands instead:
+- lumos list apps       -> lumos app list
+- lumos list users      -> lumos user list
+- lumos list groups     -> lumos group list
+- lumos list permissions -> lumos permission list
+- lumos list requests   -> lumos request list
+"""
+
 from json import dumps
 from uuid import UUID
 
-from click_extra import group, option
+from click_extra import echo, group, option
 from tabulate import tabulate
 
 from lumos_cli.common.client import ApiClient
@@ -11,13 +22,29 @@ from lumos_cli.common.models import AccessRequest, LumosModel
 client = ApiClient()
 
 
-@group(name="list")
+def deprecation_warning(old_cmd: str, new_cmd: str) -> None:
+    """Print deprecation warning to stderr."""
+    echo(
+        f"⚠️  Warning: 'lumos list {old_cmd}' is deprecated. Use 'lumos {new_cmd}' instead.\n",
+        err=True,
+    )
+
+
+@group(name="list", deprecated=True)
 def list_group():
-    """List various Lumos resources"""
+    """[DEPRECATED] List various Lumos resources.
+
+    This command group is deprecated. Use the new noun-based commands:
+    - lumos app list
+    - lumos user list
+    - lumos group list
+    - lumos permission list
+    - lumos request list
+    """
     pass
 
 
-@list_group.command("users", help="List users in Lumos")
+@list_group.command("users", help="[DEPRECATED] Use 'lumos user list' instead")
 @option("--like", default=None, help="Search by name or email")
 @option("--csv", is_flag=True, help="Output as CSV")
 @option("--json", "output_json", is_flag=True, help="Output as JSON")
@@ -35,6 +62,7 @@ def list_users(
     page: int,
     id_only: bool,
 ) -> None:
+    deprecation_warning("users", "user list")
     all = csv or output_json or not paginate
     users, count, total = client.get_users(like=like, all=all, page=page, page_size=page_size)
     display(
@@ -50,7 +78,7 @@ def list_users(
     )
 
 
-@list_group.command("permissions", help="List permissions for a given app")
+@list_group.command("permissions", help="[DEPRECATED] Use 'lumos permission list' instead")
 @option("--app", required=True, type=str, help="App UUID")
 @option("--like", default=None, help="Filters permissions")
 @option("--csv", is_flag=True, help="Output as CSV")
@@ -70,6 +98,7 @@ def list_permissions(
     page: int,
     id_only: bool,
 ) -> None:
+    deprecation_warning("permissions", "permission list")
     app_uuid = UUID(app)
     all = csv or output_json or not paginate
     permissions, count, total = client.get_app_requestable_permissions(
@@ -89,7 +118,7 @@ def list_permissions(
     )
 
 
-@list_group.command("groups", help="List groups for the domain or the specified --app")
+@list_group.command("groups", help="[DEPRECATED] Use 'lumos group list' instead")
 @option(
     "--app",
     default=None,
@@ -114,6 +143,7 @@ def list_groups(
     page: int,
     id_only: bool,
 ) -> None:
+    deprecation_warning("groups", "group list")
     app_uuid = UUID(app) if app else None
     all = csv or output_json or not paginate
     groups, count, total = client.get_groups(app_id=app_uuid, search_term=like, all=all, page=page, page_size=page_size)
@@ -131,7 +161,7 @@ def list_groups(
     )
 
 
-@list_group.command("requests", help="List access requests")
+@list_group.command("requests", help="[DEPRECATED] Use 'lumos request list' instead")
 @option(
     "--for-user",
     default=None,
@@ -170,6 +200,7 @@ def list_requests(
     page: int,
     id_only: bool,
 ) -> None:
+    deprecation_warning("requests", "request list")
     user_uuid = None
     if mine:
         user_uuid = client.get_current_user_id()
@@ -204,7 +235,7 @@ def list_requests(
     )
 
 
-@list_group.command("apps", help="List apps in the appstore")
+@list_group.command("apps", help="[DEPRECATED] Use 'lumos app list' instead")
 @option("--like", default=None, help="Filters apps by search term")
 @option("--mine", is_flag=True, help="Show only my apps.")
 @option("--csv", is_flag=True, help="Output as CSV")
@@ -224,6 +255,7 @@ def list_apps(
     page: int,
     id_only: bool,
 ) -> None:
+    deprecation_warning("apps", "app list")
     all = csv or output_json or not paginate
     if mine:
         access_requests = client.get_my_apps()
