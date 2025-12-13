@@ -1,0 +1,25 @@
+---
+alwaysApply: true
+---
+
+# Documentation Guidelines
+
+When editing documentation, **only modify files in `docs/sphinx/`**, not `docs/*.md` directly.
+
+## Directory Structure
+
+- `docs/sphinx/*.md` - **Source files** (edit these)
+- `docs/*.md` - **Auto-generated** from sphinx build (do not edit directly)
+- `docs/sphinx/_build/` - Build output (do not edit)
+
+## Workflow
+
+1. Edit source files in `docs/sphinx/`
+2. Run `make markdown` from `docs/` to regenerate `docs/*.md`
+3. The root `docs/*.md` files are auto-generated and will be overwritten
+
+## Important
+
+- Never edit `docs/cli-reference.md`, `docs/examples.md`, `docs/index.md`, or `docs/installation.md` directly
+- These files contain an auto-generated warning comment at the top
+- All documentation changes should be made in `docs/sphinx/` source files
