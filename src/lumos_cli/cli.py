@@ -90,11 +90,6 @@ def register_subcommands():
     lumos.add_command(permission)
     lumos.add_command(request)
 
-    # Register deprecated 'list' command group for backward compatibility
-    from lumos_cli.list_collections.cli import list_group
-
-    lumos.add_command(list_group, name="list")
-
 
 # Register subcommands at module load time
 register_subcommands()

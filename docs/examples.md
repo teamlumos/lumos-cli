@@ -1,3 +1,9 @@
+<!--
+  AUTO-GENERATED SOURCE FILE
+  This is the source file for Sphinx documentation.
+  Edit this file, then run \`make markdown\` from docs/ to regenerate docs/\*.md
+-->
+
 # Examples
 
 This page provides practical examples for common Lumos CLI workflows with code samples.
@@ -24,7 +30,7 @@ lumos login --admin
 
 ### Check Current User
 
-Verify who you're logged in as:
+Verify who you’re logged in as:
 
 ```bash
 lumos whoami
@@ -397,15 +403,15 @@ lumos user list --page-size 50 --page 2
 
 ## Migration from Old Syntax
 
-If you're migrating from the old `lumos <verb> <noun>` syntax, here's a quick reference:
+If you’re migrating from the old `lumos <verb> <noun>` syntax, here’s a quick reference:
 
-| Old Command | New Command |
-|-------------|-------------|
-| `lumos list apps` | `lumos app list` |
-| `lumos list users` | `lumos user list` |
-| `lumos list groups` | `lumos group list` |
+| Old Command                         | New Command                        |
+| ----------------------------------- | ---------------------------------- |
+| `lumos list apps`                   | `lumos app list`                   |
+| `lumos list users`                  | `lumos user list`                  |
+| `lumos list groups`                 | `lumos group list`                 |
 | `lumos list permissions --app UUID` | `lumos permission list --app UUID` |
-| `lumos list requests` | `lumos request list` |
-| `lumos request` (create) | `lumos request create` |
+| `lumos list requests`               | `lumos request list`               |
+| `lumos request` (create)            | `lumos request create`             |
 
 The old `lumos list *` commands still work but are deprecated and will show a warning message.
