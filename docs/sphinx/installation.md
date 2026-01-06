@@ -37,6 +37,59 @@ Replace `VERSION` with the actual version number from the [releases page](https:
 uv tool install https://github.com/teamlumos/lumos-cli/releases/latest/download/lumos-VERSION-py3-none-any.whl
 ```
 
+## Install from Source
+
+You can install Lumos CLI directly from the GitHub repository using pip or uv with the git protocol. This is useful for development or to get the latest unreleased changes.
+
+### Using pip with git
+
+```bash
+# Install from the main branch
+pip install git+https://github.com/teamlumos/lumos-cli.git
+
+# Install from a specific branch
+pip install git+https://github.com/teamlumos/lumos-cli.git@branch-name
+
+# Install from a specific tag or version
+pip install git+https://github.com/teamlumos/lumos-cli.git@v2.3.0
+
+# Install from a specific commit
+pip install git+https://github.com/teamlumos/lumos-cli.git@commit-sha
+```
+
+### Using uv with git
+
+```bash
+# Install as a tool from the main branch
+uv tool install git+https://github.com/teamlumos/lumos-cli.git
+
+# Install from a specific branch
+uv tool install git+https://github.com/teamlumos/lumos-cli.git@branch-name
+
+# Install from a specific tag or version
+uv tool install git+https://github.com/teamlumos/lumos-cli.git@v2.3.0
+
+# Add as a project dependency
+uv add git+https://github.com/teamlumos/lumos-cli.git
+```
+
+### Clone and Install Locally
+
+For development or customization:
+
+```bash
+# Clone the repository
+git clone https://github.com/teamlumos/lumos-cli.git
+cd lumos-cli
+
+# Install with uv (recommended)
+uv sync
+uv run lumos --help
+
+# Or install with pip in editable mode
+pip install -e .
+```
+
 ## Binary Downloads
 
 Download pre-built binaries directly from the [GitHub Releases page](https://github.com/teamlumos/lumos-cli/releases):

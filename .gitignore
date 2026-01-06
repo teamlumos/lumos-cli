@@ -12,3 +12,4 @@ node_modules/
 
 # Documentation build output
 docs/sphinx/_build/
+docs/readme.io/
