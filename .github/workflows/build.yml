@@ -174,3 +174,41 @@ jobs:
           name: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}
           path: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
           retention-days: 90
+
+  test-binaries:
+    name: Test ${{ matrix.platform }} Binary
+    needs: build-binaries
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu22-2cpu-amd64
+            platform: linux-amd64
+          - runner: ubuntu22-2cpu-arm64
+            platform: linux-arm64
+          - runner: macos-latest
+            platform: macos-arm64
+          - runner: windows-latest
+            platform: windows
+
+    steps:
+      - name: Download binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}
+
+      - name: Extract and test binary (Unix)
+        if: matrix.platform != 'windows'
+        shell: bash
+        run: |
+          tar -xzf lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
+          chmod +x lumos
+          ./lumos --version
+
+      - name: Extract and test binary (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          tar -xzf lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
+          .\lumos.exe --version
