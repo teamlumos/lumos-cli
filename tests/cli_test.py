@@ -11,8 +11,8 @@ from uuid import UUID
 import pytest
 from click.testing import CliRunner
 
-from lumos_cli.cli import lumos
-from lumos_cli.common.models import (
+from lumos.cli import lumos
+from lumos.common.models import (
     AccessRequest,
     App,
     Group,
@@ -181,7 +181,7 @@ class TestLogoutCommand:
         assert result.exit_code == 0
         assert "Logout of your Lumos account" in result.output
 
-    @patch("lumos_cli.cli._logout")
+    @patch("lumos.cli._logout")
     def test_logout_execution(self, mock_logout, runner):
         """Test logout command executes successfully."""
         result = runner.invoke(lumos, ["logout"])
@@ -361,14 +361,14 @@ class TestRequestSubcommand:
 class TestRequestStatusCommand:
     """Test the request status command."""
 
-    @patch("lumos_cli.common.helpers.setup")
+    @patch("lumos.common.helpers.setup")
     def test_request_status_help(self, mock_setup, runner):
         """Test request status help."""
         result = runner.invoke(lumos, ["request", "status", "--help"])
         assert result.exit_code == 0
         assert "Check the status of a request" in result.output
 
-    @patch("lumos_cli.common.helpers.setup")
+    @patch("lumos.common.helpers.setup")
     def test_request_status_options(self, mock_setup, runner):
         """Test request status has expected options."""
         result = runner.invoke(lumos, ["request", "status", "--help"])
@@ -383,7 +383,7 @@ class TestRequestStatusCommand:
 class TestRequestPollCommand:
     """Test the request poll command."""
 
-    @patch("lumos_cli.common.helpers.setup")
+    @patch("lumos.common.helpers.setup")
     def test_request_poll_help(self, mock_setup, runner):
         """Test request poll help."""
         result = runner.invoke(lumos, ["request", "poll", "--help"])
@@ -391,7 +391,7 @@ class TestRequestPollCommand:
         assert "Poll a request" in result.output
         assert "5 minutes" in result.output
 
-    @patch("lumos_cli.common.helpers.setup")
+    @patch("lumos.common.helpers.setup")
     def test_request_poll_options(self, mock_setup, runner):
         """Test request poll has expected options."""
         result = runner.invoke(lumos, ["request", "poll", "--help"])
@@ -403,14 +403,14 @@ class TestRequestPollCommand:
 class TestRequestCancelCommand:
     """Test the request cancel command."""
 
-    @patch("lumos_cli.common.helpers.setup")
+    @patch("lumos.common.helpers.setup")
     def test_request_cancel_help(self, mock_setup, runner):
         """Test request cancel help."""
         result = runner.invoke(lumos, ["request", "cancel", "--help"])
         assert result.exit_code == 0
         assert "Cancel a request" in result.output
 
-    @patch("lumos_cli.common.helpers.setup")
+    @patch("lumos.common.helpers.setup")
     def test_request_cancel_options(self, mock_setup, runner):
         """Test request cancel has expected options."""
         result = runner.invoke(lumos, ["request", "cancel", "--help"])

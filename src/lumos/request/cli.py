@@ -6,9 +6,9 @@ from click_extra import Context, confirm, echo, group, option, pass_context, pro
 from pick import pick
 from tabulate import tabulate
 
-from lumos_cli.common.client import ApiClient
-from lumos_cli.common.helpers import authenticate
-from lumos_cli.common.models import (
+from lumos.common.client import ApiClient
+from lumos.common.helpers import authenticate
+from lumos.common.models import (
     AccessRequest,
     App,
     Permission,

@@ -4,9 +4,9 @@ from uuid import UUID
 from click_extra import group, option
 from tabulate import tabulate
 
-from lumos_cli.common.client import ApiClient
-from lumos_cli.common.helpers import authenticate, get_statuses
-from lumos_cli.common.models import AccessRequest, LumosModel
+from lumos.common.client import ApiClient
+from lumos.common.helpers import authenticate, get_statuses
+from lumos.common.models import AccessRequest, LumosModel
 
 client = ApiClient()
 

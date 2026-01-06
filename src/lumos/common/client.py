@@ -8,11 +8,19 @@ from uuid import UUID
 import requests
 from click_extra import confirm, echo
 
-from lumos_cli import __version__
-from lumos_cli.common.client_helpers import check_version_header
-from lumos_cli.common.keyhelpers import write_key
-from lumos_cli.common.logging import logdebug_request, logdebug_response
-from lumos_cli.common.models import AccessRequest, App, AppSetting, Group, Permission, SupportRequestStatus, User
+from lumos import __version__
+from lumos.common.client_helpers import check_version_header
+from lumos.common.keyhelpers import write_key
+from lumos.common.logging import logdebug_request, logdebug_response
+from lumos.common.models import (
+    AccessRequest,
+    App,
+    AppSetting,
+    Group,
+    Permission,
+    SupportRequestStatus,
+    User,
+)
 
 
 class BaseClient:
@@ -70,7 +78,8 @@ class BaseClient:
                 page == 1
                 and total > 5000
                 and not confirm(
-                    f"Warning: {total} results found. This may take a while. Do you want to continue?", default=True
+                    f"Warning: {total} results found. This may take a while. Do you want to continue?",
+                    default=True,
                 )
             ):
                 raise SystemExit(1)
@@ -137,9 +146,15 @@ class BaseClient:
             return self._send_request(method, endpoint, body, params, retry)
         if response.status_code == 401:
             if retry > 1 or not (scope := os.environ.get("SCOPE")):
-                echo("Something went wrong with authorization. Try logging in again.", err=True)
+                echo(
+                    "Something went wrong with authorization. Try logging in again.",
+                    err=True,
+                )
                 raise SystemExit(1)
-            echo("Something went wrong with authorization. Trying to log in again.", err=True)
+            echo(
+                "Something went wrong with authorization. Trying to log in again.",
+                err=True,
+            )
             AuthClient().authenticate(scope == "admin")
             return self._send_request(method, endpoint, body, params, retry + 1)
         if response.status_code == 403:
@@ -233,7 +248,10 @@ class AuthClient(BaseClient):
 
         wait = 0
         while True:
-            print(" ⏰ Waiting" + ("." * (wait % 10)) + (" " * (10 - (wait % 10))), end="\r")
+            print(
+                " ⏰ Waiting" + ("." * (wait % 10)) + (" " * (10 - (wait % 10))),
+                end="\r",
+            )
             token_response = requests.post(token_url, headers=headers, data=token_data)
             if token_response.status_code == 400:
                 echo(f"Bad request: {token_response.json()}")

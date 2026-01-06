@@ -2,8 +2,8 @@ import os
 
 from requests import Response
 
-from lumos_cli import __version__
-from lumos_cli.common.client_helpers import check_version_header, parse_version
+from lumos import __version__
+from lumos.common.client_helpers import check_version_header, parse_version
 
 
 def test_parse_version():

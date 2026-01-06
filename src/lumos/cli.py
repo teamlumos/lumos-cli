@@ -2,12 +2,12 @@ import os
 
 from click_extra import Context, echo, group, option, pass_context
 
-from lumos_cli.common.client import ApiClient
-from lumos_cli.common.helpers import authenticate
-from lumos_cli.common.helpers import login as _login
-from lumos_cli.common.helpers import logout as _logout
-from lumos_cli.common.helpers import setup as _setup
-from lumos_cli.common.logging import logdebug
+from lumos.common.client import ApiClient
+from lumos.common.helpers import authenticate
+from lumos.common.helpers import login as _login
+from lumos.common.helpers import logout as _logout
+from lumos.common.helpers import setup as _setup
+from lumos.common.logging import logdebug
 
 client = ApiClient()
 
@@ -80,8 +80,8 @@ def logout():
 # Import and register subcommands
 def register_subcommands():
     """Register all subcommands after the main CLI group is defined"""
-    from lumos_cli.list_collections.cli import list_group
-    from lumos_cli.request.cli import request
+    from lumos.list_collections.cli import list_group
+    from lumos.request.cli import request
 
     lumos.add_command(request)
     lumos.add_command(list_group, name="list")

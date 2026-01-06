@@ -3,7 +3,7 @@ import os
 import requests
 from click_extra import secho
 
-from lumos_cli import __version__
+from lumos import __version__
 
 
 def check_version_header(response: requests.Response) -> bool:

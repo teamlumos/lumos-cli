@@ -4,9 +4,9 @@ import os
 from click_extra import confirm, echo, prompt
 from pick import pick
 
-from lumos_cli.common.client import AuthClient
-from lumos_cli.common.keyhelpers import key_file_path, read_key, write_key
-from lumos_cli.common.models import App, Permission, SupportRequestStatus
+from lumos.common.client import AuthClient
+from lumos.common.keyhelpers import key_file_path, read_key, write_key
+from lumos.common.models import App, Permission, SupportRequestStatus
 
 
 def authenticate(func):
@@ -30,7 +30,8 @@ def setup(show_prompt: bool = False, show_overwrite_prompt: bool = False):
         ):
             return
     if show_prompt and not confirm(
-        " 🛠️ You need to authenticate to use this application. Do you want to do that now?", default=True
+        " 🛠️ You need to authenticate to use this application. Do you want to do that now?",
+        default=True,
     ):
         raise SystemExit(1)
     selected, _ = pick(["OAuth 2.0", "API key"], "How do you want to authenticate?")
@@ -79,7 +80,10 @@ def check_current_apps(
             if len(app.requestable_permissions) > 0 and selected_permissions:
                 for permission in [str(r.id) for r in app.requestable_permissions]:
                     if permission in [str(r.id) for r in selected_permissions]:
-                        return app, "There's already a request for this app and permission"
+                        return (
+                            app,
+                            "There's already a request for this app and permission",
+                        )
             elif len(app.requestable_permissions) == 0 and not selected_permissions:
                 return app, "There's already a request for this app"
 
