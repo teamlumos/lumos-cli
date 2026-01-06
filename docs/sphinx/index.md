@@ -45,3 +45,9 @@ examples
 
 cli-reference
 ```
+
+```{toctree}
+:maxdepth: 1
+:caption: Contributing
+contributing
+```

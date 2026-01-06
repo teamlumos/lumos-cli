@@ -66,3 +66,7 @@ lumos request
     * [`lumos request status`](cli-reference.md#lumos-request-status)
     * [`lumos request poll`](cli-reference.md#lumos-request-poll)
     * [`lumos request cancel`](cli-reference.md#lumos-request-cancel)
+
+## Contributing
+
+* [Contributing to Lumos CLI](contributing.md)

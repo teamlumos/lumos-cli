@@ -25,7 +25,7 @@ You can also install Lumos CLI as a Python package from GitHub Releases.
 
 ```bash
 # Download the wheel from the latest release
-pip install https://github.com/teamlumos/lumos-cli/releases/latest/download/lumos_cli-VERSION-py3-none-any.whl
+pip install https://github.com/teamlumos/lumos-cli/releases/latest/download/lumos-VERSION-py3-none-any.whl
 ```
 
 Replace `VERSION` with the actual version number from the [releases page](https://github.com/teamlumos/lumos-cli/releases).
@@ -34,7 +34,7 @@ Replace `VERSION` with the actual version number from the [releases page](https:
 
 ```bash
 # Install from GitHub releases
-uv tool install https://github.com/teamlumos/lumos-cli/releases/latest/download/lumos_cli-VERSION-py3-none-any.whl
+uv tool install https://github.com/teamlumos/lumos-cli/releases/latest/download/lumos-VERSION-py3-none-any.whl
 ```
 
 ## Binary Downloads

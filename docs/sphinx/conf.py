@@ -19,10 +19,10 @@ author = "Lumos"
 # The version info, acts as replacement for |version| and |release|
 # Also used in various other places throughout the built documents.
 try:
-    import tomllib
+    import tomli
 
     with open("../../pyproject.toml", "rb") as f:
-        pyproject = tomllib.load(f)
+        pyproject = tomli.load(f)
         version = pyproject["project"]["version"]
         release = version
 except Exception:

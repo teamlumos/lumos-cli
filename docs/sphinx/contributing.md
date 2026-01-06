@@ -2,16 +2,6 @@
 
 Thank you for your interest in contributing to the Lumos CLI! This document provides guidelines and instructions for contributors and maintainers.
 
-## Table of Contents
-
-- [Development Setup](#development-setup)
-- [Project Structure](#project-structure)
-- [Development Workflow](#development-workflow)
-- [Code Style](#code-style)
-- [Testing](#testing)
-- [Documentation](#documentation)
-- [Release Process](#release-process)
-
 ## Development Setup
 
 ### Prerequisites
@@ -45,22 +35,22 @@ Thank you for your interest in contributing to the Lumos CLI! This document prov
 Create an alias for development:
 
 ```bash
-alias lumosdev='uv run python -m lumos_cli'
+alias lumosdev='uv run python -m lumos'
 ```
 
 Or run directly:
 
 ```bash
-uv run python -m lumos_cli --help
+uv run python -m lumos --help
 ```
 
 ## Project Structure
 
 ```
 lumos-cli/
-├── src/lumos_cli/           # Main source code
+├── src/lumos/           # Main source code
 │   ├── __init__.py
-│   ├── __main__.py          # Entry point for `python -m lumos_cli`
+│   ├── __main__.py          # Entry point for `python -m lumos`
 │   ├── cli.py               # Main CLI group and core commands
 │   ├── common/              # Shared utilities
 │   │   ├── client.py        # API client
@@ -101,13 +91,13 @@ lumos-cli/
 
 ### Adding a New Command
 
-1. Create a new module in the appropriate directory (e.g., `src/lumos_cli/your_feature/cli.py`)
+1. Create a new module in the appropriate directory (e.g., `src/lumos/your_feature/cli.py`)
 
 2. Define your click command:
 
    ```python
    from click_extra import command, option
-   from lumos_cli.common.helpers import authenticate
+   from lumos.common.helpers import authenticate
 
    @command("your-command", help="Description of your command")
    @option("--flag", is_flag=True, help="Option description")
@@ -117,11 +107,11 @@ lumos-cli/
        pass
    ```
 
-3. Register the command in `src/lumos_cli/cli.py`:
+3. Register the command in `src/lumos/cli.py`:
 
    ```python
    def register_subcommands():
-       from lumos_cli.your_feature.cli import your_command
+       from lumos.your_feature.cli import your_command
        cli.add_command(your_command)
    ```
 
@@ -164,7 +154,7 @@ uv run pytest
 ### Running Tests with Coverage
 
 ```bash
-uv run pytest --cov=lumos_cli --cov-report=html
+uv run pytest --cov=lumos --cov-report=html
 ```
 
 ### Writing Tests
@@ -214,7 +204,7 @@ The documentation uses click-extra's Sphinx directives to show live CLI examples
 # Define CLI source (hidden by default)
 \`\`\`{click:source}
 :hide-results:
-from lumos_cli.cli import cli
+from lumos.cli import cli
 \`\`\`
 
 # Run CLI command and show output with ANSI colors
@@ -247,7 +237,7 @@ Releases are automated via [semantic-release](https://semantic-release.gitbook.i
 1. **Version Analysis**: semantic-release analyzes commits to determine the next version
 2. **Build**: Cross-platform binaries are built for Linux, macOS, and Windows
 3. **Documentation**: Documentation is regenerated with the new version
-4. **Release**: 
+4. **Release**:
    - `CHANGELOG.md` is updated
    - `pyproject.toml` version is bumped
    - Git tag is created
@@ -271,7 +261,7 @@ uv version X.Y.Z
 
 # Build artifacts
 uv build
-uv run pyinstaller src/lumos_cli/__main__.py
+uv run pyinstaller src/lumos/__main__.py
 
 # Create and push tag
 git tag vX.Y.Z
