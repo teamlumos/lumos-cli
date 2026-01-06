@@ -1,7 +1,13 @@
 from uuid import UUID
 
-from lumos_cli.common.helpers import check_current_apps, get_statuses
-from lumos_cli.common.models import AccessRequest, App, Permission, SupportRequestStatus, User
+from lumos.common.helpers import check_current_apps, get_statuses
+from lumos.common.models import (
+    AccessRequest,
+    App,
+    Permission,
+    SupportRequestStatus,
+    User,
+)
 
 
 def test_get_statuses():
@@ -32,7 +38,10 @@ def test_get_statuses_all_statuses():
 
 def test_check_current_apps():
     user = User(
-        id=UUID("123e4567-e89b-12d3-a456-426614174000"), given_name="John", family_name="Doe", email="foo@foo.com"
+        id=UUID("123e4567-e89b-12d3-a456-426614174000"),
+        given_name="John",
+        family_name="Doe",
+        email="foo@foo.com",
     )
     app1 = App(
         id=UUID("123e4567-e89b-12d3-a456-426614174000"),
@@ -49,13 +58,22 @@ def test_check_current_apps():
         instance_id="bar",
     )
     permission1 = Permission(
-        id=UUID("123e4567-e89b-12d3-a456-426614174001"), label="permission", app_id=str(app1.id), app_class_id="foo"
+        id=UUID("123e4567-e89b-12d3-a456-426614174001"),
+        label="permission",
+        app_id=str(app1.id),
+        app_class_id="foo",
     )
     permission2 = Permission(
-        id=UUID("123e4567-e89b-12d3-a456-426614174002"), label="permission", app_id=str(app1.id), app_class_id="foo"
+        id=UUID("123e4567-e89b-12d3-a456-426614174002"),
+        label="permission",
+        app_id=str(app1.id),
+        app_class_id="foo",
     )
     permission3 = Permission(
-        id=UUID("123e4567-e89b-12d3-a456-426614174003"), label="permission", app_id=str(app1.id), app_class_id="foo"
+        id=UUID("123e4567-e89b-12d3-a456-426614174003"),
+        label="permission",
+        app_id=str(app1.id),
+        app_class_id="foo",
     )
     access_request1 = AccessRequest(
         id=UUID("123e4567-e89b-12d3-a456-426614174001"),

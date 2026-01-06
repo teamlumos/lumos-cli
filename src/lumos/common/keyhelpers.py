@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from lumos_cli.common.logging import logdebug
+from lumos.common.logging import logdebug
 
 
 def key_file_path() -> Path:
