@@ -1,3 +1,9 @@
+<!--
+  AUTO-GENERATED SOURCE FILE
+  This is the source file for Sphinx documentation.
+  Edit this file, then run \`make markdown\` from docs/ to regenerate docs/\*.md
+-->
+
 # CLI Reference
 
 This page provides a complete reference for all Lumos CLI commands with live examples.
@@ -35,12 +41,15 @@ Options:
   -h, --help            Show this message and exit.
 
 Commands:
-  list     List various Lumos resources
-  login    Login to your Lumos account via OAuth.
-  logout   Logout of your Lumos account.
-  request  Request access to an app.
-  setup    Setup your Lumos CLI.
-  whoami   Show information about the currently logged in user.
+  app         Manage apps.
+  group       Manage groups.
+  login       Login to your Lumos account via OAuth.
+  logout      Logout of your Lumos account.
+  permission  Manage permissions.
+  request     Manage access requests.
+  setup       Setup your Lumos CLI.
+  user        Manage users.
+  whoami      Show information about the currently logged in user.
 ```
 
 ## Authentication Commands
@@ -106,15 +115,15 @@ Options:
   -h, --help  Show this message and exit.
 ```
 
-## List Commands
+## App Commands
 
-The `list` command group provides access to various Lumos resources.
+The `app` command group provides access to apps in the Lumos appstore.
 
 ```ansi-shell-session
-$ lumos --no-color list --help
-Usage: lumos list [OPTIONS] COMMAND [ARGS]...
+$ lumos --no-color app --help
+Usage: lumos app [OPTIONS] COMMAND [ARGS]...
 
-  List various Lumos resources
+  Manage apps.
 
 Options:
   --time / --no-time    Measure and print elapsed execution time.  [default: no-
@@ -139,20 +148,16 @@ Options:
   -h, --help            Show this message and exit.
 
 Commands:
-  apps         List apps in the appstore
-  groups       List groups for the domain or the specified --app
-  permissions  List permissions for a given app
-  requests     List access requests
-  users        List users in Lumos
+  list  List apps in the appstore
 ```
 
-### `lumos list apps`
+### `lumos app list`
 
 List apps available in the appstore.
 
 ```ansi-shell-session
-$ lumos list --no-color apps --help
-Usage: lumos list apps [OPTIONS]
+$ lumos app --no-color list --help
+Usage: lumos app list [OPTIONS]
 
   List apps in the appstore
 
@@ -168,13 +173,49 @@ Options:
   -h, --help                  Show this message and exit.
 ```
 
-### `lumos list users`
+## User Commands
+
+The `user` command group provides access to users in Lumos.
+
+```ansi-shell-session
+$ lumos --no-color user --help
+Usage: lumos user [OPTIONS] COMMAND [ARGS]...
+
+  Manage users.
+
+Options:
+  --time / --no-time    Measure and print elapsed execution time.  [default: no-
+                        time]
+  --color, --ansi / --no-color, --no-ansi
+                        Strip out all colors and all ANSI codes from output.
+                        [default: color]
+  --config CONFIG_PATH  Location of the configuration file. Supports local path
+                        with glob patterns or remote URL.  [default:
+                        ~/.config/lumos/*.toml|*.yaml|*.yml|*.json|*.ini]
+  --no-config           Ignore all configuration files and only use command line
+                        parameters and environment variables.
+  --show-params         Show all CLI parameters, their provenance, defaults and
+                        value, then exit.
+  --table-format [asciidoc|csv|csv-excel|csv-excel-tab|csv-unix|double-grid|double-outline|fancy-grid|fancy-outline|github|grid|heavy-grid|heavy-outline|html|jira|latex|latex-booktabs|latex-longtable|latex-raw|mediawiki|mixed-grid|mixed-outline|moinmoin|orgtbl|outline|pipe|plain|presto|pretty|psql|rounded-grid|rounded-outline|rst|simple|simple-grid|simple-outline|textile|tsv|unsafehtml|vertical|youtrack]
+                        Rendering style of tables.  [default: rounded-outline]
+  --verbosity LEVEL     Either CRITICAL, ERROR, WARNING, INFO, DEBUG.  [default:
+                        WARNING]
+  -v, --verbose         Increase the default WARNING verbosity by one level for
+                        each additional repetition of the option.  [default: 0]
+  --version             Show the version and exit.
+  -h, --help            Show this message and exit.
+
+Commands:
+  list  List users in Lumos
+```
+
+### `lumos user list`
 
 List users in Lumos.
 
 ```ansi-shell-session
-$ lumos list --no-color users --help
-Usage: lumos list users [OPTIONS]
+$ lumos user --no-color list --help
+Usage: lumos user list [OPTIONS]
 
   List users in Lumos
 
@@ -189,35 +230,49 @@ Options:
   -h, --help                  Show this message and exit.
 ```
 
-### `lumos list permissions`
+## Group Commands
 
-List permissions for a given app.
+The `group` command group provides access to groups in Lumos.
 
 ```ansi-shell-session
-$ lumos list --no-color permissions --help
-Usage: lumos list permissions [OPTIONS]
+$ lumos --no-color group --help
+Usage: lumos group [OPTIONS] COMMAND [ARGS]...
 
-  List permissions for a given app
+  Manage groups.
 
 Options:
-  --app TEXT                  App UUID  [required]
-  --like TEXT                 Filters permissions
-  --csv                       Output as CSV
-  --json                      Output as JSON
-  --paginate / --no-paginate  Pagination  [default: paginate]
-  --page-size INTEGER         Page size  [default: 100]
-  --page INTEGER              Page  [default: 1]
-  --id-only                   Output ID only
-  -h, --help                  Show this message and exit.
+  --time / --no-time    Measure and print elapsed execution time.  [default: no-
+                        time]
+  --color, --ansi / --no-color, --no-ansi
+                        Strip out all colors and all ANSI codes from output.
+                        [default: color]
+  --config CONFIG_PATH  Location of the configuration file. Supports local path
+                        with glob patterns or remote URL.  [default:
+                        ~/.config/lumos/*.toml|*.yaml|*.yml|*.json|*.ini]
+  --no-config           Ignore all configuration files and only use command line
+                        parameters and environment variables.
+  --show-params         Show all CLI parameters, their provenance, defaults and
+                        value, then exit.
+  --table-format [asciidoc|csv|csv-excel|csv-excel-tab|csv-unix|double-grid|double-outline|fancy-grid|fancy-outline|github|grid|heavy-grid|heavy-outline|html|jira|latex|latex-booktabs|latex-longtable|latex-raw|mediawiki|mixed-grid|mixed-outline|moinmoin|orgtbl|outline|pipe|plain|presto|pretty|psql|rounded-grid|rounded-outline|rst|simple|simple-grid|simple-outline|textile|tsv|unsafehtml|vertical|youtrack]
+                        Rendering style of tables.  [default: rounded-outline]
+  --verbosity LEVEL     Either CRITICAL, ERROR, WARNING, INFO, DEBUG.  [default:
+                        WARNING]
+  -v, --verbose         Increase the default WARNING verbosity by one level for
+                        each additional repetition of the option.  [default: 0]
+  --version             Show the version and exit.
+  -h, --help            Show this message and exit.
+
+Commands:
+  list  List groups for the domain or the specified --app
 ```
 
-### `lumos list groups`
+### `lumos group list`
 
 List groups for the domain or a specific app.
 
 ```ansi-shell-session
-$ lumos list --no-color groups --help
-Usage: lumos list groups [OPTIONS]
+$ lumos group --no-color list --help
+Usage: lumos group list [OPTIONS]
 
   List groups for the domain or the specified --app
 
@@ -234,25 +289,55 @@ Options:
   -h, --help                  Show this message and exit.
 ```
 
-### `lumos list requests`
+## Permission Commands
 
-List access requests.
+The `permission` command group provides access to permissions in Lumos.
 
 ```ansi-shell-session
-$ lumos list --no-color requests --help
-Usage: lumos list requests [OPTIONS]
+$ lumos --no-color permission --help
+Usage: lumos permission [OPTIONS] COMMAND [ARGS]...
 
-  List access requests
+  Manage permissions.
 
 Options:
-  --for-user TEXT             Show only requests for ('targetting') a particular
-                              user
-  --mine                      Show only requests for ('targetting') me. Takes
-                              precedence over --for-user.
-  --status TEXT               One of `PENDING`, `COMPLETED`,
-                              `DENIED_PROVISIONING`, etc
-  --pending                   Show only pending requests
-  --past                      Show only past requests
+  --time / --no-time    Measure and print elapsed execution time.  [default: no-
+                        time]
+  --color, --ansi / --no-color, --no-ansi
+                        Strip out all colors and all ANSI codes from output.
+                        [default: color]
+  --config CONFIG_PATH  Location of the configuration file. Supports local path
+                        with glob patterns or remote URL.  [default:
+                        ~/.config/lumos/*.toml|*.yaml|*.yml|*.json|*.ini]
+  --no-config           Ignore all configuration files and only use command line
+                        parameters and environment variables.
+  --show-params         Show all CLI parameters, their provenance, defaults and
+                        value, then exit.
+  --table-format [asciidoc|csv|csv-excel|csv-excel-tab|csv-unix|double-grid|double-outline|fancy-grid|fancy-outline|github|grid|heavy-grid|heavy-outline|html|jira|latex|latex-booktabs|latex-longtable|latex-raw|mediawiki|mixed-grid|mixed-outline|moinmoin|orgtbl|outline|pipe|plain|presto|pretty|psql|rounded-grid|rounded-outline|rst|simple|simple-grid|simple-outline|textile|tsv|unsafehtml|vertical|youtrack]
+                        Rendering style of tables.  [default: rounded-outline]
+  --verbosity LEVEL     Either CRITICAL, ERROR, WARNING, INFO, DEBUG.  [default:
+                        WARNING]
+  -v, --verbose         Increase the default WARNING verbosity by one level for
+                        each additional repetition of the option.  [default: 0]
+  --version             Show the version and exit.
+  -h, --help            Show this message and exit.
+
+Commands:
+  list  List permissions for a given app
+```
+
+### `lumos permission list`
+
+List permissions for a given app.
+
+```ansi-shell-session
+$ lumos permission --no-color list --help
+Usage: lumos permission list [OPTIONS]
+
+  List permissions for a given app
+
+Options:
+  --app TEXT                  App UUID  [required]
+  --like TEXT                 Filters permissions
   --csv                       Output as CSV
   --json                      Output as JSON
   --paginate / --no-paginate  Pagination  [default: paginate]
@@ -270,7 +355,47 @@ The `request` command group handles access requests.
 $ lumos --no-color request --help
 Usage: lumos request [OPTIONS] COMMAND [ARGS]...
 
-  Request access to an app.
+  Manage access requests.
+
+Options:
+  --time / --no-time    Measure and print elapsed execution time.  [default: no-
+                        time]
+  --color, --ansi / --no-color, --no-ansi
+                        Strip out all colors and all ANSI codes from output.
+                        [default: color]
+  --config CONFIG_PATH  Location of the configuration file. Supports local path
+                        with glob patterns or remote URL.  [default:
+                        ~/.config/lumos/*.toml|*.yaml|*.yml|*.json|*.ini]
+  --no-config           Ignore all configuration files and only use command line
+                        parameters and environment variables.
+  --show-params         Show all CLI parameters, their provenance, defaults and
+                        value, then exit.
+  --table-format [asciidoc|csv|csv-excel|csv-excel-tab|csv-unix|double-grid|double-outline|fancy-grid|fancy-outline|github|grid|heavy-grid|heavy-outline|html|jira|latex|latex-booktabs|latex-longtable|latex-raw|mediawiki|mixed-grid|mixed-outline|moinmoin|orgtbl|outline|pipe|plain|presto|pretty|psql|rounded-grid|rounded-outline|rst|simple|simple-grid|simple-outline|textile|tsv|unsafehtml|vertical|youtrack]
+                        Rendering style of tables.  [default: rounded-outline]
+  --verbosity LEVEL     Either CRITICAL, ERROR, WARNING, INFO, DEBUG.  [default:
+                        WARNING]
+  -v, --verbose         Increase the default WARNING verbosity by one level for
+                        each additional repetition of the option.  [default: 0]
+  --version             Show the version and exit.
+  -h, --help            Show this message and exit.
+
+Commands:
+  cancel  Cancel a request by ID
+  create  Request access to an app
+  list    List access requests
+  poll    Poll a request by ID for up to 5 minutes
+  status  Check the status of a request by ID or `--last` for the most recent...
+```
+
+### `lumos request create`
+
+Create an access request for an app.
+
+```ansi-shell-session
+$ lumos request --no-color create --help
+Usage: lumos request create [OPTIONS]
+
+  Request access to an app
 
 Options:
   --reason TEXT           Business justification for request
@@ -295,32 +420,35 @@ Options:
   --wait / --no-wait      Wait for the request to complete
   --dry-run               Print the request command without actually making the
                           request
-  --time / --no-time      Measure and print elapsed execution time.  [default:
-                          no-time]
-  --color, --ansi / --no-color, --no-ansi
-                          Strip out all colors and all ANSI codes from output.
-                          [default: color]
-  --config CONFIG_PATH    Location of the configuration file. Supports local
-                          path with glob patterns or remote URL.  [default:
-                          ~/.config/lumos/*.toml|*.yaml|*.yml|*.json|*.ini]
-  --no-config             Ignore all configuration files and only use command
-                          line parameters and environment variables.
-  --show-params           Show all CLI parameters, their provenance, defaults
-                          and value, then exit.
-  --table-format [asciidoc|csv|csv-excel|csv-excel-tab|csv-unix|double-grid|double-outline|fancy-grid|fancy-outline|github|grid|heavy-grid|heavy-outline|html|jira|latex|latex-booktabs|latex-longtable|latex-raw|mediawiki|mixed-grid|mixed-outline|moinmoin|orgtbl|outline|pipe|plain|presto|pretty|psql|rounded-grid|rounded-outline|rst|simple|simple-grid|simple-outline|textile|tsv|unsafehtml|vertical|youtrack]
-                          Rendering style of tables.  [default: rounded-outline]
-  --verbosity LEVEL       Either CRITICAL, ERROR, WARNING, INFO, DEBUG.
-                          [default: WARNING]
-  -v, --verbose           Increase the default WARNING verbosity by one level
-                          for each additional repetition of the option.
-                          [default: 0]
-  --version               Show the version and exit.
   -h, --help              Show this message and exit.
+```
 
-Commands:
-  cancel  Cancel a request by ID
-  poll    Poll a request by ID for up to 5 minutes
-  status  Check the status of a request by ID or `--last` for the most recent...
+### `lumos request list`
+
+List access requests.
+
+```ansi-shell-session
+$ lumos request --no-color list --help
+Usage: lumos request list [OPTIONS]
+
+  List access requests
+
+Options:
+  --for-user TEXT             Show only requests for ('targetting') a particular
+                              user
+  --mine                      Show only requests for ('targetting') me. Takes
+                              precedence over --for-user.
+  --status TEXT               One of `PENDING`, `COMPLETED`,
+                              `DENIED_PROVISIONING`, etc
+  --pending                   Show only pending requests
+  --past                      Show only past requests
+  --csv                       Output as CSV
+  --json                      Output as JSON
+  --paginate / --no-paginate  Pagination  [default: paginate]
+  --page-size INTEGER         Page size  [default: 100]
+  --page INTEGER              Page  [default: 1]
+  --id-only                   Output ID only
+  -h, --help                  Show this message and exit.
 ```
 
 ### `lumos request status`

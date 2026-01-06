@@ -1,3 +1,9 @@
+<!--
+  AUTO-GENERATED SOURCE FILE
+  This is the source file for Sphinx documentation.
+  Edit this file, then run \`make markdown\` from docs/ to regenerate docs/\*.md
+-->
+
 # Installation
 
 ## macOS and Linux (via Homebrew)

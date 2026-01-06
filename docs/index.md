@@ -1,3 +1,9 @@
+<!--
+  AUTO-GENERATED SOURCE FILE
+  This is the source file for Sphinx documentation.
+  Edit this file, then run \`make markdown\` from docs/ to regenerate docs/\*.md
+-->
+
 # Lumos CLI Documentation
 
 Welcome to the Lumos CLI documentation. The Lumos CLI is a command-line interface for interacting with the Lumos platform, enabling you to manage access requests, list resources, and automate workflows.
@@ -46,6 +52,7 @@ lumos request
   * [Monitoring Requests](examples.md#monitoring-requests)
   * [Scripting Examples](examples.md#scripting-examples)
   * [Output Formats](examples.md#output-formats)
+  * [Migration from Old Syntax](examples.md#migration-from-old-syntax)
 
 ## Reference
 
@@ -56,13 +63,17 @@ lumos request
     * [`lumos setup`](cli-reference.md#lumos-setup)
     * [`lumos login`](cli-reference.md#lumos-login)
     * [`lumos logout`](cli-reference.md#lumos-logout)
-  * [List Commands](cli-reference.md#list-commands)
-    * [`lumos list apps`](cli-reference.md#lumos-list-apps)
-    * [`lumos list users`](cli-reference.md#lumos-list-users)
-    * [`lumos list permissions`](cli-reference.md#lumos-list-permissions)
-    * [`lumos list groups`](cli-reference.md#lumos-list-groups)
-    * [`lumos list requests`](cli-reference.md#lumos-list-requests)
+  * [App Commands](cli-reference.md#app-commands)
+    * [`lumos app list`](cli-reference.md#lumos-app-list)
+  * [User Commands](cli-reference.md#user-commands)
+    * [`lumos user list`](cli-reference.md#lumos-user-list)
+  * [Group Commands](cli-reference.md#group-commands)
+    * [`lumos group list`](cli-reference.md#lumos-group-list)
+  * [Permission Commands](cli-reference.md#permission-commands)
+    * [`lumos permission list`](cli-reference.md#lumos-permission-list)
   * [Request Commands](cli-reference.md#request-commands)
+    * [`lumos request create`](cli-reference.md#lumos-request-create)
+    * [`lumos request list`](cli-reference.md#lumos-request-list)
     * [`lumos request status`](cli-reference.md#lumos-request-status)
     * [`lumos request poll`](cli-reference.md#lumos-request-poll)
     * [`lumos request cancel`](cli-reference.md#lumos-request-cancel)

@@ -24,10 +24,13 @@ lumos setup
 lumos whoami
 
 # List available apps
-lumos list apps --like github
+lumos app list --like github
 
-# Request access
-lumos request
+# Request access (interactive)
+lumos request create
+
+# Request access (scripted)
+lumos request create --app APP_UUID --reason "Need access" --for-me --wait
 ```
 
 ## Documentation
