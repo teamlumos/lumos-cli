@@ -1,0 +1,162 @@
+name: Publish Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/sphinx/**'
+      - 'docs/scripts/**'
+      - 'docs/Makefile'
+      - 'src/lumos_cli/**'
+  workflow_dispatch:
+    inputs:
+      publish-mode:
+        description: 'Publish mode for readme.io'
+        required: true
+        type: choice
+        options:
+          - draft
+          - public
+        default: draft
+
+env:
+  # readme.io project configuration
+  READMEIO_CATEGORY_SLUG: reference
+
+jobs:
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-latest
+    outputs:
+      docs-changed: ${{ steps.check-changes.outputs.changed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check for documentation changes
+        id: check-changes
+        run: |
+          if git diff --name-only HEAD~1 HEAD | grep -qE '^docs/|^src/lumos_cli/'; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.6'
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --group docs
+
+      - name: Build documentation
+        run: make -C docs docs
+
+      - name: Upload readme.io docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: readme-io-docs
+          path: docs/readme.io/
+          retention-days: 7
+
+      - name: Upload HTML docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-docs
+          path: docs/sphinx/_build/html/
+          retention-days: 7
+
+  publish-to-readme:
+    name: Publish to readme.io
+    needs: build-docs
+    runs-on: ubuntu-latest
+    # Only run on main branch pushes or manual dispatch
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    steps:
+      - name: Download readme.io docs
+        uses: actions/download-artifact@v4
+        with:
+          name: readme-io-docs
+          path: readme-io-docs/
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install rdme CLI
+        run: npm install -g rdme
+
+      - name: Determine publish mode
+        id: publish-mode
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "mode=${{ inputs.publish-mode }}" >> $GITHUB_OUTPUT
+          else
+            # Default to draft for automated pushes
+            echo "mode=draft" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish docs to readme.io (Draft)
+        if: steps.publish-mode.outputs.mode == 'draft'
+        env:
+          RDME_API_KEY: ${{ secrets.README_API_KEY }}
+        run: |
+          echo "Publishing documentation as draft to readme.io..."
+          rdme docs readme-io-docs/ \
+            --key "$RDME_API_KEY" \
+            --version "main" \
+            --dryRun || true
+          
+          echo ""
+          echo "=================================================="
+          echo "📝 DRAFT MODE: Documentation changes staged"
+          echo "=================================================="
+          echo ""
+          echo "To review and publish:"
+          echo "1. Go to https://dash.readme.com/project/lumos-developers"
+          echo "2. Review the documentation changes in the 'main' version"
+          echo "3. When ready, run this workflow manually with 'public' mode"
+          echo ""
+
+      - name: Publish docs to readme.io (Public)
+        if: steps.publish-mode.outputs.mode == 'public'
+        env:
+          RDME_API_KEY: ${{ secrets.README_API_KEY }}
+        run: |
+          echo "Publishing documentation to readme.io..."
+          rdme docs readme-io-docs/ \
+            --key "$RDME_API_KEY" \
+            --version "main"
+          
+          echo ""
+          echo "=================================================="
+          echo "✅ Documentation published to readme.io"
+          echo "=================================================="
+          echo ""
+          echo "View at: https://developers.lumos.com/reference/lumos-cli"
+          echo ""
+
+  notify-on-failure:
+    name: Notify on Failure
+    needs: [build-docs, publish-to-readme]
+    runs-on: ubuntu-latest
+    if: failure()
+    steps:
+      - name: Create failure summary
+        run: |
+          echo "## ❌ Documentation Publishing Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The documentation workflow failed. Please check the logs for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Workflow run:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY

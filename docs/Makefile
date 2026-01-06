@@ -4,20 +4,23 @@ SPHINXOPTS    ?=
 SPHINXBUILD   ?= uv run sphinx-build
 SPHINXDIR     = sphinx
 BUILDDIR      = $(SPHINXDIR)/_build
+READMEIODIR   = readme.io
 
-.PHONY: help clean html markdown docs
+.PHONY: help clean html markdown readme-io docs
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@echo "Available targets:"
 	@echo "  html      - Build HTML documentation"
 	@echo "  markdown  - Build Markdown documentation"
-	@echo "  docs      - Build both"
+	@echo "  readme-io - Generate readme.io docs with frontmatter"
+	@echo "  docs      - Build all (markdown, html, and readme.io)"
 	@echo "  clean     - Remove build artifacts"
 
 # Clean build directory
 clean:
 	rm -rf $(BUILDDIR)
+	rm -rf $(READMEIODIR)
 	rm -f *.md
 
 # Build HTML documentation
@@ -32,5 +35,10 @@ markdown:
 	@cp $(BUILDDIR)/markdown/*.md .
 	@echo "Markdown files copied to docs/"
 
-# Build both
-docs: markdown html
+# Generate readme.io documentation with YAML frontmatter
+readme-io: markdown
+	@uv run python scripts/generate_readme_docs.py --source-dir . --output-dir $(READMEIODIR)
+	@echo "readme.io docs generated in $(READMEIODIR)/"
+
+# Build all documentation
+docs: markdown html readme-io

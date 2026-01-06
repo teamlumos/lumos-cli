@@ -36,6 +36,7 @@ lumos request
 * [Installation](installation.md)
   * [macOS and Linux (via Homebrew)](installation.md#macos-and-linux-via-homebrew)
   * [Python Package (via pip or uv)](installation.md#python-package-via-pip-or-uv)
+  * [Install from Source](installation.md#install-from-source)
   * [Binary Downloads](installation.md#binary-downloads)
   * [Initial Setup](installation.md#initial-setup)
   * [Troubleshooting](installation.md#troubleshooting)
