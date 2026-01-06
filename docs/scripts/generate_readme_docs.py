@@ -54,7 +54,7 @@ def generate_frontmatter(config: dict) -> str:
     lines.append(f'slug: "{config["slug"]}"')
     lines.append(f'excerpt: "{config["excerpt"]}"')
     lines.append(f'category: "{config["category"]}"')
-    lines.append(f'order: {config["order"]}')
+    lines.append(f"order: {config['order']}")
     lines.append("hidden: false")
     lines.append("---")
     lines.append("")
@@ -125,9 +125,7 @@ def generate_readme_docs(source_dir: Path, output_dir: Path) -> list[str]:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate readme.io documentation with YAML frontmatter"
-    )
+    parser = argparse.ArgumentParser(description="Generate readme.io documentation with YAML frontmatter")
     parser.add_argument(
         "--source-dir",
         type=Path,
