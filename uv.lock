@@ -341,36 +341,31 @@ wheels = [
 ]
 
 [[package]]
-name = "lumos-cli"
+name = "lumos"
 version = "2.3.0"
 source = { editable = "." }
 dependencies = [
-    { name = "annotated-types" },
-    { name = "certifi" },
-    { name = "charset-normalizer" },
     { name = "click-extra" },
-    { name = "idna" },
     { name = "pick" },
     { name = "pydantic" },
-    { name = "pydantic-core" },
-    { name = "pyinstaller" },
-    { name = "pytest" },
     { name = "pytz" },
     { name = "requests" },
     { name = "tabulate" },
-    { name = "types-pytz" },
-    { name = "types-requests" },
-    { name = "types-tabulate" },
-    { name = "typing-extensions" },
-    { name = "urllib3" },
 ]
 
 [package.dev-dependencies]
+build = [
+    { name = "pyinstaller" },
+]
 dev = [
     { name = "basedpyright" },
     { name = "debugpy" },
     { name = "pre-commit" },
+    { name = "pytest" },
     { name = "ruff" },
+    { name = "types-pytz" },
+    { name = "types-requests" },
+    { name = "types-tabulate" },
 ]
 docs = [
     { name = "myst-parser" },
@@ -382,33 +377,25 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "annotated-types", specifier = "==0.6.0" },
-    { name = "certifi", specifier = "==2024.2.2" },
-    { name = "charset-normalizer", specifier = "==3.3.2" },
     { name = "click-extra", specifier = ">=7.4.0,<8" },
-    { name = "idna", specifier = "==3.6" },
-    { name = "pick", specifier = "==2.2.0" },
-    { name = "pydantic", specifier = "==2.6.1" },
-    { name = "pydantic-core", specifier = "==2.16.2" },
-    { name = "pyinstaller", specifier = ">=6.5.0,<7" },
-    { name = "pytest", specifier = ">=8.2.2,<9" },
-    { name = "pytz", specifier = "==2024.1" },
-    { name = "requests", specifier = ">=2.31.0" },
-    { name = "tabulate", specifier = "==0.9.0" },
-    { name = "types-pytz", specifier = "==2024.1.0.20240203" },
-    { name = "types-requests", specifier = "==2.31.0.20240403" },
-    { name = "types-tabulate", specifier = "==0.9.0.20240106" },
-    { name = "typing-extensions", specifier = "==4.9.0" },
-    { name = "typing-extensions", specifier = ">=3.7.4.3" },
-    { name = "urllib3", specifier = "==2.2.0" },
+    { name = "pick", specifier = ">=2.2.0,<3" },
+    { name = "pydantic", specifier = ">=2.6.0,<3" },
+    { name = "pytz", specifier = ">=2024.1" },
+    { name = "requests", specifier = ">=2.31.0,<3" },
+    { name = "tabulate", specifier = ">=0.9.0,<1" },
 ]
 
 [package.metadata.requires-dev]
+build = [{ name = "pyinstaller", specifier = ">=6.5.0,<7" }]
 dev = [
     { name = "basedpyright", specifier = ">=1.21.0,<2" },
     { name = "debugpy", specifier = ">=1.8.0,<2" },
     { name = "pre-commit", specifier = ">=4.0.0,<5" },
+    { name = "pytest", specifier = ">=8.2.2,<9" },
     { name = "ruff", specifier = ">=0.8.0,<1" },
+    { name = "types-pytz", specifier = ">=2024.1" },
+    { name = "types-requests", specifier = ">=2.31.0" },
+    { name = "types-tabulate", specifier = ">=0.9.0" },
 ]
 docs = [
     { name = "myst-parser", specifier = ">=3.0.0,<4" },

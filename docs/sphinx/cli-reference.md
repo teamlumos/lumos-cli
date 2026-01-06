@@ -4,8 +4,7 @@ This page provides a complete reference for all Lumos CLI commands with live exa
 
 ```{click:source}
 :hide-source:
-from lumos_cli.cli import lumos
-
+from lumos.cli import lumos
 ```
 
 ## Getting Help

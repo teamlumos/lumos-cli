@@ -18,7 +18,7 @@ help:
 # Clean build directory
 clean:
 	rm -rf $(BUILDDIR)
-	rm -f cli-reference.md examples.md index.md installation.md
+	rm -f *.md
 
 # Build HTML documentation
 html:
@@ -32,5 +32,5 @@ markdown:
 	@cp $(BUILDDIR)/markdown/*.md .
 	@echo "Markdown files copied to docs/"
 
-# Build both 
+# Build both
 docs: markdown html
