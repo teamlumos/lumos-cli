@@ -4,6 +4,7 @@ on:
   workflow_call:
     inputs:
       version:
+        description: "Version to build (x.x.x)"
         type: string
         required: false
         default: ''
@@ -50,7 +51,7 @@ jobs:
         run: uv run basedpyright
 
   test:
-    name: Test
+    name: Unit Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -70,14 +71,13 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: uv sync --group dev
-          
 
       - name: Run tests
         run: uv run pytest tests/ -v
 
   python-package:
     name: Python Package
-    needs: 
+    needs:
       - lint
       - test
     runs-on: ubuntu-latest
@@ -98,6 +98,11 @@ jobs:
         with:
           version: latest
           enable-cache: true
+
+      - name: Update version
+        shell: bash
+        if: inputs.version != ''
+        run: uv version ${inputs.version}
 
       - name: Build wheel
         shell: bash
@@ -120,7 +125,7 @@ jobs:
 
   build-binaries:
     name: ${{ matrix.platform }} Binary
-    needs: 
+    needs:
       - lint
       - test
     runs-on: ${{ matrix.runner }}
@@ -152,27 +157,32 @@ jobs:
           version: latest
           enable-cache: true
 
+      - name: Update version
+        shell: bash
+        if: inputs.version != ''
+        run: uv version ${inputs.version}
+
       - name: Install dependencies
         shell: bash
-        run: uv sync
+        run: uv sync --group build
 
       - name: Build binary
         shell: bash
         run: |
-          uv run pyinstaller src/lumos_cli/__main__.py
+          uv run pyinstaller src/lumos/__main__.py
           if [[ "${{ matrix.platform }}" == "windows" ]]; then
             mv ./dist/__main__/__main__.exe ./dist/__main__/lumos.exe
           else
             mv ./dist/__main__/__main__ ./dist/__main__/lumos
           fi
           VERSION="${{ inputs.version || 'dev' }}"
-          tar -czf lumos-${{ matrix.platform }}-${VERSION}.tar.gz -C ./dist/__main__ .
+          tar -czf lumos-${{ matrix.platform }}-v${VERSION}.tar.gz -C ./dist/__main__ .
 
       - name: Upload artifacts to workflow
         uses: actions/upload-artifact@v4
         with:
-          name: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}
-          path: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
+          name: lumos-${{ matrix.platform }}-v${{ inputs.version || 'dev' }}
+          path: lumos-${{ matrix.platform }}-v${{ inputs.version || 'dev' }}.tar.gz
           retention-days: 90
 
   test-binaries:
@@ -196,13 +206,13 @@ jobs:
       - name: Download binary artifact
         uses: actions/download-artifact@v4
         with:
-          name: lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}
+          name: lumos-${{ matrix.platform }}-v${{ inputs.version || 'dev' }}
 
       - name: Extract and test binary (Unix)
         if: matrix.platform != 'windows'
         shell: bash
         run: |
-          tar -xzf lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
+          tar -xzf lumos-${{ matrix.platform }}-v${{ inputs.version || 'dev' }}.tar.gz
           chmod +x lumos
           ./lumos --version
 
@@ -210,5 +220,5 @@ jobs:
         if: matrix.platform == 'windows'
         shell: pwsh
         run: |
-          tar -xzf lumos-${{ matrix.platform }}-${{ inputs.version || 'dev' }}.tar.gz
+          tar -xzf lumos-${{ matrix.platform }}-v${{ inputs.version || 'dev' }}.tar.gz
           .\lumos.exe --version
