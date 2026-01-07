@@ -169,14 +169,9 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          uv run pyinstaller src/lumos/__main__.py
-          if [[ "${{ matrix.platform }}" == "windows" ]]; then
-            mv ./dist/__main__/__main__.exe ./dist/__main__/lumos.exe
-          else
-            mv ./dist/__main__/__main__ ./dist/__main__/lumos
-          fi
+          uv run pyinstaller src/lumos/__main__.py --name lumos
           VERSION="${{ inputs.version || 'dev' }}"
-          tar -czf lumos-${{ matrix.platform }}-v${VERSION}.tar.gz -C ./dist/__main__ .
+          tar -czf lumos-${{ matrix.platform }}-v${VERSION}.tar.gz -C ./dist/lumos .
 
       - name: Upload artifacts to workflow
         uses: actions/upload-artifact@v4
