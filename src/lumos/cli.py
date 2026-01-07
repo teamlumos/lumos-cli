@@ -2,6 +2,7 @@ import os
 
 from click_extra import Context, echo, group, option, pass_context
 
+from lumos import __version__
 from lumos.common.client import ApiClient
 from lumos.common.helpers import authenticate
 from lumos.common.helpers import login as _login
@@ -14,6 +15,7 @@ client = ApiClient()
 
 @group(
     context_settings={"help_option_names": ["-h", "--help"]},
+    version=__version__,
 )
 @option("--debug", is_flag=True, help="Enable debug mode", hidden=True)
 @pass_context
