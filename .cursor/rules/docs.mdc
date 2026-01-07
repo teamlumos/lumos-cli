@@ -1,0 +1,69 @@
+---
+description: Guidelines for editing documentation files. Apply when creating or modifying docs, README, or documentation content.
+globs:
+  - README.md
+  - docs/**
+alwaysApply: false
+---
+
+# Documentation Guidelines
+
+## Editable Files
+
+Only edit documentation in these locations:
+
+| Location | Purpose |
+|----------|---------|
+| `README.md` | Project overview and quickstart |
+| `docs/sphinx/*.md` | Detailed documentation source files |
+
+## Never Edit Directly
+
+**Never edit `docs/*.md` files directly.** These are auto-generated from Sphinx source files and will be overwritten.
+
+## Building Docs
+
+After editing any files in `docs/sphinx/`, rebuild the documentation:
+
+```bash
+make -C docs docs
+```
+
+This generates:
+- `docs/*.md` - Markdown output for GitHub viewing
+- `docs/sphinx/_build/html/` - HTML documentation
+
+## README Guidelines
+
+The README should be:
+
+- **Concise**: Brief project overview, not exhaustive documentation
+- **Quickstart focused**: Get users running in minutes
+- **A gateway**: Link to detailed docs in `docs/` for deeper topics
+
+### README Structure
+
+1. Project title and badges
+2. One-paragraph description
+3. Quick installation
+4. Basic usage example
+5. Links to detailed documentation in `docs/`
+
+### Linking to Detailed Docs
+
+For topics that need more detail, link to the full docs:
+
+```markdown
+For more details, see the [Installation Guide](docs/installation.md).
+
+See the [CLI Reference](docs/cli-reference.md) for all available commands.
+```
+
+## Sphinx Source Files
+
+When editing `docs/sphinx/*.md`:
+
+- Follow existing formatting conventions
+- Use proper Sphinx/MyST markdown syntax
+- Include cross-references where appropriate
+- Always rebuild with `make -C docs docs` after changes

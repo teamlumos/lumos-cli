@@ -2,9 +2,9 @@
 
 SPHINXOPTS    ?=
 SPHINXBUILD   ?= uv run sphinx-build
-SPHINXDIR     = sphinx
+GIT_ROOT      = $(shell git rev-parse --show-toplevel)
+SPHINXDIR     = $(GIT_ROOT)/docs/sphinx
 BUILDDIR      = $(SPHINXDIR)/_build
-READMEIODIR   = readme.io
 
 .PHONY: help clean html markdown readme-io docs
 
@@ -20,7 +20,6 @@ help:
 # Clean build directory
 clean:
 	rm -rf $(BUILDDIR)
-	rm -rf $(READMEIODIR)
 	rm -f *.md
 
 # Build HTML documentation
@@ -37,8 +36,8 @@ markdown:
 
 # Generate readme.io documentation with YAML frontmatter
 readme-io: markdown
-	@uv run python scripts/generate_readme_docs.py --source-dir . --output-dir $(READMEIODIR)
-	@echo "readme.io docs generated in $(READMEIODIR)/"
+	@uv run python scripts/generate_readme_docs.py --source-dir $(BUILDDIR)/markdown --output-dir $(BUILDDIR)/readme-io
+	@echo "readme.io docs generated in $(BUILDDIR)/readme-io/"
 
 # Build all documentation
 docs: markdown html readme-io
