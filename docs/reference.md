@@ -1,6 +1,6 @@
-# CLI Reference
+# Reference
 
-This page provides a complete reference for all Lumos CLI commands with live examples.
+This page provides a complete reference for all Lumos CLI commands.
 
 ## Getting Help
 

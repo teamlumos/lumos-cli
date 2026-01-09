@@ -1,3 +1,13 @@
+---
+title: Examples
+slug: cli-authentication
+category:
+  uri: TOOLS
+content:
+  excerpt: Lumos CLI Examples
+parent:
+  uri: cli
+---
 # Examples
 
 This page provides practical examples for common Lumos CLI workflows with code samples.

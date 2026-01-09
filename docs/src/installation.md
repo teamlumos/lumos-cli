@@ -1,3 +1,14 @@
+---
+title: Installation
+slug: cli-installation
+category:
+  uri: TOOLS
+content:
+  excerpt: Installing the Lumos CLI
+parent:
+  uri: cli
+---
+
 # Installation
 
 ## macOS and Linux (via Homebrew)
@@ -21,12 +32,12 @@ This installs a native binary with no Python dependencies required.
 
 Download pre-built binaries directly from the [GitHub Releases page](https://github.com/teamlumos/lumos-cli/releases):
 
-| Platform | Architecture          | Download                          |
-| -------- | --------------------- | --------------------------------- |
-| Linux    | AMD64 (x86_64)        | `lumos-linux-amd64-vX.X.X.tar.gz` |
-| Linux    | ARM64                 | `lumos-linux-arm64-vX.X.X.tar.gz` |
-| macOS    | ARM64 (Apple Silicon) | `lumos-macos-arm64-vX.X.X.tar.gz` |
-| Windows  | x86_64                | `lumos-windows-vX.X.X.tar.gz`     |
+| Platform | Architecture | Download |
+|----------|--------------|----------|
+| Linux | AMD64 (x86_64) | `lumos-linux-amd64-vX.X.X.tar.gz` |
+| Linux | ARM64 | `lumos-linux-arm64-vX.X.X.tar.gz` |
+| macOS | ARM64 (Apple Silicon) | `lumos-macos-arm64-vX.X.X.tar.gz` |
+| Windows | x86_64 | `lumos-windows-vX.X.X.tar.gz` |
 
 ### Linux/macOS Installation
 
@@ -48,6 +59,7 @@ lumos --version
 2. Extract the archive
 3. Add the extracted directory to your PATH
 4. Open a new terminal and run `lumos --version`
+
 
 ## Install from Source
 

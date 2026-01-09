@@ -1,6 +1,16 @@
+---
+title: Command Line Interface
+slug: cli
+category:
+  uri: TOOLS
+content:
+  excerpt:
+    Welcome to the Lumos CLI documentation.
+---
+
 # Lumos CLI Documentation
 
-Welcome to the Lumos CLI documentation. The Lumos CLI is a command-line interface for interacting with the Lumos platform, enabling you to manage access requests, list resources, and automate workflows.
+Welcome to the [Lumos CLI](https://github.com/teamlumos/lumos-cli) documentation. The Lumos CLI is a command-line interface for interacting with the Lumos platform, enabling you to manage access requests, list resources, and automate workflows.
 
 ## Quick Start
 
@@ -29,25 +39,21 @@ lumos request
 - **Scriptable**: Output in JSON or CSV for automation
 - **Interactive Mode**: User-friendly prompts for selecting apps and permissions
 
+## Reporting Issues
+
+If you run into issues, please reach out to your Lumos admin or your Lumos contact for support. You can also open an issue [here](https://github.com/teamlumos/lumos-cli/issues/new).
+
+
 ## Table of Contents
 
 ```{toctree}
-:maxdepth: 2
-:caption: User Guide
+:maxdepth: 1
+:caption: Docs
 
 installation
+authentication
+reference
 examples
-```
-
-```{toctree}
-:maxdepth: 3
-:caption: Reference
-
-cli-reference
-```
-
-```{toctree}
-:maxdepth: 1
-:caption: Contributing
 contributing
+
 ```

@@ -18,6 +18,11 @@ plugins:
         uv version ${nextRelease.version}
         uv sync --group docs
         make -C docs docs
+      successCmd: |
+        export DEBUG=rdme*
+        echo "Publishing documentation to readme.io..."
+        rdme docs docs/src/_build/readme-io
+        echo "✅ Documentation published to readme.io"
 
   - - "@semantic-release/git"
     - message: 'chore(release): ${nextRelease.version} \n\n${nextRelease.notes}'
@@ -34,9 +39,3 @@ plugins:
           label: "macOS Binary"
         - path: "lumos-windows-*.tar.gz"
           label: "Windows Binary"
-        - path: "lumos-*.whl"
-          label: "Python Wheel"
-
-  - - "@qiwi/semantic-release-gh-pages-plugin"
-    - src: docs/sphinx/_build/html
-      msg: "docs: update documentation for ${nextRelease.version}"

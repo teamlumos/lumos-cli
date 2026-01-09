@@ -15,7 +15,7 @@ Only edit documentation in these locations:
 | Location | Purpose |
 |----------|---------|
 | `README.md` | Project overview and quickstart |
-| `docs/sphinx/*.md` | Detailed documentation source files |
+| `docs/src/*.md` | Detailed documentation source files |
 
 ## Never Edit Directly
 
@@ -23,7 +23,7 @@ Only edit documentation in these locations:
 
 ## Building Docs
 
-After editing any files in `docs/sphinx/`, rebuild the documentation:
+After editing any files in `docs/src/`, rebuild the documentation:
 
 ```bash
 make -C docs docs
@@ -31,7 +31,7 @@ make -C docs docs
 
 This generates:
 - `docs/*.md` - Markdown output for GitHub viewing
-- `docs/sphinx/_build/html/` - HTML documentation
+- `docs/src/_build/html/` - HTML documentation
 
 ## README Guidelines
 
@@ -61,7 +61,7 @@ See the [CLI Reference](docs/cli-reference.md) for all available commands.
 
 ## Sphinx Source Files
 
-When editing `docs/sphinx/*.md`:
+When editing `docs/src/*.md`:
 
 - Follow existing formatting conventions
 - Use proper Sphinx/MyST markdown syntax

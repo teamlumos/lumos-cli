@@ -1,6 +1,17 @@
-# CLI Reference
+---
+title: Reference
+slug: cli-reference
+category:
+  uri: TOOLS
+content:
+  excerpt: Lumos CLI Reference
+parent:
+  uri: cli
+---
 
-This page provides a complete reference for all Lumos CLI commands with live examples.
+# Reference
+
+This page provides a complete reference for all Lumos CLI commands.
 
 ```{click:source}
 :hide-source:

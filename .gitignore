@@ -11,4 +11,4 @@ venv/
 node_modules/
 
 # Documentation build output
-docs/sphinx/_build/
+docs/src/_build/
