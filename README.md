@@ -34,7 +34,7 @@ lumos request
 
 - **[Installation](docs/installation.md)** - Detailed installation instructions for all platforms
 - **[Examples](docs/examples.md)** - Usage examples with code samples
-- **[CLI Reference](docs/cli-reference.md)** - Complete command reference
+- **[CLI Reference](docs/reference.md)** - Complete command reference
 
 Online documentation: [teamlumos.github.io/lumos-cli](https://teamlumos.github.io/lumos-cli/)
 

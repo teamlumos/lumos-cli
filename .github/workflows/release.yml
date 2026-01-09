@@ -98,7 +98,8 @@ jobs:
 
       - name: Install Modules
         run: |
-          npm install \
+          npm install -g \
+            rdme \
             @semantic-release/git \
             @semantic-release/changelog \
             @semantic-release/exec \
@@ -113,6 +114,7 @@ jobs:
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          RDME_API_KEY: ${{ secrets.README_API_KEY }}
           GIT_AUTHOR_EMAIL: "${{ steps.bot-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
           GIT_COMMITTER_EMAIL: "${{ steps.bot-user-id.outputs.user-id }}+${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com"
         run: npx semantic-release
@@ -137,149 +139,3 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/teamlumos/homebrew-tap/dispatches \
             -d '{"event_type": "release", "client_payload": {"version": "${{ needs.prepare.outputs.new-release-version }}"}}'
-
-  publish-changelog:
-    name: Publish Changelog to readme.io
-    needs: [prepare, release]
-    if: inputs.dry-run != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-
-      - name: Install rdme CLI
-        run: npm install -g rdme
-
-      - name: Extract release notes
-        id: release-notes
-        run: |
-          VERSION="v${{ needs.prepare.outputs.new-release-version }}"
-          
-          # Extract the changelog section for this version
-          # The changelog format is: # [X.Y.Z](url) (date) followed by content until the next # [
-          CHANGELOG_CONTENT=$(awk -v ver="${VERSION#v}" '
-            /^# \[/ {
-              if (found) exit
-              if ($0 ~ "\\[" ver "\\]") found=1
-            }
-            found
-          ' CHANGELOG.md)
-          
-          # Write to file for the API call
-          echo "$CHANGELOG_CONTENT" > release_notes.md
-          
-          # Set output for use in subsequent steps
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Publish changelog to readme.io
-        env:
-          RDME_API_KEY: ${{ secrets.README_API_KEY }}
-        run: |
-          VERSION="${{ steps.release-notes.outputs.version }}"
-          TITLE="Lumos CLI ${VERSION}"
-          
-          # Create changelog entry JSON
-          cat > changelog_entry.json << EOF
-          {
-            "title": "${TITLE}",
-            "type": "added",
-            "body": $(cat release_notes.md | jq -Rs .)
-          }
-          EOF
-          
-          echo "Publishing changelog for ${VERSION} to readme.io..."
-          
-          # Use rdme to create changelog entry
-          # Note: rdme changelogs command creates entries at https://developers.lumos.com/changelog
-          rdme changelogs changelog_entry.json --key "$RDME_API_KEY" || {
-            echo "Warning: Failed to publish changelog via rdme, attempting direct API call..."
-            
-            # Fallback to direct API call if rdme doesn't support the format
-            curl -X POST "https://dash.readme.com/api/v1/changelogs" \
-              -H "Authorization: Basic $(echo -n "${RDME_API_KEY}:" | base64)" \
-              -H "Content-Type: application/json" \
-              -d @changelog_entry.json
-          }
-          
-          echo ""
-          echo "=================================================="
-          echo "✅ Changelog published to readme.io"
-          echo "=================================================="
-          echo ""
-          echo "View at: https://developers.lumos.com/changelog"
-          echo ""
-
-  publish-docs:
-    name: Publish Documentation to readme.io
-    needs: [prepare, release]
-    if: inputs.dry-run != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10.6'
-
-      - name: Setup UV
-        uses: astral-sh/setup-uv@v4
-        with:
-          version: latest
-          enable-cache: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-
-      - name: Install rdme CLI
-        run: npm install -g rdme
-
-      - name: Install Python dependencies
-        run: uv sync --group docs
-
-      - name: Build documentation
-        run: make -C docs docs
-
-      - name: Publish docs to readme.io (Draft for review)
-        env:
-          RDME_API_KEY: ${{ secrets.README_API_KEY }}
-        run: |
-          VERSION="${{ needs.prepare.outputs.new-release-version }}"
-          
-          echo "Publishing documentation as draft for version ${VERSION}..."
-          
-          # First publish as a new draft version for review
-          rdme docs docs/readme.io/ \
-            --key "$RDME_API_KEY" \
-            --version "${VERSION}" \
-            --create-version || rdme docs docs/readme.io/ \
-            --key "$RDME_API_KEY" \
-            --version "${VERSION}"
-          
-          echo ""
-          echo "=================================================="
-          echo "📝 Documentation published as draft version ${VERSION}"
-          echo "=================================================="
-          echo ""
-          echo "To review and make public:"
-          echo "1. Go to https://dash.readme.com/project/lumos-developers"
-          echo "2. Review the documentation in version '${VERSION}'"
-          echo "3. When ready, promote this version to stable"
-          echo ""
-          echo "Documentation will be visible at:"
-          echo "https://developers.lumos.com/reference/lumos-cli"
-          echo ""

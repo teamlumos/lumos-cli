@@ -1,8 +1,22 @@
+---
+title: Contributing
+slug: cli-contributing
+category:
+  uri: TOOLS
+content:
+  excerpt: Authenticating the Lumos CLI
+parent:
+  uri: cli
+---
 # Contributing to Lumos CLI
 
 Thank you for your interest in contributing to the Lumos CLI! This document provides guidelines and instructions for contributors and maintainers.
 
-## Development Setup
+## Reporting issues
+
+Please report issues [here](https://github.com/teamlumos/lumos-cli/issues/new) or contact Lumos directly.
+
+## Development
 
 ### Prerequisites
 
@@ -181,19 +195,19 @@ make -C docs html      # HTML only
 make -C docs markdown  # Markdown only
 
 # View the HTML docs
-open docs/sphinx/_build/html/index.html
+open docs/src/_build/html/index.html
 ```
 
 ### Documentation Structure
 
-Source files (in `docs/sphinx/`):
-- `docs/sphinx/index.md` - Main landing page
-- `docs/sphinx/installation.md` - Installation instructions
-- `docs/sphinx/examples.md` - Usage examples with code samples
-- `docs/sphinx/cli-reference.md` - CLI reference with live examples (via click-extra sphinx)
+Source files (in `docs/src/`):
+- `docs/src/index.md` - Main landing page
+- `docs/src/installation.md` - Installation instructions
+- `docs/src/examples.md` - Usage examples with code samples
+- `docs/src/reference.md` - CLI reference with live examples (via click-extra sphinx)
 
 Generated output:
-- `docs/sphinx/_build/html/` - HTML documentation (deployed to GitHub Pages via semantic-release)
+- `docs/src/_build/html/` - HTML documentation (deployed to GitHub Pages via semantic-release)
 - `docs/*.md` - Markdown documentation (copied from build, committed during releases)
 
 ### Using click-extra Sphinx Directives

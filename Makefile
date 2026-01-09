@@ -3,24 +3,23 @@
 SPHINXOPTS    ?=
 SPHINXBUILD   ?= uv run sphinx-build
 GIT_ROOT      = $(shell git rev-parse --show-toplevel)
-SPHINXDIR     = $(GIT_ROOT)/docs/sphinx
+SPHINXDIR     = $(GIT_ROOT)/docs/src
 BUILDDIR      = $(SPHINXDIR)/_build
 
-.PHONY: help clean html markdown readme-io docs
+.PHONY: help clean html markdown readmeio docs
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@echo "Available targets:"
 	@echo "  html      - Build HTML documentation"
 	@echo "  markdown  - Build Markdown documentation"
-	@echo "  readme-io - Generate readme.io docs with frontmatter"
+	@echo "  readmeio - Generate readme.io docs with frontmatter"
 	@echo "  docs      - Build all (markdown, html, and readme.io)"
 	@echo "  clean     - Remove build artifacts"
 
 # Clean build directory
 clean:
 	rm -rf $(BUILDDIR)
-	rm -f *.md
 
 # Build HTML documentation
 html:
@@ -31,13 +30,13 @@ html:
 markdown:
 	@$(SPHINXBUILD) -M markdown "$(SPHINXDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
 	@echo "Build finished. The Markdown files are in $(BUILDDIR)/markdown."
-	@cp $(BUILDDIR)/markdown/*.md .
+	@cp $(BUILDDIR)/markdown/*.md $(GIT_ROOT)/docs/
 	@echo "Markdown files copied to docs/"
 
 # Generate readme.io documentation with YAML frontmatter
-readme-io: markdown
-	@uv run python scripts/generate_readme_docs.py --source-dir $(BUILDDIR)/markdown --output-dir $(BUILDDIR)/readme-io
-	@echo "readme.io docs generated in $(BUILDDIR)/readme-io/"
+readmeio:
+	@$(SPHINXBUILD) -M readmeio "$(SPHINXDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
+	@echo "readme.io docs generated in $(BUILDDIR)/readmeio/"
 
 # Build all documentation
-docs: markdown html readme-io
+docs: clean markdown html readmeio
