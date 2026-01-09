@@ -1,6 +1,6 @@
 ---
 title: Examples
-slug: cli-authentication
+slug: cli-examples
 category:
   uri: TOOLS
 content:
