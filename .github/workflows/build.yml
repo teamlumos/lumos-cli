@@ -148,7 +148,7 @@ jobs:
       - name: Update version
         shell: bash
         if: inputs.version != ''
-        run: uv version ${inputs.version}
+        run: uv version ${{ inputs.version }}
 
       - name: Build wheel
         shell: bash
@@ -206,7 +206,7 @@ jobs:
       - name: Update version
         shell: bash
         if: inputs.version != ''
-        run: uv version ${inputs.version}
+        run: uv version ${{ inputs.version }}
 
       - name: Install dependencies
         shell: bash
