@@ -48,14 +48,14 @@ docs = [
     "sphinx-rtd-theme>=2.0.0,<3",
     "pygments-ansi-color>=0.3.0,<1",
     "sphinx-markdown-builder>=0.6.0,<1",
-    "sphinx-readme-io"
+    "sphinx-rdme"
 ]
 
 [tool.uv]
 default-groups = "all"
 
 [tool.uv.sources]
-sphinx-readme-io = { git = "https://github.com/jasondamour/sphinx-readme-io" }
+sphinx-rdme = { git = "https://github.com/jasondamour/sphinx-rdme" }
 
 [build-system]
 requires = ["hatchling"]

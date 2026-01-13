@@ -39,7 +39,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.napoleon",
     "sphinx_markdown_builder",
-    "sphinx_readme_io",
+    "sphinx_rdme",
 ]
 
 # MyST Parser configuration

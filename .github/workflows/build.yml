@@ -60,7 +60,7 @@ jobs:
           RDME_API_KEY: ${{ secrets.RDME_API_KEY }}
         run: |
           npm install -g rdme
-          rdme docs upload docs/src/_build/readmeio/ --dry-run
+          rdme docs upload docs/src/_build/rdme/ --dry-run
 
   lint:
     name: Lint and Type Check

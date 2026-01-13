@@ -6,14 +6,14 @@ GIT_ROOT      = $(shell git rev-parse --show-toplevel)
 SPHINXDIR     = $(GIT_ROOT)/docs/src
 BUILDDIR      = $(SPHINXDIR)/_build
 
-.PHONY: help clean html markdown readmeio docs
+.PHONY: help clean html markdown rdme docs
 
 # Put it first so that "make" without argument is like "make help".
 help:
 	@echo "Available targets:"
 	@echo "  html      - Build HTML documentation"
 	@echo "  markdown  - Build Markdown documentation"
-	@echo "  readmeio - Generate readme.io docs with frontmatter"
+	@echo "  rdme      - Generate readme.io docs with frontmatter"
 	@echo "  docs      - Build all (markdown, html, and readme.io)"
 	@echo "  clean     - Remove build artifacts"
 
@@ -33,10 +33,10 @@ markdown:
 	@cp $(BUILDDIR)/markdown/*.md $(GIT_ROOT)/docs/
 	@echo "Markdown files copied to docs/"
 
-# Generate readme.io documentation with YAML frontmatter
-readmeio:
-	@$(SPHINXBUILD) -M readmeio "$(SPHINXDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
-	@echo "readme.io docs generated in $(BUILDDIR)/readmeio/"
+# Generate rdme documentation with YAML frontmatter
+rdme:
+	@$(SPHINXBUILD) -M rdme "$(SPHINXDIR)" "$(BUILDDIR)" $(SPHINXOPTS)
+	@echo "Build finished. The rdme files are in $(BUILDDIR)/rdme."
 
 # Build all documentation
-docs: clean markdown html readmeio
+docs: clean markdown html rdme
