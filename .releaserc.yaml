@@ -12,10 +12,14 @@ plugins:
 
   - "@semantic-release/changelog"
 
+  # semantic-release-pypi handles version updates in pyproject.toml
+  # pypiPublish is false because we use PyPI trusted publishers in a separate job
+  - - "semantic-release-pypi"
+    - pypiPublish: false
+
   - - "@semantic-release/exec"
     - verifyReleaseCmd: echo "new-release-version=${nextRelease.version}" >> $GITHUB_OUTPUT
-      prepareCommand: |
-        uv version ${nextRelease.version}
+      prepareCmd: |
         uv sync --group docs
         make -C docs docs
       successCmd: |
