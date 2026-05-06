@@ -8,10 +8,21 @@ on:
         required: false
         type: boolean
         default: false
+      test-publish-to-pypi:
+        description: "Publish a manual test build to PyPI without creating a tag/release"
+        required: false
+        type: boolean
+        default: false
+      test-version:
+        description: "Version for test publish (must be unique on PyPI, e.g. 2.3.0.dev123)"
+        required: false
+        type: string
+        default: ""
 
 jobs:
   prepare:
     name: Determine next version
+    if: inputs.test-publish-to-pypi != true
     runs-on: ubuntu-latest
     outputs:
       new-release-version: ${{ steps.semantic.outputs.new-release-version }}
@@ -50,7 +61,7 @@ jobs:
   build:
     name: Build
     needs: prepare
-    if: needs.prepare.outputs.new-release-version != ''
+    if: inputs.test-publish-to-pypi != true && needs.prepare.outputs.new-release-version != ''
     uses: ./.github/workflows/build.yml
     with:
       version: ${{ needs.prepare.outputs.new-release-version }}
@@ -60,7 +71,7 @@ jobs:
   release:
     name: Create Release
     needs: [prepare, build]
-    if: inputs.dry-run != 'true'
+    if: inputs.test-publish-to-pypi != true && inputs.dry-run != 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -139,7 +150,7 @@ jobs:
   release-homebrew:
     name: Release Homebrew Tap
     needs: [prepare, release]
-    if: inputs.dry-run != 'true'
+    if: inputs.test-publish-to-pypi != true && inputs.dry-run != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/create-github-app-token@v2
@@ -156,3 +167,43 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/teamlumos/homebrew-tap/dispatches \
             -d '{"event_type": "release", "client_payload": {"version": "${{ needs.prepare.outputs.new-release-version }}"}}'
+
+  test-publish:
+    name: Test Publish to PyPI (DO NOT MERGE)
+    if: inputs.test-publish-to-pypi == true
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/lumos-identity-cli/
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate test version input
+        shell: bash
+        run: |
+          if [ -z "${{ inputs.test-version }}" ]; then
+            echo "::error::test-version is required when test-publish-to-pypi=true"
+            exit 1
+          fi
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10.6'
+
+      - name: Setup UV
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: latest
+
+      - name: Build test distribution
+        shell: bash
+        run: |
+          uv version "${{ inputs.test-version }}"
+          uv build
+
+      - name: Publish test build to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
