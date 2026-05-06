@@ -376,7 +376,7 @@ wheels = [
 ]
 
 [[package]]
-name = "lumos"
+name = "lumos-identity-cli"
 version = "2.3.0"
 source = { editable = "." }
 dependencies = [

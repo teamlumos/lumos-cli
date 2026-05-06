@@ -10,6 +10,12 @@ A command-line interface for the Lumos platform. Manage access requests, list re
 brew install teamlumos/tap/lumos
 ```
 
+### PyPI (Python environments)
+
+```shell
+pip install lumos-identity-cli
+```
+
 ### Other Methods
 
 See [Installation Guide](docs/installation.md) for pip, uv, and binary installation options.
