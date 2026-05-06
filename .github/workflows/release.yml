@@ -64,7 +64,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/lumos/
+      url: https://pypi.org/project/lumos-identity-cli/
     permissions:
       contents: write  # For creating releases and pushing commits
       id-token: write  # For PyPI trusted publishing via OIDC
