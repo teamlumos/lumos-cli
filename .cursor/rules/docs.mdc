@@ -26,7 +26,7 @@ Only edit documentation in these locations:
 After editing any files in `docs/src/`, rebuild the documentation:
 
 ```bash
-make -C docs docs
+make docs
 ```
 
 This generates:
@@ -66,4 +66,4 @@ When editing `docs/src/*.md`:
 - Follow existing formatting conventions
 - Use proper Sphinx/MyST markdown syntax
 - Include cross-references where appropriate
-- Always rebuild with `make -C docs docs` after changes
+- Always rebuild with `make docs` after changes

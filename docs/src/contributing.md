@@ -188,11 +188,11 @@ Documentation is built using [Sphinx](https://www.sphinx-doc.org/) with [MyST Ma
 uv sync --group docs
 
 # Build both HTML and Markdown, copy markdown to docs/
-make -C docs docs
+make docs
 
 # Or build individually:
-make -C docs html      # HTML only
-make -C docs markdown  # Markdown only
+make html      # HTML only
+make markdown  # Markdown only
 
 # View the HTML docs
 open docs/src/_build/html/index.html

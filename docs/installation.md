@@ -10,13 +10,19 @@ brew install teamlumos/tap/lumos
 
 This installs a native binary with no Python dependencies required.
 
-## Python (PyPI)
+## Python (via PyPI)
 
-Install from PyPI when you want the Python package:
+Install the CLI from [PyPI](https://pypi.org/project/lumos-identity-cli/) with pip or uv:
 
 ```bash
 pip install lumos-identity-cli
 ```
+
+```bash
+uv tool install lumos-identity-cli
+```
+
+Requires Python 3.10.6 or newer. After installation, run `lumos --version` to verify.
 
 ### Supported Platforms
 
