@@ -21,11 +21,11 @@ plugins:
     - verifyReleaseCmd: echo "new-release-version=${nextRelease.version}" >> $GITHUB_OUTPUT
       prepareCmd: |
         uv sync --group docs
-        make -C docs docs
+        make docs
       successCmd: |
         export DEBUG=rdme*
         echo "Publishing documentation to readme.io..."
-        rdme docs docs/src/_build/readme-io
+        rdme docs docs/src/_build/rdme
         echo "✅ Documentation published to readme.io"
 
   - - "@semantic-release/git"
