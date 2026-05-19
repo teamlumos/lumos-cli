@@ -189,7 +189,7 @@ wheels = [
 
 [[package]]
 name = "click-extra"
-version = "7.4.0"
+version = "7.16.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boltons" },
@@ -202,9 +202,9 @@ dependencies = [
     { name = "tomli", marker = "python_full_version < '3.11'" },
     { name = "wcmatch" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/50/2a/79e85d7683fd97037326dbdad60524c075ef01dad2adad0a6d6fa40c41a4/click_extra-7.4.0.tar.gz", hash = "sha256:869cd811074a4c5049fb241087e55242bf36ee328133ae932f37730833d9b9d9", size = 86763, upload-time = "2025-12-08T05:06:28.587Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5e/02/d180104019150d340049dccc41f17d9ba0c3363c44767b01b029716d259b/click_extra-7.16.1.tar.gz", hash = "sha256:a616651275a9673ed4930976a1d6bdd93dc04325cf475ccc38399b0c4396644e", size = 190154, upload-time = "2026-05-15T06:53:28.075Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5f/8e/61d484461ead9f2c971ba11a9ee591aed0c0e707b2e4ac28ddc26e65e486/click_extra-7.4.0-py3-none-any.whl", hash = "sha256:f827066818b8f41e83189793e64dcd67425b228f62332597e02d3ec9cf4711b5", size = 102505, upload-time = "2025-12-08T05:06:27.164Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/91/81c0dacf90bc8d9f778ef74e3993cad0e7c99647afd7352a6e9769c0398c/click_extra-7.16.1-py3-none-any.whl", hash = "sha256:d83cb123f82f13d95bc5d0ffa3d049c3bcdb55278105d0a77059eb0735e9286e", size = 208248, upload-time = "2026-05-15T06:53:26.535Z" },
 ]
 
 [[package]]
@@ -277,15 +277,6 @@ wheels = [
 ]
 
 [[package]]
-name = "distro"
-version = "1.9.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/fc/f8/98eea607f65de6527f8a2e8885fc8015d3e6f5775df186e443e0964a11c3/distro-1.9.0.tar.gz", hash = "sha256:2fa77c6fd8940f116ee1d6b94a2f90b13b5ea8d019b98bc8bafdcabcdd9bdbed", size = 60722, upload-time = "2023-12-24T09:54:32.31Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/b3/231ffd4ab1fc9d679809f356cebee130ac7daa00d6d6f3206dd4fd137e9e/distro-1.9.0-py3-none-any.whl", hash = "sha256:7bffd925d65168f85027d8da9af6bddab658135b840670a223589bc0c8ef02b2", size = 20277, upload-time = "2023-12-24T09:54:30.421Z" },
-]
-
-[[package]]
 name = "docutils"
 version = "0.20.1"
 source = { registry = "https://pypi.org/simple" }
@@ -308,14 +299,11 @@ wheels = [
 
 [[package]]
 name = "extra-platforms"
-version = "6.0.0"
+version = "12.0.3"
 source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "distro" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/df/73e313d4ecca7b703b6f369d9ed0c2c0d4d8a149e1c675e9915f8426a513/extra_platforms-6.0.0.tar.gz", hash = "sha256:ff0d392e390d2447183af4b300dd4569d2dbf760adf1e30c2b0cefb30ee58488", size = 45977, upload-time = "2026-01-02T09:15:41.019Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4c/f6/a20c4586c9bd653f596258455652725405f4b734e6270f7fc07a1a498932/extra_platforms-12.0.3.tar.gz", hash = "sha256:0a3201a05f93f18c840f3e9970d33f756a621eea719cbdfa24a514f96c79de7e", size = 72879, upload-time = "2026-04-29T06:47:18.131Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/99/13/0a6a20bd85679d30d8e85d4e63397f8deabe2e9614d6a656ad3e02a76fb7/extra_platforms-6.0.0-py3-none-any.whl", hash = "sha256:732619d1f7db602e12189a66a7de7d8492607452c2d1b5444952174e92864ed0", size = 53001, upload-time = "2026-01-02T09:15:42.193Z" },
+    { url = "https://files.pythonhosted.org/packages/46/ef/efc376476f41868ca834b30ed100b250d53da2b4929ee8e63ef48e7b0b03/extra_platforms-12.0.3-py3-none-any.whl", hash = "sha256:b6b7fad4b41e1f9f161cc74c03d963e43a3a34e0ee1991943314685314b01cf6", size = 76128, upload-time = "2026-04-29T06:47:16.945Z" },
 ]
 
 [[package]]
@@ -413,7 +401,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click-extra", specifier = ">=7.4.0,<8" },
+    { name = "click-extra", specifier = ">=7.10.0,<8" },
     { name = "pick", specifier = ">=2.2.0,<3" },
     { name = "pydantic", specifier = ">=2.6.0,<3" },
     { name = "pytz", specifier = ">=2024.1" },

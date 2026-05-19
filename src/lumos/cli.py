@@ -15,7 +15,7 @@ client = ApiClient()
 
 @group(
     context_settings={"help_option_names": ["-h", "--help"]},
-    version=__version__,
+    version_fields={"version": __version__},
 )
 @option("--debug", is_flag=True, help="Enable debug mode", hidden=True)
 @pass_context
