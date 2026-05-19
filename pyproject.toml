@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "click-extra>=7.4.0,<8",
+    "click-extra>=7.10.0,<8",
     "pick>=2.2.0,<3",
     "pydantic>=2.6.0,<3",
     "pytz>=2024.1",
