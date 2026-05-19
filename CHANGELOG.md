@@ -1,3 +1,15 @@
+## [2.4.1](https://github.com/teamlumos/lumos-cli/compare/v2.4.0...v2.4.1) (2026-05-19)
+
+
+### Bug Fixes
+
+* release to pypi ([61057c0](https://github.com/teamlumos/lumos-cli/commit/61057c0218787d30d22c69a06dbe2a17a646ca2d))
+
+
+### Reverts
+
+* Revert "test(ci): add manual PyPI test-publish path" ([bff18ee](https://github.com/teamlumos/lumos-cli/commit/bff18ee0eeee48fa33c90ce9ae0929800c5a3858))
+
 # [2.4.0](https://github.com/teamlumos/lumos-cli/compare/v2.3.0...v2.4.0) (2026-01-09)
 
 
