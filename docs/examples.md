@@ -375,7 +375,7 @@ lumos list apps --csv > apps.csv
 All `list` commands support multiple output formats:
 
 | Format  | Flag        | Use Case                       |
-| ------- | ----------- | ------------------------------ |
+|:--------|:------------|:-------------------------------|
 | Table   | (default)   | Human-readable terminal output |
 | JSON    | `--json`    | Scripting and API integration  |
 | CSV     | `--csv`     | Spreadsheet import/export      |

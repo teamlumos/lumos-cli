@@ -5,6 +5,7 @@ These tests validate the end-user experience by testing CLI structure,
 options, and help text without making actual API calls.
 """
 
+import os
 from unittest.mock import patch
 from uuid import UUID
 
@@ -84,7 +85,11 @@ def mock_access_request(mock_user, mock_app, mock_permission):
 
 @pytest.fixture
 def runner():
-    return CliRunner()
+    # GitHub Actions sets FORCE_COLOR=1; click-extra 7.10+ then highlights help
+    # keywords with ANSI codes, which breaks plain-string assertions.
+    env = os.environ.copy()
+    env["FORCE_COLOR"] = "0"
+    return CliRunner(env=env)
 
 
 class TestMainCLI:
