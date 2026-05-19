@@ -30,7 +30,7 @@ pip install lumos-identity-cli
 Download pre-built binaries directly from the [GitHub Releases page](https://github.com/teamlumos/lumos-cli/releases):
 
 | Platform | Architecture          | Download                          |
-| -------- | --------------------- | --------------------------------- |
+|:---------|:----------------------|:----------------------------------|
 | Linux    | AMD64 (x86_64)        | `lumos-linux-amd64-vX.X.X.tar.gz` |
 | Linux    | ARM64                 | `lumos-linux-arm64-vX.X.X.tar.gz` |
 | macOS    | ARM64 (Apple Silicon) | `lumos-macos-arm64-vX.X.X.tar.gz` |
