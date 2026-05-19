@@ -42,6 +42,10 @@ extensions = [
     "sphinx_rdme",
 ]
 
+# Required for {click:run} / {click:source} directives in docs/src/reference.md.
+# click-extra 7.10+ gates build-time CLI execution behind this opt-in flag.
+click_extra_enable_exec_directives = True
+
 # MyST Parser configuration
 myst_enable_extensions = [
     "colon_fence",

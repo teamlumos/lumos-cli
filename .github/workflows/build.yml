@@ -44,7 +44,7 @@ jobs:
       - name: Check for uncommitted documentation changes
         run: |
           if [ -n "$(git status --porcelain docs/)" ]; then
-            echo "::error::Generated documentation is out of date. Please run 'make -C docs docs' and commit the changes."
+            echo "::error::Generated documentation is out of date. Please run 'make docs' and commit the changes."
             echo ""
             echo "The following files have uncommitted changes:"
             git status --porcelain docs/
