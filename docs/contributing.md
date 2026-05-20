@@ -253,7 +253,7 @@ uv version X.Y.Z
 
 # Build artifacts
 uv build
-uv run pyinstaller src/lumos/__main__.py
+uv run pyinstaller src/lumos/__main__.py --collect-data click_extra
 
 # Create and push tag
 git tag vX.Y.Z
