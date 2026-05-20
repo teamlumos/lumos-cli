@@ -1,3 +1,13 @@
+## [2.4.2](https://github.com/teamlumos/lumos-cli/compare/v2.4.1...v2.4.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* **ci:** bundle click-extra data and stabilize doc config paths ([ca4797e](https://github.com/teamlumos/lumos-cli/commit/ca4797ecf07e3ddfc6687f421fd032115d668bd3))
+* **cli:** use click-extra version_fields for PyPI installs ([90f99b3](https://github.com/teamlumos/lumos-cli/commit/90f99b36efcec5cfd4f24f01a46871b25e5c8466))
+* **docs:** stabilize CLI help wrapping for CI validation ([4bbbfe3](https://github.com/teamlumos/lumos-cli/commit/4bbbfe376bbcec425bed094ac4a075395861f41e))
+* **tests,docs:** align with click-extra 7.16 help output ([ff29235](https://github.com/teamlumos/lumos-cli/commit/ff292352701df9f7c214fd1ab44c56301eb5bdd8))
+
 ## [2.4.1](https://github.com/teamlumos/lumos-cli/compare/v2.4.0...v2.4.1) (2026-05-19)
 
 
