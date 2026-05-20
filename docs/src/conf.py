@@ -6,6 +6,11 @@
 import os
 import sys
 
+# Stabilize click help wrapping in generated docs across dev machines and CI.
+import click.formatting
+
+click.formatting.FORCED_WIDTH = 78
+
 # Add the source directory to the path for autodoc
 sys.path.insert(0, os.path.abspath("../../src"))
 
