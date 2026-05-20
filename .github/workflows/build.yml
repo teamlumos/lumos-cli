@@ -209,7 +209,7 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          uv run pyinstaller src/lumos/__main__.py --name lumos
+          uv run pyinstaller src/lumos/__main__.py --name lumos --collect-data click_extra
           VERSION="${{ inputs.version || 'dev' }}"
           tar -czf lumos-${{ matrix.platform }}-v${VERSION}.tar.gz -C ./dist/lumos .
 

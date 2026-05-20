@@ -32,6 +32,8 @@ markdown:
 	@echo "Build finished. The Markdown files are in $(BUILDDIR)/markdown."
 	@cp $(BUILDDIR)/markdown/*.md $(GIT_ROOT)/docs/
 	@echo "Markdown files copied to docs/"
+	@# Normalize platform-specific config paths so docs/reference.md matches Linux CI.
+	@perl -i -pe 's{~/Library/Application Support/lumos}{~/.config/lumos}g' $(GIT_ROOT)/docs/reference.md
 
 # Generate rdme documentation with YAML frontmatter
 rdme:
