@@ -145,6 +145,12 @@ class BaseClient:
             time.sleep(retry)
             return self._send_request(method, endpoint, body, params, retry)
         if response.status_code == 401:
+            if os.environ.get("LUMOS_CHECK_ONLY"):
+                echo(
+                    "Not logged in (credential is missing, invalid, or expired).",
+                    err=True,
+                )
+                raise SystemExit(1)
             if retry > 1 or not (scope := os.environ.get("SCOPE")):
                 echo(
                     "Something went wrong with authorization. Try logging in again.",
