@@ -52,6 +52,12 @@ Get just the user ID:
 lumos whoami --id
 ```
 
+Check auth status from a script without triggering an interactive login:
+
+```bash
+lumos whoami --check && echo "logged in" || echo "not logged in"
+```
+
 ## Listing Resources
 
 ### List Apps

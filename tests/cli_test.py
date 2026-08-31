@@ -147,6 +147,63 @@ class TestWhoamiCommand:
         assert result.exit_code == 0
         assert "--username" in result.output
         assert "--id" in result.output
+        assert "--check" in result.output
+
+
+class TestWhoamiCheckFlag:
+    """Test whoami --check: it must never open a browser or block on OAuth."""
+
+    def teardown_method(self):
+        # _set_check_only writes directly to os.environ (it has to run before
+        # the eager option is exposed as a kwarg), so it doesn't get the
+        # automatic monkeypatch teardown. Clean it up explicitly per test.
+        os.environ.pop("LUMOS_CHECK_ONLY", None)
+        os.environ.pop("API_KEY", None)
+        os.environ.pop("SCOPE", None)
+
+    def test_check_exits_nonzero_when_no_credential_present(self, runner, monkeypatch, tmp_path):
+        """No key file, no API_KEY env: --check should fail fast, not prompt/login."""
+        monkeypatch.delenv("API_KEY", raising=False)
+        monkeypatch.setattr("lumos.common.helpers.key_file_path", lambda: tmp_path / "missing")
+
+        with (
+            patch("lumos.cli.client.get_current_user") as mock_get_user,
+            patch("lumos.common.helpers.login") as mock_login,
+        ):
+            result = runner.invoke(lumos, ["whoami", "--check"])
+
+        assert result.exit_code != 0
+        mock_login.assert_not_called()
+        mock_get_user.assert_not_called()
+
+    def test_check_proceeds_when_credential_file_present(self, runner, monkeypatch, tmp_path, mock_user):
+        """A key file on disk should be enough for --check to pass through,
+        with no interactive prompt and no login call."""
+        key_file = tmp_path / "key"
+        key_file.write_text("user:some-token")
+        monkeypatch.delenv("API_KEY", raising=False)
+        monkeypatch.setattr("lumos.common.helpers.key_file_path", lambda: key_file)
+        # read_key() resolves key_file_path() via its own module reference,
+        # not helpers', so it must be patched too or this reads the real
+        # ~/.lumos on the machine running the tests.
+        monkeypatch.setattr("lumos.common.keyhelpers.key_file_path", lambda: key_file)
+
+        with (
+            patch("lumos.cli.client.get_current_user", return_value=mock_user),
+            patch("lumos.common.helpers.login") as mock_login,
+        ):
+            result = runner.invoke(lumos, ["whoami", "--check"])
+
+        assert result.exit_code == 0
+        mock_login.assert_not_called()
+        assert "Test User" in result.output
+
+    def test_without_check_flag_behavior_is_unchanged(self, runner):
+        """Sanity check: omitting --check leaves the pre-existing decorator
+        code path (setup(show_prompt=True)) untouched."""
+        result = runner.invoke(lumos, ["whoami", "--help"])
+        assert result.exit_code == 0
+        assert "Show information about the currently logged in user" in result.output
 
 
 class TestSetupCommand:
