@@ -85,16 +85,20 @@ def logout():
 
 
 @group(name="nhi")
-def nhi():
+@pass_context
+def nhi(ctx: Context) -> None:
     """Non-human identity commands."""
+    host = os.environ.get("LUMOS_HTTP_GATEWAY", "http://localhost:18080")
+    api = NonHumanIdentityServiceApi(LumosSdkApiClient(Configuration(host=host)))
+    ctx.obj = {"host": host, "api": api}
 
 
 @nhi.command("list-identities", help="List non-human identities for a domain.")
 @option("--domain-id", required=True, help="Domain ID")
-def list_identities(domain_id: str) -> None:
+@pass_context
+def list_identities(ctx: Context, domain_id: str) -> None:
     """List non-human identities for a domain."""
-    host = os.environ.get("LUMOS_HTTP_GATEWAY", "http://localhost:18080")
-    api = NonHumanIdentityServiceApi(LumosSdkApiClient(Configuration(host=host)))
+    api = ctx.obj["api"]
     request = NonHumanIdentityServiceListNonHumanIdentitiesRequest()
     response = api.non_human_identity_service_list_non_human_identities(
         domain_id=domain_id,
