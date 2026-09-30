@@ -17,6 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "click-extra>=7.10.0,<8",
+    "lumos-sdk==1.0.5",
     "pick>=2.2.0,<3",
     "pydantic>=2.6.0,<3",
     "pytz>=2024.1",
@@ -54,8 +55,15 @@ docs = [
 
 [tool.uv]
 default-groups = "all"
+keyring-provider = "subprocess"
+
+[[tool.uv.index]]
+name = "lumos-internal-pypi"
+url = "https://aws@lumos-134185523792.d.codeartifact.us-west-2.amazonaws.com/pypi/lumos-internal-pypi/simple/"
+explicit = true
 
 [tool.uv.sources]
+lumos-sdk = { index = "lumos-internal-pypi" }
 sphinx-rdme = { git = "https://github.com/jasondamour/sphinx-rdme" }
 
 [build-system]
