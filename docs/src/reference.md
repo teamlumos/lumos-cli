@@ -60,6 +60,22 @@ Logout of your Lumos account and clear stored credentials.
 invoke(lumos, args=["--no-color", "logout", "--help"])
 ```
 
+## Non-human identity commands
+
+The `nhi` command group calls the generated non-human identity client.
+
+```{click:run}
+invoke(lumos, args=["--no-color", "nhi", "--help"])
+```
+
+### `lumos nhi list-identities`
+
+List non-human identities for a domain.
+
+```{click:run}
+invoke(lumos, args=["--no-color", "nhi", "list-identities", "--help"])
+```
+
 ## List Commands
 
 The `list` command group provides access to various Lumos resources.

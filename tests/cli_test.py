@@ -11,6 +11,9 @@ from uuid import UUID
 
 import pytest
 from click.testing import CliRunner
+from lumos_sdk.models.non_human_identity_service_list_non_human_identities_request import (
+    NonHumanIdentityServiceListNonHumanIdentitiesRequest,
+)
 
 from lumos.cli import lumos
 from lumos.common.models import (
@@ -117,6 +120,7 @@ class TestMainCLI:
         assert "logout" in result.output
         # Subcommand groups
         assert "list" in result.output
+        assert "nhi" in result.output
         assert "request" in result.output
 
     def test_cli_version(self, runner):
@@ -461,7 +465,7 @@ class TestCLIStructure:
         assert result.exit_code == 0
 
         # These are the main commands
-        commands = ["whoami", "setup", "login", "logout", "list", "request"]
+        commands = ["whoami", "setup", "login", "logout", "list", "nhi", "request"]
         for cmd in commands:
             assert cmd in result.output, f"Command '{cmd}' not found in CLI"
 
@@ -542,3 +546,56 @@ class TestCLIPagination:
         result = runner.invoke(lumos, ["list", "requests", "--help"])
         assert "--page" in result.output
         assert "--page-size" in result.output
+
+
+class TestNhiListIdentities:
+    """Test the non-human identity list command."""
+
+    def test_nhi_help(self, runner):
+        """Test that the nhi group lists list-identities."""
+        result = runner.invoke(lumos, ["nhi", "--help"])
+        assert result.exit_code == 0
+        assert "list-identities" in result.output
+
+    def test_list_identities_help(self, runner):
+        """Test that list-identities requires a domain id."""
+        result = runner.invoke(lumos, ["nhi", "list-identities", "--help"])
+        assert result.exit_code == 0
+        assert "--domain-id" in result.output
+
+    def test_list_identities_requires_domain_id(self, runner):
+        """Test that omitting --domain-id fails."""
+        result = runner.invoke(lumos, ["nhi", "list-identities"])
+        assert result.exit_code != 0
+
+    @patch("lumos.cli.NonHumanIdentityServiceApi")
+    @patch("lumos.cli.LumosSdkApiClient")
+    @patch("lumos.cli.Configuration")
+    def test_list_identities_calls_sdk(self, mock_configuration, mock_client, mock_api, runner):
+        """Test that the command calls the generated list method and prints the response."""
+        listed = mock_api.return_value.non_human_identity_service_list_non_human_identities
+        listed.return_value.to_str.return_value = "identities"
+        result = runner.invoke(lumos, ["nhi", "list-identities", "--domain-id", "42"])
+        assert result.exit_code == 0
+        assert "identities" in result.output
+        mock_configuration.assert_called_once_with(host="http://localhost:18080")
+        mock_client.assert_called_once_with(mock_configuration.return_value)
+        mock_api.assert_called_once_with(mock_client.return_value)
+        request = listed.call_args.kwargs["non_human_identity_service_list_non_human_identities_request"]
+        assert listed.call_args.kwargs["domain_id"] == "42"
+        assert isinstance(request, NonHumanIdentityServiceListNonHumanIdentitiesRequest)
+
+    @patch("lumos.cli.NonHumanIdentityServiceApi")
+    @patch("lumos.cli.LumosSdkApiClient")
+    @patch("lumos.cli.Configuration")
+    def test_list_identities_uses_gateway_env(self, mock_configuration, mock_client, mock_api, runner):
+        """Test that LUMOS_HTTP_GATEWAY overrides the gateway host."""
+        mock_api.return_value.non_human_identity_service_list_non_human_identities.return_value.to_str.return_value = (
+            "ok"
+        )
+        env = os.environ.copy()
+        env["FORCE_COLOR"] = "0"
+        env["LUMOS_HTTP_GATEWAY"] = "http://gateway.example:18080"
+        result = CliRunner(env=env).invoke(lumos, ["nhi", "list-identities", "--domain-id", "7"])
+        assert result.exit_code == 0
+        mock_configuration.assert_called_once_with(host="http://gateway.example:18080")

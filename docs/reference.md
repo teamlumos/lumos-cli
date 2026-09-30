@@ -44,6 +44,7 @@ Commands:
   list     List various Lumos resources
   login    Login to your Lumos account via OAuth.
   logout   Logout of your Lumos account.
+  nhi      Non-human identity commands.
   request  Request access to an app.
   setup    Setup your Lumos CLI.
   whoami   Show information about the currently logged in user.
@@ -110,6 +111,63 @@ Usage: lumos logout [OPTIONS]
 
 Options:
   -h, --help  Show this message and exit.
+```
+
+## Non-human identity commands
+
+The `nhi` command group calls the generated non-human identity client.
+
+```ansi-shell-session
+$ lumos --no-color nhi --help
+Usage: lumos nhi [OPTIONS] COMMAND [ARGS]...
+
+  Non-human identity commands.
+
+Options:
+  --time / --no-time      Measure and print elapsed execution time.  [default:
+                          no-time]
+  --config CONFIG_PATH    Location of the configuration file. Supports local
+                          path with glob patterns or remote URL.  [default: ~/.c
+                          onfig/lumos/{*.toml,*.yaml,*.yml,*.json,*.ini,pyprojec
+                          t.toml}]
+  --no-config             Ignore all configuration files and only use command
+                          line parameters and environment variables.
+  --validate-config FILE  Validate the configuration file and exit.
+  --color, --ansi / --no-color, --no-ansi
+                          Strip out all colors and all ANSI codes from output.
+                          [default: color]
+  --theme [dark|dracula|light|monokai|nord|solarized_dark]
+                          Color theme used for help screens.  [default: dark]
+  --show-params           Show all CLI parameters, their provenance, defaults
+                          and value, then exit.
+  --table-format [aligned|asciidoc|colon-grid|csv|csv-excel|csv-excel-tab|csv-unix|double-grid|double-outline|fancy-grid|fancy-outline|github|grid|heavy-grid|heavy-outline|hjson|html|jira|json|json5|jsonc|latex|latex-booktabs|latex-longtable|latex-raw|mediawiki|mixed-grid|mixed-outline|moinmoin|orgtbl|outline|pipe|plain|presto|pretty|psql|rounded-grid|rounded-outline|rst|simple|simple-grid|simple-outline|textile|toml|tsv|unsafehtml|vertical|xml|yaml|youtrack]
+                          Rendering style of tables.  [default: rounded-outline]
+  --verbosity LEVEL       Either CRITICAL, ERROR, WARNING, INFO, DEBUG.
+                          [default: WARNING]
+  -v, --verbose           Increase the default WARNING verbosity by one level
+                          for each additional repetition of the option.
+                          [default: 0]
+  --version               Show the version and exit.
+  -h, --help              Show this message and exit.
+
+Commands:
+  help             Show help for a command.
+  list-identities  List non-human identities for a domain.
+```
+
+### `lumos nhi list-identities`
+
+List non-human identities for a domain.
+
+```ansi-shell-session
+$ lumos --no-color nhi list-identities --help
+Usage: lumos nhi list-identities [OPTIONS]
+
+  List non-human identities for a domain.
+
+Options:
+  --domain-id TEXT  Domain ID  [required]
+  -h, --help        Show this message and exit.
 ```
 
 ## List Commands

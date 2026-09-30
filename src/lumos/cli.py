@@ -1,6 +1,11 @@
 import os
 
 from click_extra import Context, echo, group, option, pass_context
+from lumos_sdk import ApiClient as LumosSdkApiClient
+from lumos_sdk import Configuration, NonHumanIdentityServiceApi
+from lumos_sdk.models.non_human_identity_service_list_non_human_identities_request import (
+    NonHumanIdentityServiceListNonHumanIdentitiesRequest,
+)
 
 from lumos import __version__
 from lumos.common.client import ApiClient
@@ -79,12 +84,32 @@ def logout():
     echo(" 👋 Logged out!")
 
 
+@group(name="nhi")
+def nhi():
+    """Non-human identity commands."""
+
+
+@nhi.command("list-identities", help="List non-human identities for a domain.")
+@option("--domain-id", required=True, help="Domain ID")
+def list_identities(domain_id: str) -> None:
+    """List non-human identities for a domain."""
+    host = os.environ.get("LUMOS_HTTP_GATEWAY", "http://localhost:18080")
+    api = NonHumanIdentityServiceApi(LumosSdkApiClient(Configuration(host=host)))
+    request = NonHumanIdentityServiceListNonHumanIdentitiesRequest()
+    response = api.non_human_identity_service_list_non_human_identities(
+        domain_id=domain_id,
+        non_human_identity_service_list_non_human_identities_request=request,
+    )
+    echo(response.to_str())
+
+
 # Import and register subcommands
 def register_subcommands():
     """Register all subcommands after the main CLI group is defined"""
     from lumos.list_collections.cli import list_group
     from lumos.request.cli import request
 
+    lumos.add_command(nhi)
     lumos.add_command(request)
     lumos.add_command(list_group, name="list")
 
