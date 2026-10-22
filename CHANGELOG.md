@@ -1,3 +1,10 @@
+## [2.4.3](https://github.com/teamlumos/lumos-cli/compare/v2.4.2...v2.4.3) (2026-10-22)
+
+
+### Bug Fixes
+
+* **deps:** bump certifi to 2026.10.19 to address a CA compromise ([af3be56](https://github.com/teamlumos/lumos-cli/commit/af3be567520a68fbd3d2eb45674b1322440e5584))
+
 ## [2.4.2](https://github.com/teamlumos/lumos-cli/compare/v2.4.1...v2.4.2) (2026-05-20)
 
 
