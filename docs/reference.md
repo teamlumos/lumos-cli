@@ -64,6 +64,10 @@ Usage: lumos whoami [OPTIONS]
 Options:
   --username  Show the current user's username only
   --id        Show the current user's ID only
+  --check     Check auth status without triggering an interactive login. Exits
+              non-zero if not authenticated (or if the stored credential is
+              rejected by the API), instead of opening a browser and waiting for
+              OAuth approval. Safe to use in non-interactive scripts.
   -h, --help  Show this message and exit.
 ```
 

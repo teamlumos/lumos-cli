@@ -10,11 +10,25 @@ from lumos.common.models import App, Permission, SupportRequestStatus
 
 
 def authenticate(func):
-    """Makes sure client is authenticated first"""
+    """Makes sure client is authenticated first.
+
+    If LUMOS_CHECK_ONLY is set (see the `whoami --check` flag), this skips the
+    interactive login flow entirely: it just verifies a credential is present
+    on disk (or in the environment) and exits non-zero without prompting or
+    opening a browser if it isn't. It does not verify the credential is still
+    valid server-side; see the check_only handling in BaseClient._send_request
+    for the case where a 401 comes back for a present-but-expired credential.
+    """
 
     @functools.wraps(func)
     def wrapper_authenticate(*args, **kwargs):
-        setup(show_prompt=True)
+        if os.environ.get("LUMOS_CHECK_ONLY"):
+            if not os.environ.get("API_KEY") and not key_file_path().exists():
+                echo("Not logged in.", err=True)
+                raise SystemExit(1)
+            read_key()
+        else:
+            setup(show_prompt=True)
         return func(*args, **kwargs)
 
     return wrapper_authenticate

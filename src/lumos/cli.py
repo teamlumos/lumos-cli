@@ -13,6 +13,13 @@ from lumos.common.logging import logdebug
 client = ApiClient()
 
 
+def _set_check_only(ctx: Context, param: object, value: bool) -> bool:
+    """Eager callback for --check: set LUMOS_CHECK_ONLY before @authenticate runs."""
+    if value:
+        os.environ["LUMOS_CHECK_ONLY"] = "1"
+    return value
+
+
 @group(
     context_settings={"help_option_names": ["-h", "--help"]},
     version_fields={"version": __version__},
@@ -29,6 +36,19 @@ def lumos(ctx: Context, debug: bool) -> None:
 @lumos.command("whoami", help="Show information about the currently logged in user.")
 @option("--username", is_flag=True, help="Show the current user's username only")
 @option("--id", "show_id", is_flag=True, help="Show the current user's ID only")
+@option(
+    "--check",
+    is_flag=True,
+    is_eager=True,
+    expose_value=False,
+    callback=_set_check_only,
+    help=(
+        "Check auth status without triggering an interactive login. "
+        "Exits non-zero if not authenticated (or if the stored credential "
+        "is rejected by the API), instead of opening a browser and waiting "
+        "for OAuth approval. Safe to use in non-interactive scripts."
+    ),
+)
 @authenticate
 def whoami(username: bool, show_id: bool) -> None:
     user = client.get_current_user()

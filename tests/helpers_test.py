@@ -1,6 +1,9 @@
+import os
 from uuid import UUID
 
-from lumos.common.helpers import check_current_apps, get_statuses
+import pytest
+
+from lumos.common.helpers import authenticate, check_current_apps, get_statuses
 from lumos.common.models import (
     AccessRequest,
     App,
@@ -8,6 +11,61 @@ from lumos.common.models import (
     SupportRequestStatus,
     User,
 )
+
+
+class TestAuthenticateCheckOnly:
+    """LUMOS_CHECK_ONLY makes @authenticate a non-interactive check instead of
+    an implicit login trigger. See the whoami --check flag in cli.py."""
+
+    def teardown_method(self):
+        os.environ.pop("API_KEY", None)
+        os.environ.pop("SCOPE", None)
+
+    def test_exits_nonzero_without_prompting_when_no_credential(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("LUMOS_CHECK_ONLY", "1")
+        monkeypatch.delenv("API_KEY", raising=False)
+        monkeypatch.setattr("lumos.common.helpers.key_file_path", lambda: tmp_path / "missing-key")
+
+        calls = []
+
+        @authenticate
+        def fake_command():
+            calls.append("ran")
+
+        with pytest.raises(SystemExit) as exc_info:
+            fake_command()
+
+        assert exc_info.value.code == 1
+        assert calls == []  # the wrapped command must never run
+
+    def test_proceeds_when_key_file_exists(self, monkeypatch, tmp_path):
+        key_file = tmp_path / "key"
+        key_file.write_text("user:some-token")
+        monkeypatch.setenv("LUMOS_CHECK_ONLY", "1")
+        monkeypatch.delenv("API_KEY", raising=False)
+        monkeypatch.setattr("lumos.common.helpers.key_file_path", lambda: key_file)
+        # read_key() (called after the existence check passes) resolves
+        # key_file_path() via its own module reference, not helpers', so it
+        # must be patched too or this reads the real ~/.lumos on the machine.
+        monkeypatch.setattr("lumos.common.keyhelpers.key_file_path", lambda: key_file)
+
+        @authenticate
+        def fake_command():
+            return "ran"
+
+        assert fake_command() == "ran"
+        assert os.environ.get("API_KEY") == "some-token"
+
+    def test_proceeds_when_api_key_env_already_set(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("LUMOS_CHECK_ONLY", "1")
+        monkeypatch.setenv("API_KEY", "env-token")
+        monkeypatch.setattr("lumos.common.helpers.key_file_path", lambda: tmp_path / "missing-key")
+
+        @authenticate
+        def fake_command():
+            return "ran"
+
+        assert fake_command() == "ran"
 
 
 def test_get_statuses():
