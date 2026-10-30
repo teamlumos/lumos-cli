@@ -16,7 +16,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
-    "certifi>=2026.10.19",
+    "certifi>=2026.10.23",
     "click-extra>=7.10.0,<8",
     "pick>=2.2.0,<3",
     "pydantic>=2.6.0,<3",
