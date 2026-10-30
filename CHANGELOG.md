@@ -1,3 +1,10 @@
+## [2.4.4](https://github.com/teamlumos/lumos-cli/compare/v2.4.3...v2.4.4) (2026-10-30)
+
+
+### Bug Fixes
+
+* **deps:** bump certifi to 2026.10.23 ([e999597](https://github.com/teamlumos/lumos-cli/commit/e999597b8f2ddfaab1e998a9930bdb69f3e046eb))
+
 ## [2.4.3](https://github.com/teamlumos/lumos-cli/compare/v2.4.2...v2.4.3) (2026-10-22)
 
 

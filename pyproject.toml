@@ -1,6 +1,6 @@
 [project]
 name = "lumos-identity-cli"
-version = "2.4.3"
+version = "2.4.4"
 description = "Lumos command line interface."
 readme = "README.md"
 authors = [{ name = "lumos-dev" }]
